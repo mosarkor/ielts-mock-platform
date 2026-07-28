@@ -117,6 +117,29 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
     }
   };
 
+  const handleResetUserPassword = async (userId, currentName) => {
+    const newPass = prompt(`Enter new passcode for "${currentName}" (${userId}):`);
+    if (newPass === null) return; // user cancelled
+    if (!newPass.trim()) {
+      alert('Passcode cannot be empty');
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/users/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, newPassword: newPass.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+      
+      alert('Password updated successfully!');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const handleAssignTest = async (e) => {
     e.preventDefault();
     if (!selectedTestId || selectedStudentIds.length === 0) {
@@ -380,18 +403,27 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                           <div>
                             <strong>{u.name}</strong> ({u.id})
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                              Role: <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{u.role}</span>
+                              Role: <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{u.role}</span> | Passcode: <strong style={{ color: 'var(--color-indigo)' }}>{u.passcode}</strong>
                             </div>
                           </div>
-                          {u.id !== user.id && (
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button 
-                              onClick={() => handleDeleteUser(u.id)}
-                              className="btn btn-danger"
+                              onClick={() => handleResetUserPassword(u.id, u.name)}
+                              className="btn btn-secondary"
                               style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
                             >
-                              Delete
+                              🔑 Reset
                             </button>
-                          )}
+                            {u.id !== user.id && (
+                              <button 
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="btn btn-danger"
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))
                     )}

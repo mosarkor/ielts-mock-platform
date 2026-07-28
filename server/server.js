@@ -344,8 +344,19 @@ app.get('/api/admin/overview', async (req, res) => {
 // Get all users
 app.get('/api/admin/users', async (req, res) => {
   try {
-    const users = await db.all('SELECT id, name, role FROM users');
+    const users = await db.all('SELECT id, name, role, password_hash as passcode FROM users');
     res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reset user password
+app.post('/api/admin/users/reset-password', async (req, res) => {
+  const { userId, newPassword } = req.body;
+  try {
+    await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [newPassword, userId]);
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
