@@ -74,7 +74,7 @@ async function processMockFiles() {
         // Bypass login and auto-fill student ID
         const autoLoginSnippet = `
         // Auto-login extension injected by IELTS Mock Platform
-        window.addEventListener('DOMContentLoaded', () => {
+        function runAutoLogin() {
           const params = new URLSearchParams(window.location.search);
           const sId = params.get('studentId') || 'STUDENT';
           const tId = params.get('testId') || '${mockNumber}';
@@ -88,11 +88,16 @@ async function processMockFiles() {
           
           const welcomeName = document.getElementById('welcomeName');
           if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
-        });
+        }
+        if (document.readyState !== 'loading') {
+          runAutoLogin();
+        } else {
+          document.addEventListener('DOMContentLoaded', runAutoLogin);
+        }
         `;
 
-        // Inject auto-login snippet before closing script tag
-        content = content.replace('</script>', `${autoLoginSnippet}\n</script>`);
+        // Inject auto-login snippet before closing body tag
+        content = content.replace('</body>', `<script>${autoLoginSnippet}</script>\n</body>`);
 
         // Modify finishTest function to post data back to our Express API
         const finishTestTarget = `function finishTest(){`;

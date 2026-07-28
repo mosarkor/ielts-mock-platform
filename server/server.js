@@ -445,7 +445,7 @@ app.post('/api/admin/upload-test', async (req, res) => {
     if (content.includes('function finishTest')) {
       const autoLoginSnippet = `
       // Auto-login extension injected by IELTS Mock Platform
-      window.addEventListener('DOMContentLoaded', () => {
+      function runAutoLogin() {
         const params = new URLSearchParams(window.location.search);
         const sId = params.get('studentId') || 'STUDENT';
         const tId = params.get('testId') || '${testId}';
@@ -457,9 +457,14 @@ app.post('/api/admin/upload-test', async (req, res) => {
         if (introScreen) introScreen.classList.remove('hidden');
         const welcomeName = document.getElementById('welcomeName');
         if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
-      });
+      }
+      if (document.readyState !== 'loading') {
+        runAutoLogin();
+      } else {
+        document.addEventListener('DOMContentLoaded', runAutoLogin);
+      }
       `;
-      content = content.replace('</script>', `${autoLoginSnippet}\n</script>`);
+      content = content.replace('</body>', `<script>${autoLoginSnippet}</script>\n</body>`);
       
       // Modify finishTest function to post data back to our Express API
       const finishTestTarget = `function finishTest(){`;

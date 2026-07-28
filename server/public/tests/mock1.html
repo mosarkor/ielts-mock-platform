@@ -686,25 +686,7 @@ In boxes 36–40, write<br>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-        // Auto-login extension injected by IELTS Mock Platform
-        window.addEventListener('DOMContentLoaded', () => {
-          const params = new URLSearchParams(window.location.search);
-          const sId = params.get('studentId') || 'STUDENT';
-          const tId = params.get('testId') || '1';
-          
-          candidate = sId;
-          const loginScreen = document.getElementById('login');
-          if (loginScreen) loginScreen.classList.add('hidden');
-          
-          const introScreen = document.getElementById('intro');
-          if (introScreen) introScreen.classList.remove('hidden');
-          
-          const welcomeName = document.getElementById('welcomeName');
-          if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
-        });
-        
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const ANSWERS = {"l1": ["80"], "l2": ["garage"], "l3": ["kitchen"], "l4": ["heater"], "l5": ["toaster"], "l6": ["Friday evening"], "l7": ["supermarket"], "l8": ["petrol"], "l9": ["1st of June", "1 June", "June 1st", "June 1"], "l10": ["exam"], "l11": ["8:55", "8.55", "8:55 a.m.", "8.55 a.m.", "08:55", "8.55am", "8:55am", "8:55 am", "8.55 am"], "l12": ["hot meal"], "l13": ["15 minutes", "15 min", "fifteen minutes", "fifteen min"], "l14": ["sports"], "l15": ["poster"], "l16": ["month"], "l17": ["clubs"], "l18": ["E"], "l19": ["A"], "l20": ["F"], "l21": ["B"], "l22": ["A"], "l23": ["B"], "l24": ["A"], "l25": ["B", "E"], "l26": ["B", "E"], "l27": ["A", "D"], "l28": ["A", "D"], "l29": ["C", "E"], "l30": ["C", "E"], "l31": ["resources"], "l32": ["stressful"], "l33": ["competition"], "l34": ["light"], "l35": ["reduction"], "l36": ["mud"], "l37": ["starvation"], "l38": ["evaporation"], "l39": ["nest"], "l40": ["heart"], "r1": ["TRUE"], "r2": ["FALSE"], "r3": ["NOT GIVEN"], "r4": ["NOT GIVEN"], "r5": ["FALSE"], "r6": ["boat"], "r7": ["1999"], "r8": ["terminal"], "r9": ["food"], "r10": ["donkey"], "r11": ["traditions"], "r12": ["plants"], "r13": ["report"], "r14": ["B"], "r15": ["D"], "r16": ["H"], "r17": ["C"], "r18": ["F"], "r19": ["G"], "r20": ["B"], "r21": ["E"], "r22": ["A"], "r23": ["D"], "r24": ["small car", "car"], "r25": ["30 miles"], "r26": ["Birmingham"], "r27": ["G"], "r28": ["D"], "r29": ["F"], "r30": ["B"], "r31": ["A"], "r32": ["C"], "r33": ["A"], "r34": ["B"], "r35": ["D"], "r36": ["YES"], "r37": ["NO"], "r38": ["NOT GIVEN"], "r39": ["NOT GIVEN"], "r40": ["NO"]};
 const DISPLAY_ANSWERS = {"l1": "80", "l2": "garage", "l3": "kitchen", "l4": "heater", "l5": "toaster", "l6": "Friday evening", "l7": "supermarket", "l8": "petrol", "l9": "1st of June / 1 June / June 1st / June 1", "l10": "exam", "l11": "8:55 / 8.55 / 8:55 a.m. / 8.55 a.m. / 08:55 / 8.55am / 8:55am / 8:55 am / 8.55 am", "l12": "hot meal", "l13": "15 minutes / 15 min / fifteen minutes / fifteen min", "l14": "sports", "l15": "poster", "l16": "month", "l17": "clubs", "l18": "E", "l19": "A", "l20": "F", "l21": "B", "l22": "A", "l23": "B", "l24": "A", "l25": "B and E", "l26": "B and E", "l27": "A and D", "l28": "A and D", "l29": "C and E", "l30": "C and E", "l31": "resources", "l32": "stressful", "l33": "competition", "l34": "light", "l35": "reduction", "l36": "mud", "l37": "starvation", "l38": "evaporation", "l39": "nest", "l40": "heart", "r1": "TRUE", "r2": "FALSE", "r3": "NOT GIVEN", "r4": "NOT GIVEN", "r5": "FALSE", "r6": "boat", "r7": "1999", "r8": "terminal", "r9": "food", "r10": "donkey", "r11": "traditions", "r12": "plants", "r13": "report", "r14": "B", "r15": "D", "r16": "H", "r17": "C", "r18": "F", "r19": "G", "r20": "B", "r21": "E", "r22": "A", "r23": "D", "r24": "small car / car", "r25": "30 miles", "r26": "Birmingham", "r27": "G", "r28": "D", "r29": "F", "r30": "B", "r31": "A", "r32": "C", "r33": "A", "r34": "B", "r35": "D", "r36": "YES", "r37": "NO", "r38": "NOT GIVEN", "r39": "NOT GIVEN", "r40": "NO"};
@@ -1357,5 +1339,28 @@ function setTextSize(t){
   document.querySelector(`#optPageTextSize .opt-choice[data-size="${t}"]`).classList.add('active');
 }
 </script>
+<script>
+        // Auto-login extension injected by IELTS Mock Platform
+        function runAutoLogin() {
+          const params = new URLSearchParams(window.location.search);
+          const sId = params.get('studentId') || 'STUDENT';
+          const tId = params.get('testId') || '1';
+          
+          candidate = sId;
+          const loginScreen = document.getElementById('login');
+          if (loginScreen) loginScreen.classList.add('hidden');
+          
+          const introScreen = document.getElementById('intro');
+          if (introScreen) introScreen.classList.remove('hidden');
+          
+          const welcomeName = document.getElementById('welcomeName');
+          if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
+        }
+        if (document.readyState !== 'loading') {
+          runAutoLogin();
+        } else {
+          document.addEventListener('DOMContentLoaded', runAutoLogin);
+        }
+        </script>
 </body>
 </html>

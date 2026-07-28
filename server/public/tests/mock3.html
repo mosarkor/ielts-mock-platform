@@ -691,25 +691,7 @@ body.text-xlarge #exam { zoom:1.3; }
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-        // Auto-login extension injected by IELTS Mock Platform
-        window.addEventListener('DOMContentLoaded', () => {
-          const params = new URLSearchParams(window.location.search);
-          const sId = params.get('studentId') || 'STUDENT';
-          const tId = params.get('testId') || '3';
-          
-          candidate = sId;
-          const loginScreen = document.getElementById('login');
-          if (loginScreen) loginScreen.classList.add('hidden');
-          
-          const introScreen = document.getElementById('intro');
-          if (introScreen) introScreen.classList.remove('hidden');
-          
-          const welcomeName = document.getElementById('welcomeName');
-          if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
-        });
-        
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const ANSWERS = {"l1": ["Ropes", "rope"], "l2": ["Equipment"], "l3": ["Safety"], "l4": ["Guide"], "l5": ["Forest"], "l6": ["Navigation"], "l7": ["Lunch"], "l8": ["20 percent", "20%", "twenty percent"], "l9": ["Shoes", "shoe"], "l10": ["Arkwright"], "l11": ["A"], "l12": ["C"], "l13": ["B"], "l14": ["A"], "l15": ["B"], "l16": ["A"], "l17": ["H"], "l18": ["E"], "l19": ["D"], "l20": ["F"], "l21": ["B"], "l22": ["C"], "l23": ["B"], "l24": ["A"], "l25": ["C"], "l26": ["C"], "l27": ["Global hunger"], "l28": ["Pollution"], "l29": ["Wood"], "l30": ["Grasses", "Grass"], "l31": ["Huge Increase", "Increase"], "l32": ["Internal clock"], "l33": ["Light and dark"], "l34": ["Unsocial hours"], "l35": ["Heart and stomach"], "l36": ["Depression"], "l37": ["Mental ability"], "l38": ["Performance"], "l39": ["Family life"], "l40": ["Friends", "Friend"], "r1": ["FALSE"], "r2": ["NOT GIVEN"], "r3": ["TRUE"], "r4": ["FALSE"], "r5": ["NOT GIVEN"], "r6": ["FALSE"], "r7": ["His diaries", "diaries"], "r8": ["3 years", "Three years", "3", "three"], "r9": ["Chains", "chain"], "r10": ["Governor Philip", "Governor", "Philip"], "r11": ["June 1789"], "r12": ["China"], "r13": ["Botany Bay"], "r14": ["A"], "r15": ["D"], "r16": ["B"], "r17": ["D"], "r18": ["C"], "r19": ["B"], "r20": ["D"], "r21": ["A"], "r22": ["workplace injury"], "r23": ["16.6 weeks"], "r24": ["7%", "7 percent"], "r25": ["golf"], "r26": ["massage"], "r27": ["C"], "r28": ["D"], "r29": ["B"], "r30": ["A"], "r31": ["D"], "r32": ["C"], "r33": ["B"], "r34": ["D"], "r35": ["A"], "r36": ["E"], "r37": ["F"], "r38": ["B"], "r39": ["B"], "r40": ["A"]};
 const DISPLAY_ANSWERS = {"l1": "Ropes", "l2": "Equipment", "l3": "Safety", "l4": "Guide", "l5": "Forest", "l6": "Navigation", "l7": "Lunch", "l8": "20 percent", "l9": "Shoes", "l10": "Arkwright", "l11": "A", "l12": "C", "l13": "B", "l14": "A", "l15": "B", "l16": "A", "l17": "H", "l18": "E", "l19": "D", "l20": "F", "l21": "B", "l22": "C", "l23": "B", "l24": "A", "l25": "C", "l26": "C", "l27": "Global hunger", "l28": "Pollution", "l29": "Wood", "l30": "Grasses", "l31": "(Huge) Increase", "l32": "Internal clock", "l33": "Light and dark", "l34": "Unsocial hours", "l35": "Heart and stomach", "l36": "Depression", "l37": "Mental ability", "l38": "Performance", "l39": "Family life", "l40": "Friends", "r1": "FALSE", "r2": "NOT GIVEN", "r3": "TRUE", "r4": "FALSE", "r5": "NOT GIVEN", "r6": "FALSE", "r7": "His diaries", "r8": "3/Three years", "r9": "Chains", "r10": "Governor Philip", "r11": "June 1789", "r12": "China", "r13": "Botany Bay", "r14": "A", "r15": "D", "r16": "B", "r17": "D", "r18": "C", "r19": "B", "r20": "D", "r21": "A", "r22": "workplace injury", "r23": "16.6 weeks", "r24": "7%", "r25": "golf", "r26": "massage", "r27": "C", "r28": "D", "r29": "B", "r30": "A", "r31": "D", "r32": "C", "r33": "B", "r34": "D", "r35": "A", "r36": "E", "r37": "F", "r38": "B", "r39": "B", "r40": "A"};
@@ -1339,5 +1321,28 @@ function setTextSize(t){
   document.querySelector(`#optPageTextSize .opt-choice[data-size="${t}"]`).classList.add('active');
 }
 </script>
+<script>
+        // Auto-login extension injected by IELTS Mock Platform
+        function runAutoLogin() {
+          const params = new URLSearchParams(window.location.search);
+          const sId = params.get('studentId') || 'STUDENT';
+          const tId = params.get('testId') || '3';
+          
+          candidate = sId;
+          const loginScreen = document.getElementById('login');
+          if (loginScreen) loginScreen.classList.add('hidden');
+          
+          const introScreen = document.getElementById('intro');
+          if (introScreen) introScreen.classList.remove('hidden');
+          
+          const welcomeName = document.getElementById('welcomeName');
+          if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
+        }
+        if (document.readyState !== 'loading') {
+          runAutoLogin();
+        } else {
+          document.addEventListener('DOMContentLoaded', runAutoLogin);
+        }
+        </script>
 </body>
 </html>

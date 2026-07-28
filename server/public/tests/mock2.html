@@ -656,25 +656,7 @@ body.text-xlarge #exam { zoom:1.3; }
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-        // Auto-login extension injected by IELTS Mock Platform
-        window.addEventListener('DOMContentLoaded', () => {
-          const params = new URLSearchParams(window.location.search);
-          const sId = params.get('studentId') || 'STUDENT';
-          const tId = params.get('testId') || '2';
-          
-          candidate = sId;
-          const loginScreen = document.getElementById('login');
-          if (loginScreen) loginScreen.classList.add('hidden');
-          
-          const introScreen = document.getElementById('intro');
-          if (introScreen) introScreen.classList.remove('hidden');
-          
-          const welcomeName = document.getElementById('welcomeName');
-          if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
-        });
-        
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const ANSWERS = {"l1": ["94635550"], "l2": ["Clark House"], "l3": ["University Drive"], "l4": ["Monday"], "l5": ["Thursday"], "l6": ["A month", "month", "one month"], "l7": ["A"], "l8": ["C"], "l9": ["B"], "l10": ["C"], "l11": ["Computer as Teacher", "Computer As Teacher"], "l12": ["University of Melbourne", "the University of Melbourne"], "l13": ["top floor"], "l14": ["ground floor"], "l15": ["3:10", "3.10", "3:10 p.m.", "3.10 p.m.", "3:10 pm", "3.10 pm"], "l16": ["Palm Lounge"], "l17": ["C"], "l18": ["B"], "l19": ["B"], "l20": ["A"], "l21": ["C"], "l22": ["A"], "l23": ["B"], "l24": ["B"], "l25": ["A"], "l26": ["C"], "l27": ["C"], "l28": ["E"], "l29": ["F"], "l30": ["textbook allowance"], "l31": ["plastic"], "l32": ["processing"], "l33": ["seasoned", "properly seasoned"], "l34": ["polished"], "l35": ["cost", "the cost"], "l36": ["grain pattern", "grain patterns"], "l37": ["words"], "l38": ["0.8"], "l39": ["0.1"], "l40": ["black velvet"], "r1": ["x"], "r2": ["ix"], "r3": ["vi"], "r4": ["v"], "r5": ["iii"], "r6": ["i"], "r7": ["A"], "r8": ["B"], "r9": ["E"], "r10": ["D"], "r11": ["C"], "r12": ["Energetic", "energetics", "energy"], "r13": ["Force sensors", "force sensor"], "r14": ["D"], "r15": ["G"], "r16": ["E"], "r17": ["A"], "r18": ["E"], "r19": ["C"], "r20": ["F"], "r21": ["NOT GIVEN"], "r22": ["NOT GIVEN"], "r23": ["TRUE"], "r24": ["FALSE"], "r25": ["FALSE"], "r26": ["TRUE"], "r27": ["B"], "r28": ["C"], "r29": ["H"], "r30": ["G"], "r31": ["E"], "r32": ["D"], "r33": ["A"], "r34": ["bee-keeping", "bee keeping", "beekeeping"], "r35": ["life cycles"], "r36": ["droughts", "drought"], "r37": ["C"], "r38": ["A"], "r39": ["D"], "r40": ["D"]};
 const DISPLAY_ANSWERS = {"l1": "94635550", "l2": "Clark House", "l3": "University Drive", "l4": "Monday", "l5": "Thursday", "l6": "A month", "l7": "A", "l8": "C", "l9": "B", "l10": "C", "l11": "Computer as Teacher", "l12": "University of Melbourne", "l13": "top floor", "l14": "ground floor", "l15": "3:10", "l16": "Palm Lounge", "l17": "C", "l18": "B", "l19": "B", "l20": "A", "l21": "C", "l22": "A", "l23": "B", "l24": "B", "l25": "A", "l26": "C", "l27": "C", "l28": "E", "l29": "F", "l30": "textbook allowance", "l31": "plastic", "l32": "processing", "l33": "(properly) seasoned", "l34": "polished", "l35": "(the) cost", "l36": "grain pattern(s)", "l37": "words", "l38": "0.8", "l39": "0.1", "l40": "black velvet", "r1": "x", "r2": "ix", "r3": "vi", "r4": "v", "r5": "iii", "r6": "i", "r7": "A", "r8": "B", "r9": "E", "r10": "D", "r11": "C", "r12": "Energetic", "r13": "Force sensors", "r14": "D", "r15": "G", "r16": "E", "r17": "A", "r18": "E", "r19": "C", "r20": "F", "r21": "NOT GIVEN", "r22": "NOT GIVEN", "r23": "TRUE", "r24": "FALSE", "r25": "FALSE", "r26": "TRUE", "r27": "B", "r28": "C", "r29": "H", "r30": "G", "r31": "E", "r32": "D", "r33": "A", "r34": "bee-keeping", "r35": "life cycles", "r36": "drought(s)", "r37": "C", "r38": "A", "r39": "D", "r40": "D"};
@@ -1303,5 +1285,28 @@ function setTextSize(t){
   document.querySelector(`#optPageTextSize .opt-choice[data-size="${t}"]`).classList.add('active');
 }
 </script>
+<script>
+        // Auto-login extension injected by IELTS Mock Platform
+        function runAutoLogin() {
+          const params = new URLSearchParams(window.location.search);
+          const sId = params.get('studentId') || 'STUDENT';
+          const tId = params.get('testId') || '2';
+          
+          candidate = sId;
+          const loginScreen = document.getElementById('login');
+          if (loginScreen) loginScreen.classList.add('hidden');
+          
+          const introScreen = document.getElementById('intro');
+          if (introScreen) introScreen.classList.remove('hidden');
+          
+          const welcomeName = document.getElementById('welcomeName');
+          if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
+        }
+        if (document.readyState !== 'loading') {
+          runAutoLogin();
+        } else {
+          document.addEventListener('DOMContentLoaded', runAutoLogin);
+        }
+        </script>
 </body>
 </html>
