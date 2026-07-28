@@ -98,123 +98,26 @@ export async function initDb() {
       ('UNI2026E', 'Elena Rostova', 'student123', 'student')
     `);
 
-    // Sample Test Data
-    const sampleListening = {
-      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-      sections: [
-        {
-          title: "Section 1: Library Membership Form",
-          instructions: "Complete the form below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
-          questions: [
-            { id: 1, type: "fill-in-the-blank", label: "First name:", placeholder: "e.g. John", answer: "Aria" },
-            { id: 2, type: "fill-in-the-blank", label: "Surname:", placeholder: "e.g. Smith", answer: "Thorne" },
-            { id: 3, type: "fill-in-the-blank", label: "Postcode:", placeholder: "e.g. CB2 1LQ", answer: "CB21LQ" },
-            { id: 4, type: "fill-in-the-blank", label: "Membership type:", placeholder: "e.g. Adult", answer: "Student" },
-            { id: 5, type: "fill-in-the-blank", label: "Annual fee paid:", placeholder: "e.g. £25", answer: "15" }
-          ]
-        },
-        {
-          title: "Section 2: Campus Tour",
-          instructions: "Choose the correct letter, A, B or C.",
-          questions: [
-            {
-              id: 6,
-              type: "multiple-choice",
-              text: "Where is the new Science Center located?",
-              options: ["A. Behind the library", "B. Opposite the cafeteria", "C. Next to the gym"],
-              answer: "B"
-            },
-            {
-              id: 7,
-              type: "multiple-choice",
-              text: "The student lounge is open until:",
-              options: ["A. 8:00 PM", "B. 10:00 PM", "C. Midnight"],
-              answer: "C"
-            }
-          ]
-        }
-      ]
-    };
-
-    const sampleReading = {
-      passages: [
-        {
-          title: "Passage 1: The Rise of Vertical Farming",
-          text: `Vertical farming is the practice of growing crops in vertically stacked layers. It often incorporates controlled-environment agriculture, which aims to optimize plant growth, and soilless farming techniques such as hydroponics, aquaponics, and aeroponics. Some common choices of structures to house vertical farming systems include buildings, shipping containers, tunnels, and abandoned mine shafts.\n\nThe modern concept of vertical farming was proposed in 1999 by Dickson Despommier, a professor of Public and Environmental Health at Columbia University. Despommier and his students designed a layout of a skyscraper farm that could feed 50,000 people. Although the skyscraper has not yet been built, it popularized the idea of vertical farming.\n\nThe primary advantage of using vertical farming technologies is the increased crop yield that comes with a smaller unit area of land requirement. The increased ability to cultivate a larger variety of crops at once because crops do not share the same plots of land while being grown is another sought-after advantage. Additionally, crops are resistant to weather disruptions because of their placement indoors, reducing crop lost to extreme or unexpected weather occurrences.`,
-          questions: [
-            {
-              id: 11,
-              type: "multiple-choice",
-              text: "Dickson Despommier is a professor at which university?",
-              options: ["A. Harvard University", "B. Columbia University", "C. Stanford University", "D. Oxford University"],
-              answer: "B"
-            },
-            {
-              id: 12,
-              type: "true-false-notgiven",
-              text: "Dickson Despommier's vertical farming skyscraper has already been constructed.",
-              options: ["TRUE", "FALSE", "NOT GIVEN"],
-              answer: "FALSE"
-            },
-            {
-              id: 13,
-              type: "true-false-notgiven",
-              text: "Vertical farming crops are highly vulnerable to outdoor weather patterns.",
-              options: ["TRUE", "FALSE", "NOT GIVEN"],
-              answer: "FALSE"
-            },
-            {
-              id: 14,
-              type: "fill-in-the-blank",
-              label: "The modern concept of vertical farming was proposed in the year:",
-              placeholder: "e.g. 1990",
-              answer: "1999"
-            }
-          ]
-        }
-      ]
-    };
-
-    const sampleWriting = {
-      task1: {
-        prompt: "The chart below shows the number of students enrolled in various language courses at a university between 2020 and 2024. Summarize the information by selecting and reporting the main features, and make comparisons where relevant.",
-        minWords: 150
-      },
-      task2: {
-        prompt: "Some people believe that reading books is the best way to gain knowledge, while others argue that practical experience is more valuable. Discuss both views and give your opinion.",
-        minWords: 250
-      }
-    };
-
-    // Insert Sample Test
-    const result = await db.run(`
-      INSERT INTO tests (title, listening_data, reading_data, writing_data, created_by)
-      VALUES (?, ?, ?, ?, ?)
-    `, 
-      "IELTS Academic Mock Test 1", 
-      JSON.stringify(sampleListening), 
-      JSON.stringify(sampleReading), 
-      JSON.stringify(sampleWriting), 
-      'admin'
-    );
-    const testId = result.lastID;
-
-    // Seed the 9 HTML Mock Tests
+    // Seed the 9 HTML Mock Tests directly
+    let firstTestId = null;
     for (let i = 1; i <= 9; i++) {
       const mockListening = {
         isIframe: true,
         iframeUrl: `/tests/mock${i}.html`
       };
-      await db.run(`
+      const result = await db.run(`
         INSERT INTO tests (title, listening_data, reading_data, writing_data, created_by)
         VALUES (?, ?, ?, ?, ?)
       `, 
-        `IELTS Full Academic Mock Test ${i}`, 
+        `IELTS Academic Mock Test ${i}`, 
         JSON.stringify(mockListening), 
         JSON.stringify({}), 
         JSON.stringify({}), 
         'admin'
       );
+      if (i === 1) {
+        firstTestId = result.lastID;
+      }
     }
 
     // Seed assignments
@@ -223,10 +126,10 @@ export async function initDb() {
       ('UNI2026B', ?, datetime('now', '-1 days'), 'started'),
       ('UNI2026C', ?, datetime('now', '-3 days'), 'completed'),
       ('UNI2026D', ?, datetime('now', '-4 days'), 'completed')
-    `, testId, testId, testId, testId);
+    `, firstTestId, firstTestId, firstTestId, firstTestId);
 
-    // Assign the new 9 mock tests to UNI2026A and UNI2026B too so they show up immediately
-    for (let t = 2; t <= 10; t++) {
+    // Assign the remaining mock tests to UNI2026A and UNI2026B too so they show up immediately
+    for (let t = firstTestId + 1; t < firstTestId + 9; t++) {
       await db.run(`INSERT INTO assignments (student_id, test_id, assigned_at, status) VALUES 
         ('UNI2026A', ?, datetime('now'), 'assigned'),
         ('UNI2026B', ?, datetime('now'), 'assigned')
@@ -249,7 +152,7 @@ export async function initDb() {
         'teacher', 1
       )
     `, 
-      testId,
+      firstTestId,
       JSON.stringify({ 1: "Aria", 2: "Thorne", 3: "CB21LQ", 4: "Student", 5: "15", 6: "B", 7: "A" }), // 6 out of 7 right = 7.5 (scaled)
       JSON.stringify({ 11: "B", 12: "FALSE", 13: "FALSE", 14: "1999" }), // 4 out of 4 right = 8.0 (scaled)
       JSON.stringify({
@@ -271,7 +174,7 @@ export async function initDb() {
         5.5, 6.0, 0
       )
     `,
-      testId,
+      firstTestId,
       JSON.stringify({ 1: "John", 2: "Lee", 3: "CB21LQ", 4: "Adult", 5: "25", 6: "A", 7: "B" }),
       JSON.stringify({ 11: "A", 12: "TRUE", 13: "FALSE", 14: "1995" }),
       JSON.stringify({
