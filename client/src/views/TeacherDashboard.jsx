@@ -9,6 +9,9 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
 
   // Selected submission for grading
   const [selectedSub, setSelectedSub] = useState(null);
+  const [viewMode, setViewMode] = useState('grading'); // 'grading' or 'detailed_review'
+  const [answerKey, setAnswerKey] = useState(null);
+  const [loadingKey, setLoadingKey] = useState(false);
 
   // Rubric scores state
   const [rubric, setRubric] = useState({ ta: 6.0, cc: 6.0, lr: 6.0, gra: 6.0 });
@@ -18,6 +21,46 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
   useEffect(() => {
     fetchSubmissions();
   }, []);
+
+  useEffect(() => {
+    if (selectedSub) {
+      loadAnswerKey(selectedSub);
+    } else {
+      setAnswerKey(null);
+    }
+  }, [selectedSub]);
+
+  const loadAnswerKey = async (sub) => {
+    setLoadingKey(true);
+    try {
+      let iframeUrl = `/tests/mock${sub.test_id}.html`;
+      if (sub.listening_data) {
+        try {
+          const lData = JSON.parse(sub.listening_data);
+          if (lData.iframeUrl) {
+            iframeUrl = lData.iframeUrl;
+          }
+        } catch(e) {}
+      }
+      
+      const res = await fetch(iframeUrl);
+      if (!res.ok) throw new Error('Answer key not found');
+      const html = await res.text();
+      
+      const answersMatch = html.match(/const\s+ANSWERS\s*=\s*({[^;]+});/);
+      const displayAnswersMatch = html.match(/const\s+DISPLAY_ANSWERS\s*=\s*({[^;]+});/);
+      
+      if (answersMatch) {
+        const answersObj = JSON.parse(answersMatch[1]);
+        const displayObj = displayAnswersMatch ? JSON.parse(displayAnswersMatch[1]) : {};
+        setAnswerKey({ answers: answersObj, display: displayObj });
+      }
+    } catch (err) {
+      console.error('Failed to load answer key:', err);
+    } finally {
+      setLoadingKey(false);
+    }
+  };
 
   const fetchSubmissions = async () => {
     setLoading(true);
@@ -35,6 +78,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
 
   const handleSelectSubmission = (sub) => {
     setSelectedSub(sub);
+    setViewMode('grading');
     if (sub.writing_scores) {
       setRubric(sub.writing_scores);
     } else {
@@ -92,6 +136,61 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
     } catch (err) {
       alert(err.message);
     }
+  };
+
+  const handleCopyReport = () => {
+    if (!selectedSub || !answerKey) return;
+    
+    const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const isCorrect = (studentAns, correctAnswersArr) => {
+      if (!correctAnswersArr || !correctAnswersArr.length) return false;
+      const sNorm = norm(studentAns);
+      return correctAnswersArr.some(ans => norm(ans) === sNorm);
+    };
+
+    let report = `IELTS Mock Test Center — Performance Report\n`;
+    report += `==================================================\n`;
+    report += `Candidate ID: ${selectedSub.student_id}\n`;
+    report += `Candidate Name: ${selectedSub.student_name}\n`;
+    report += `Test Title: ${selectedSub.test_title}\n\n`;
+    
+    report += `BAND SCORES OVERVIEW:\n`;
+    report += `- Listening Score: Band ${selectedSub.listening_score.toFixed(1)}\n`;
+    report += `- Reading Score: Band ${selectedSub.reading_score.toFixed(1)}\n`;
+    if (selectedSub.writing_score !== null) {
+      report += `- Writing Score: Band ${selectedSub.writing_score.toFixed(1)}\n`;
+    }
+    report += `\nINCORRECT & MISSED ANSWERS FEEDBACK:\n\n`;
+    
+    report += `[🎧 LISTENING SECTION ERRORS]\n`;
+    let lErrors = 0;
+    for (let i = 1; i <= 40; i++) {
+      const studentAns = selectedSub.listening_answers[i] || '';
+      const correctArr = answerKey.answers['l' + i] || [];
+      const correctText = answerKey.display['l' + i] || correctArr.join(' / ') || '—';
+      if (!isCorrect(studentAns, correctArr)) {
+        lErrors++;
+        report += `Q${i}: Student: "${studentAns || '—'}" | Correct: "${correctText}"\n`;
+      }
+    }
+    if (lErrors === 0) report += `Perfect score in Listening section!\n`;
+    report += `\n`;
+
+    report += `[📖 READING SECTION ERRORS]\n`;
+    let rErrors = 0;
+    for (let i = 1; i <= 40; i++) {
+      const studentAns = selectedSub.reading_answers[i] || '';
+      const correctArr = answerKey.answers['r' + i] || [];
+      const correctText = answerKey.display['r' + i] || correctArr.join(' / ') || '—';
+      if (!isCorrect(studentAns, correctArr)) {
+        rErrors++;
+        report += `Q${i}: Student: "${studentAns || '—'}" | Correct: "${correctText}"\n`;
+      }
+    }
+    if (rErrors === 0) report += `Perfect score in Reading section!\n`;
+    
+    navigator.clipboard.writeText(report);
+    alert('Detailed performance report successfully copied to clipboard!');
   };
 
   const toggleRevealStatus = async (subId, currentStatus) => {
@@ -174,136 +273,281 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
               </div>
             </div>
 
-            <div style={styles.workspaceGrid}>
-              {/* Left Essay Panel */}
-              <div className="card" style={styles.essayPanel}>
-                <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
-                  <h4 style={{ color: '#ffffff' }}>Student Writing Answers</h4>
+            </div>
+
+            {/* View Mode Tabs */}
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', userSelect: 'none' }}>
+              <button 
+                onClick={() => setViewMode('grading')}
+                className="btn"
+                style={{
+                  ...styles.tabBtn,
+                  backgroundColor: viewMode === 'grading' ? 'var(--color-indigo)' : 'var(--bg-secondary)',
+                  color: '#ffffff',
+                  border: '1px solid var(--glass-border)',
+                }}
+              >
+                ✏️ Grade Writing Tasks
+              </button>
+              <button 
+                onClick={() => setViewMode('detailed_review')}
+                className="btn"
+                style={{
+                  ...styles.tabBtn,
+                  backgroundColor: viewMode === 'detailed_review' ? 'var(--color-indigo)' : 'var(--bg-secondary)',
+                  color: '#ffffff',
+                  border: '1px solid var(--glass-border)',
+                }}
+              >
+                📊 Detailed Listening & Reading Review
+              </button>
+            </div>
+
+            {viewMode === 'grading' ? (
+              <div style={styles.workspaceGrid}>
+                {/* Left Essay Panel */}
+                <div className="card" style={styles.essayPanel}>
+                  <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+                    <h4 style={{ color: 'var(--text-primary)' }}>Student Writing Answers</h4>
+                  </div>
+
+                  <div style={styles.essayBox}>
+                    <div style={styles.essayBoxHeader}>
+                      <h5>Writing Task 1 Prompt:</h5>
+                    </div>
+                    <p style={styles.writingPrompt}>Refer to Task 1 instructions assigned in this test.</p>
+                    
+                    <h5 style={{ color: 'var(--text-secondary)', marginTop: '1rem', marginBottom: '0.5rem' }}>Student Essay (Word count: {getWordCount(selectedSub.writing_answers.task1)}):</h5>
+                    <div style={styles.rawEssayText}>{selectedSub.writing_answers.task1 || "No answer submitted"}</div>
+                  </div>
+
+                  <div style={{ ...styles.essayBox, marginTop: '2rem' }}>
+                    <div style={styles.essayBoxHeader}>
+                      <h5>Writing Task 2 Prompt:</h5>
+                    </div>
+                    <p style={styles.writingPrompt}>Refer to Task 2 instructions assigned in this test.</p>
+                    
+                    <h5 style={{ color: 'var(--text-secondary)', marginTop: '1rem', marginBottom: '0.5rem' }}>Student Essay (Word count: {getWordCount(selectedSub.writing_answers.task2)}):</h5>
+                    <div style={styles.rawEssayText}>{selectedSub.writing_answers.task2 || "No answer submitted"}</div>
+                  </div>
                 </div>
 
-                <div style={styles.essayBox}>
-                  <div style={styles.essayBoxHeader}>
-                    <h5>Writing Task 1 Prompt:</h5>
+                {/* Right Grading Panel */}
+                <form onSubmit={handleSaveGrade} className="card" style={styles.gradingPanel}>
+                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem' }}>
+                    IELTS Writing Rubric Assessment
+                  </h4>
+
+                  <div style={styles.rubricGrid}>
+                    <div className="form-group">
+                      <label className="form-label">Task Achievement / Response (TR)</label>
+                      <select 
+                        className="form-input"
+                        value={rubric.ta} 
+                        onChange={(e) => handleRubricChange('ta', e.target.value)}
+                      >
+                        {bandOptions.map(val => (
+                          <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Coherence & Cohesion (CC)</label>
+                      <select 
+                        className="form-input"
+                        value={rubric.cc} 
+                        onChange={(e) => handleRubricChange('cc', e.target.value)}
+                      >
+                        {bandOptions.map(val => (
+                          <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Lexical Resource (LR)</label>
+                      <select 
+                        className="form-input"
+                        value={rubric.lr} 
+                        onChange={(e) => handleRubricChange('lr', e.target.value)}
+                      >
+                        {bandOptions.map(val => (
+                          <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Grammatical Range & Accuracy (GRA)</label>
+                      <select 
+                        className="form-input"
+                        value={rubric.gra} 
+                        onChange={(e) => handleRubricChange('gra', e.target.value)}
+                      >
+                        {bandOptions.map(val => (
+                          <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <p style={styles.writingPrompt}>Refer to Task 1 instructions assigned in this test.</p>
+
+                  <div className="form-group" style={{ marginTop: '1rem' }}>
+                    <label className="form-label">🎧 Listening Calculated Band (Reference)</label>
+                    <input type="text" className="form-input" value={`Band ${selectedSub.listening_score.toFixed(1)}`} disabled style={{ opacity: 0.6 }} />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">📖 Reading Calculated Band (Reference)</label>
+                    <input type="text" className="form-input" value={`Band ${selectedSub.reading_score.toFixed(1)}`} disabled style={{ opacity: 0.6 }} />
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                    <label className="form-label">Teacher Written Comments & Advice</label>
+                    <textarea 
+                      className="form-input"
+                      style={{ height: '140px', resize: 'none', lineHeight: '1.5' }}
+                      placeholder="Write detailed recommendations on how the student can improve vocabulary, coherence, and grammar patterns..."
+                      value={feedbackText}
+                      onChange={(e) => setFeedbackText(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group" style={styles.toggleRow}>
+                    <label style={styles.toggleLabel}>
+                      <input 
+                        type="checkbox"
+                        checked={releaseImmediately} 
+                        onChange={(e) => setReleaseImmediately(e.target.checked)}
+                      />
+                      <span>Release Scores and Feedback to Student Dashboard immediately</span>
+                    </label>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    className="btn btn-success" 
+                    style={{ width: '100%', justifyContent: 'center', marginTop: '1.5rem' }}
+                  >
+                    💾 Save and Finalize Grades
+                  </button>
+                </form>
+              </div>
+            ) : (
+              <div style={styles.workspaceGrid}>
+                {/* Listening Column */}
+                <div className="card" style={{ maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 style={{ color: 'var(--text-primary)' }}>🎧 Listening Overview</h4>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#6366f1' }}>
+                      Band {selectedSub.listening_score.toFixed(1)}
+                    </span>
+                  </div>
                   
-                  <h5 style={{ color: '#94a3b8', marginTop: '1rem', marginBottom: '0.5rem' }}>Student Essay (Word count: {getWordCount(selectedSub.writing_answers.task1)}):</h5>
-                  <div style={styles.rawEssayText}>{selectedSub.writing_answers.task1 || "No answer submitted"}</div>
+                  <div style={{ overflowY: 'auto', flex: 1 }}>
+                    {!answerKey ? (
+                      <p style={{ color: 'var(--text-secondary)', padding: '1rem' }}>
+                        {loadingKey ? 'Extracting answer keys from mock test file...' : 'Answer key details could not be found.'}
+                      </p>
+                    ) : (
+                      <table style={styles.reviewTable}>
+                        <thead>
+                          <tr>
+                            <th style={styles.reviewTh}>Q</th>
+                            <th style={styles.reviewTh}>Student Answer</th>
+                            <th style={styles.reviewTh}>Correct Key</th>
+                            <th style={styles.reviewTh}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Array.from({ length: 40 }, (_, idx) => {
+                            const qNum = idx + 1;
+                            const studentAns = selectedSub.listening_answers[qNum] || '';
+                            const correctArr = answerKey.answers['l' + qNum] || [];
+                            const displayCorrect = answerKey.display['l' + qNum] || correctArr.join(' / ') || '—';
+                            const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                            const sNorm = norm(studentAns);
+                            const isOk = correctArr.some(ans => norm(ans) === sNorm);
+                            
+                            return (
+                              <tr key={qNum} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                <td style={styles.reviewTd}><strong>{qNum}</strong></td>
+                                <td style={styles.reviewTd}>{studentAns || '—'}</td>
+                                <td style={styles.reviewTd}>{displayCorrect}</td>
+                                <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
+                                  {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
                 </div>
 
-                <div style={{ ...styles.essayBox, marginTop: '2rem' }}>
-                  <div style={styles.essayBoxHeader}>
-                    <h5>Writing Task 2 Prompt:</h5>
+                {/* Reading Column */}
+                <div className="card" style={{ maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 style={{ color: 'var(--text-primary)' }}>📖 Reading Overview</h4>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#10b981' }}>
+                      Band {selectedSub.reading_score.toFixed(1)}
+                    </span>
                   </div>
-                  <p style={styles.writingPrompt}>Refer to Task 2 instructions assigned in this test.</p>
                   
-                  <h5 style={{ color: '#94a3b8', marginTop: '1rem', marginBottom: '0.5rem' }}>Student Essay (Word count: {getWordCount(selectedSub.writing_answers.task2)}):</h5>
-                  <div style={styles.rawEssayText}>{selectedSub.writing_answers.task2 || "No answer submitted"}</div>
+                  <div style={{ overflowY: 'auto', flex: 1 }}>
+                    {!answerKey ? (
+                      <p style={{ color: 'var(--text-secondary)', padding: '1rem' }}>
+                        {loadingKey ? 'Extracting answer keys from mock test file...' : 'Answer key details could not be found.'}
+                      </p>
+                    ) : (
+                      <table style={styles.reviewTable}>
+                        <thead>
+                          <tr>
+                            <th style={styles.reviewTh}>Q</th>
+                            <th style={styles.reviewTh}>Student Answer</th>
+                            <th style={styles.reviewTh}>Correct Key</th>
+                            <th style={styles.reviewTh}>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Array.from({ length: 40 }, (_, idx) => {
+                            const qNum = idx + 1;
+                            const studentAns = selectedSub.reading_answers[qNum] || '';
+                            const correctArr = answerKey.answers['r' + qNum] || [];
+                            const displayCorrect = answerKey.display['r' + qNum] || correctArr.join(' / ') || '—';
+                            const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                            const sNorm = norm(studentAns);
+                            const isOk = correctArr.some(ans => norm(ans) === sNorm);
+                            
+                            return (
+                              <tr key={qNum} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                <td style={styles.reviewTd}><strong>{qNum}</strong></td>
+                                <td style={styles.reviewTd}>{studentAns || '—'}</td>
+                                <td style={styles.reviewTd}>{displayCorrect}</td>
+                                <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
+                                  {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                  {answerKey && (
+                    <button 
+                      onClick={handleCopyReport}
+                      className="btn btn-success"
+                      style={{ marginTop: '1.5rem', width: '100%', justifyContent: 'center' }}
+                    >
+                      📋 Copy Review Report to Clipboard
+                    </button>
+                  )}
                 </div>
               </div>
-
-              {/* Right Grading Panel */}
-              <form onSubmit={handleSaveGrade} className="card" style={styles.gradingPanel}>
-                <h4 style={{ color: '#ffffff', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem' }}>
-                  IELTS Writing Rubric Assessment
-                </h4>
-
-                <div style={styles.rubricGrid}>
-                  <div className="form-group">
-                    <label className="form-label">Task Achievement / Response (TR)</label>
-                    <select 
-                      className="form-input"
-                      value={rubric.ta} 
-                      onChange={(e) => handleRubricChange('ta', e.target.value)}
-                    >
-                      {bandOptions.map(val => (
-                        <option key={val} value={val}>Band {val.toFixed(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Coherence & Cohesion (CC)</label>
-                    <select 
-                      className="form-input"
-                      value={rubric.cc} 
-                      onChange={(e) => handleRubricChange('cc', e.target.value)}
-                    >
-                      {bandOptions.map(val => (
-                        <option key={val} value={val}>Band {val.toFixed(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Lexical Resource (LR)</label>
-                    <select 
-                      className="form-input"
-                      value={rubric.lr} 
-                      onChange={(e) => handleRubricChange('lr', e.target.value)}
-                    >
-                      {bandOptions.map(val => (
-                        <option key={val} value={val}>Band {val.toFixed(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Grammatical Range & Accuracy (GRA)</label>
-                    <select 
-                      className="form-input"
-                      value={rubric.gra} 
-                      onChange={(e) => handleRubricChange('gra', e.target.value)}
-                    >
-                      {bandOptions.map(val => (
-                        <option key={val} value={val}>Band {val.toFixed(1)}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-group" style={{ marginTop: '1rem' }}>
-                  <label className="form-label">🎧 Listening Calculated Band (Reference)</label>
-                  <input type="text" className="form-input" value={`Band ${selectedSub.listening_score.toFixed(1)}`} disabled style={{ opacity: 0.6 }} />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">📖 Reading Calculated Band (Reference)</label>
-                  <input type="text" className="form-input" value={`Band ${selectedSub.reading_score.toFixed(1)}`} disabled style={{ opacity: 0.6 }} />
-                </div>
-
-                <div className="form-group" style={{ marginTop: '1.5rem' }}>
-                  <label className="form-label">Teacher Written Comments & Advice</label>
-                  <textarea 
-                    className="form-input"
-                    style={{ height: '140px', resize: 'none', lineHeight: '1.5' }}
-                    placeholder="Write detailed recommendations on how the student can improve vocabulary, coherence, and grammar patterns..."
-                    value={feedbackText}
-                    onChange={(e) => setFeedbackText(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="form-group" style={styles.toggleRow}>
-                  <label style={styles.toggleLabel}>
-                    <input 
-                      type="checkbox"
-                      checked={releaseImmediately} 
-                      onChange={(e) => setReleaseImmediately(e.target.checked)}
-                    />
-                    <span>Release Scores and Feedback to Student Dashboard immediately</span>
-                  </label>
-                </div>
-
-                <button 
-                  type="submit" 
-                  className="btn btn-success" 
-                  style={{ width: '100%', justifyContent: 'center', marginTop: '1.5rem' }}
-                >
-                  💾 Save and Finalize Grades
-                </button>
-              </form>
-            </div>
+            )}
           </div>
         ) : (
           /* MAIN LISTINGS VIEW */
@@ -658,5 +902,30 @@ const styles = {
     fontSize: '0.85rem',
     color: 'var(--text-primary)',
     cursor: 'pointer',
+  },
+  tabBtn: {
+    padding: '0.6rem 1.2rem',
+    fontSize: '0.9rem',
+    fontWeight: '600',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  reviewTable: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    fontSize: '0.85rem',
+  },
+  reviewTh: {
+    textAlign: 'left',
+    padding: '0.5rem',
+    borderBottom: '2px solid var(--glass-border)',
+    color: 'var(--text-secondary)',
+    fontWeight: '600',
+  },
+  reviewTd: {
+    padding: '0.5rem',
+    verticalAlign: 'middle',
+    color: 'var(--text-primary)',
   }
 };

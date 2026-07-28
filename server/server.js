@@ -254,7 +254,7 @@ app.post('/api/student/assignment/start', async (req, res) => {
 app.get('/api/teacher/submissions', async (req, res) => {
   try {
     const submissions = await db.all(`
-      SELECT s.*, u.name as student_name, t.title as test_title
+      SELECT s.*, u.name as student_name, t.title as test_title, t.listening_data
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN tests t ON s.test_id = t.id
