@@ -362,6 +362,20 @@ app.post('/api/admin/users', async (req, res) => {
   }
 });
 
+// Delete user
+app.delete('/api/admin/users/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    if (id === 'admin') {
+      return res.status(400).json({ error: 'Cannot delete primary administrator account' });
+    }
+    await db.run('DELETE FROM users WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get tests list
 app.get('/api/admin/tests', async (req, res) => {
   try {

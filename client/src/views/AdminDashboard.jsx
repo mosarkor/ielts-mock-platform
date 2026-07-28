@@ -5,6 +5,7 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [metrics, setMetrics] = useState({ students: 0, tests: 0, pendingGrades: 0, completedGrades: 0 });
   const [students, setStudents] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [tests, setTests] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,6 +15,7 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
   const [newStudentId, setNewStudentId] = useState('');
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentPass, setNewStudentPass] = useState('student123');
+  const [newUserRole, setNewUserRole] = useState('student');
 
   // Form States: New Assignment
   const [selectedTestId, setSelectedTestId] = useState('');
@@ -47,6 +49,7 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
       const asgData = await asgRes.json();
 
       setMetrics(metricsData);
+      setAllUsers(usersData);
       setStudents(usersData.filter(u => u.role === 'student'));
       setTests(testsData);
       setAssignments(asgData);
@@ -64,7 +67,7 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
   const handleRegisterStudent = async (e) => {
     e.preventDefault();
     if (!newStudentId.trim() || !newStudentName.trim()) {
-      alert('Please fill in Student ID and Name');
+      alert('Please fill in User ID and Name');
       return;
     }
 
@@ -75,17 +78,39 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
         body: JSON.stringify({
           id: newStudentId.trim(),
           name: newStudentName.trim(),
-          role: 'student',
+          role: newUserRole,
           password: newStudentPass
         })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to register student');
+      if (!res.ok) throw new Error(data.error || 'Failed to register user');
 
-      alert('Student registered successfully!');
+      alert(`${newUserRole.charAt(0).toUpperCase() + newUserRole.slice(1)} registered successfully!`);
       setNewStudentId('');
       setNewStudentName('');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (userId === user.id) {
+      alert('Cannot delete your own account');
+      return;
+    }
+    if (!confirm(`Are you sure you want to delete user "${userId}"?`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete user');
+      
+      alert('User deleted successfully!');
       fetchAdminData();
     } catch (err) {
       alert(err.message);
@@ -229,26 +254,46 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
               {/* LEFT COLUMN: REGISTRATION & ASSIGNMENT */}
               <div style={styles.leftCol}>
                 
-                {/* A. Register Student */}
+                {/* A. Register New User */}
                 <div className="card" style={{ marginBottom: '2rem' }}>
-                  <h3 style={styles.cardTitle}>👤 Register New Candidate</h3>
+                  <h3 style={styles.cardTitle}>👤 Register New User</h3>
                   <form onSubmit={handleRegisterStudent} style={{ marginTop: '1rem' }}>
                     <div className="form-group">
-                      <label className="form-label">Student ID (Unique)</label>
+                      <label className="form-label">Account Role</label>
+                      <select 
+                        className="form-input"
+                        value={newUserRole}
+                        onChange={(e) => {
+                          const role = e.target.value;
+                          setNewUserRole(role);
+                          if (role === 'teacher') setNewStudentPass('teacher123');
+                          else if (role === 'admin') setNewStudentPass('admin123');
+                          else setNewStudentPass('student123');
+                        }}
+                      >
+                        <option value="student">Student / Candidate</option>
+                        <option value="teacher">Teacher / Staff</option>
+                        <option value="admin">Administrator</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">
+                        {newUserRole === 'student' ? 'Student ID (Unique)' : 'Username / Login ID'}
+                      </label>
                       <input 
                         type="text" 
                         className="form-input" 
-                        placeholder="e.g. UNI2026F"
+                        placeholder={newUserRole === 'student' ? "e.g. UNI2026F" : "e.g. jsmith"}
                         value={newStudentId}
                         onChange={(e) => setNewStudentId(e.target.value)}
                       />
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Candidate Name</label>
+                      <label className="form-label">Full Name</label>
                       <input 
                         type="text" 
                         className="form-input" 
-                        placeholder="e.g. Marcus Aurelius"
+                        placeholder={newUserRole === 'student' ? "e.g. Marcus Aurelius" : "e.g. John Smith"}
                         value={newStudentName}
                         onChange={(e) => setNewStudentName(e.target.value)}
                       />
@@ -263,7 +308,7 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                       />
                     </div>
                     <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                      Add to Roster +
+                      Register User +
                     </button>
                   </form>
                 </div>
@@ -321,6 +366,36 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                       Assign Selected Mock Test
                     </button>
                   </form>
+                </div>
+
+                {/* E. User Directory */}
+                <div className="card" style={{ marginTop: '2rem' }}>
+                  <h3 style={styles.cardTitle}>👥 System Accounts & Staff</h3>
+                  <div style={styles.assignmentsListScroll}>
+                    {allUsers.length === 0 ? (
+                      <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '1rem 0' }}>No accounts found.</p>
+                    ) : (
+                      allUsers.map(u => (
+                        <div key={u.id} style={styles.asgListItem}>
+                          <div>
+                            <strong>{u.name}</strong> ({u.id})
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                              Role: <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{u.role}</span>
+                            </div>
+                          </div>
+                          {u.id !== user.id && (
+                            <button 
+                              onClick={() => handleDeleteUser(u.id)}
+                              className="btn btn-danger"
+                              style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                            >
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
 
               </div>
