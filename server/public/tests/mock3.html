@@ -1,0 +1,1343 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Mock Test Center </title>
+<style>
+:root {
+  --ielts-red:#c8102e;
+  --ielts-dark:#222;
+  --line:#d7d7d7;
+  --panel:#f4f4f2;
+  --blue:#3d8fe3;
+  --green:#118847;
+}
+* { box-sizing:border-box; }
+html,body { margin:0; height:100%; font-family:Arial, Helvetica, sans-serif; color:#111; background:#fff; }
+button, input, textarea, select { font-family:Arial, Helvetica, sans-serif; }
+a { color:inherit; }
+.hidden { display:none!important; }
+
+#login, #intro, #result { min-height:100vh; display:flex; align-items:center; justify-content:center; background:#f1f1ed; padding:24px; }
+.login-card, .intro-card, .result-card { background:#fff; border:1px solid #ddd; border-radius:4px; width:min(560px,96vw); padding:34px; box-shadow:0 8px 30px rgba(0,0,0,.12); }
+.brand { display:flex; align-items:center; gap:10px; text-decoration:none; font-weight:700; color:#111; }
+.brand .logo { background:var(--ielts-red); color:#fff; font-weight:900; letter-spacing:2px; padding:5px 10px; }
+.tg-circle { width:22px; height:22px; border-radius:50%; background:#229ED9; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:14px; font-weight:700; flex:0 0 auto; }
+.login-card h1, .intro-card h1 { margin:20px 0 8px; font-size:24px; }
+.form-row { margin:14px 0; }
+.form-row label { display:block; margin-bottom:6px; font-size:13px; font-weight:700; }
+.form-row input { width:100%; padding:12px; border:1px solid #aaa; border-radius:3px; font-size:15px; }
+.main-btn { background:var(--ielts-red); color:#fff; border:0; border-radius:3px; padding:12px 22px; font-weight:700; cursor:pointer; }
+.secondary-btn { background:#f5f5f5; color:#111; border:1px solid #aaa; border-radius:3px; padding:11px 18px; font-weight:700; cursor:pointer; }
+.main-btn:hover { background:#a70d25; }
+.intro-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:24px 0; }
+.intro-box { border:1px solid #ddd; background:#fafafa; padding:16px; border-radius:3px; text-align:center; }
+.intro-box b { display:block; font-size:28px; margin-bottom:4px; }
+.intro-box span { font-size:12px; color:#555; }
+
+#exam { height:100vh; display:flex; flex-direction:column; background:#fff; }
+.topbar { height:54px; border-bottom:1px solid #cfcfcf; display:flex; align-items:center; justify-content:space-between; padding:0 18px; background:#fff; flex:0 0 auto; }
+.top-left { display:flex; gap:16px; align-items:center; }
+.top-right { display:flex; align-items:center; gap:6px; }
+.icon-btn { border:0; background:transparent; padding:7px; cursor:default; display:flex; align-items:center; justify-content:center; border-radius:4px; }
+.icon-btn:hover { background:#f2f2f2; }
+#menuBtn { cursor:pointer; }
+
+.options-overlay { position:fixed; inset:0; background:rgba(0,0,0,.28); z-index:9000; display:none; }
+.options-overlay.open { display:block; }
+.options-panel { position:absolute; top:0; right:0; height:100%; width:340px; max-width:92vw; background:#fff; box-shadow:-6px 0 24px rgba(0,0,0,.2); display:flex; flex-direction:column; animation:slideInOpt .18s ease; }
+@keyframes slideInOpt { from{ transform:translateX(100%);} to{ transform:translateX(0);} }
+.opt-page { display:flex; flex-direction:column; height:100%; }
+.opt-page.hidden { display:none; }
+.opt-header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:16px; border-bottom:1px solid #e2e2e2; font-size:15px; }
+.opt-header > span { text-align:center; font-weight:700; grid-column:2; }
+.opt-header .opt-back { justify-self:start; grid-column:1; background:none; border:0; color:#111; font-weight:700; cursor:pointer; font-size:14px; padding:0; }
+.opt-header .opt-close { justify-self:end; grid-column:3; background:none; border:0; font-size:18px; cursor:pointer; color:#333; padding:0; }
+.opt-header.opt-header-main > span { grid-column:1; text-align:left; }
+.opt-body { padding:16px; display:flex; flex-direction:column; gap:10px; overflow:auto; flex:1; }
+.opt-submit-btn { display:flex; align-items:center; gap:10px; background:var(--ielts-red); color:#fff; border:0; border-radius:6px; padding:16px; font-weight:700; font-size:15px; cursor:pointer; }
+.opt-submit-btn .opt-arrow { margin-left:auto; }
+.opt-row { display:flex; align-items:center; justify-content:space-between; background:#fff; border:1px solid #e2e2e2; border-radius:4px; padding:14px; font-size:14px; cursor:pointer; color:#111; text-align:left; }
+.opt-row:hover { background:#fafafa; }
+.opt-row-arrow { color:#999; }
+.opt-choice.active { background:#f0f0f0; font-weight:700; }
+.opt-center { align-items:center; text-align:center; justify-content:center; flex:1; }
+.opt-submit-graphic { width:56px; height:56px; border-radius:50%; background:#eaf2ff; display:flex; align-items:center; justify-content:center; font-size:24px; color:#3d8fe3; margin:10px auto 6px; }
+.opt-center h3 { margin:4px 0; font-size:16px; }
+.opt-center p { color:#666; font-size:13px; line-height:1.5; margin:0 0 6px; }
+.opt-confirm-btn { background:var(--ielts-red); color:#fff; border:0; border-radius:6px; padding:14px 20px; font-weight:700; cursor:pointer; margin-top:14px; width:100%; }
+
+body.theme-invert #exam { filter:invert(1) hue-rotate(180deg); }
+body.theme-invert #exam img, body.theme-invert #exam svg.school-map { filter:invert(1) hue-rotate(180deg); }
+body.theme-yellow #exam { background:#000; }
+body.theme-yellow #exam .topbar, body.theme-yellow #exam .section-banner, body.theme-yellow #exam .section-tabs,
+body.theme-yellow #exam .part-tabs, body.theme-yellow #exam .passage-nav, body.theme-yellow #exam .audio-strip,
+body.theme-yellow #exam .bottom-submit, body.theme-yellow #exam .paper-card, body.theme-yellow #exam .passage-text,
+body.theme-yellow #exam .notes, body.theme-yellow #exam .writing-head, body.theme-yellow #exam .read-pane,
+body.theme-yellow #exam .w-left, body.theme-yellow #exam .w-right, body.theme-yellow #exam .w-bottom,
+body.theme-yellow #exam .choice-grid, body.theme-yellow #exam .option, body.theme-yellow #exam .instruction,
+body.theme-yellow #exam .qnav-btn, body.theme-yellow #exam .w-prompt { background:#000 !important; color:#ffd400 !important; border-color:#665500 !important; }
+body.theme-yellow #exam .ans-input, body.theme-yellow #exam .ans-select, body.theme-yellow #exam .w-textarea { background:#111 !important; color:#ffd400 !important; border-color:#665500 !important; }
+body.theme-yellow #exam .qnav-btn.answered { background:#332b00 !important; border-color:#ffd400 !important; }
+body.theme-yellow #exam .timer { background:#111 !important; color:#ffd400 !important; border-color:#665500 !important; }
+body.theme-yellow #exam h2, body.theme-yellow #exam h3, body.theme-yellow #exam b, body.theme-yellow #exam .qnum { color:#ffd400 !important; }
+body.text-large #exam { zoom:1.15; }
+body.text-xlarge #exam { zoom:1.3; }
+
+.mark-popup { position:fixed; z-index:10000; background:#fff; border:1px solid #d5d5d5; box-shadow:0 6px 22px rgba(0,0,0,.2); border-radius:6px; display:none; overflow:hidden; min-width:160px; }
+.mark-popup button { display:flex; align-items:center; gap:10px; width:100%; border:0; background:#fff; padding:11px 16px; text-align:left; cursor:pointer; font-size:14px; font-weight:600; color:#111; }
+.mark-popup button + button { border-top:1px solid #eee; }
+.mark-popup button:hover { background:#f5f5f5; }
+.mark-popup button:disabled { color:#c2c2c2; cursor:not-allowed; }
+.mark-popup button:disabled:hover { background:#fff; }
+.mp-icon { width:16px; text-align:center; flex:0 0 auto; }
+.topbar .brand { font-size:14px; }
+.candidate { font-size:13px; color:#444; }
+.timer { border:1px solid #bbb; background:#f8f8f8; padding:7px 14px; border-radius:3px; font-weight:700; min-width:88px; text-align:center; }
+.timer.warn { color:var(--ielts-red); border-color:var(--ielts-red); background:#fff3f3; }
+.section-banner { background:#f4f4f2; border-bottom:1px solid #d4d4d4; padding:10px 18px; font-size:14px; flex:0 0 auto; }
+.section-banner b { display:block; margin-bottom:3px; }
+.section-tabs { display:flex; align-items:center; gap:2px; background:#e8e8e5; border-bottom:1px solid #ccc; flex:0 0 auto; }
+.section-tabs button { border:0; background:#e8e8e5; padding:9px 22px; cursor:pointer; font-weight:700; color:#555; }
+.section-tabs button.active { background:#fff; color:var(--ielts-red); border-bottom:3px solid var(--ielts-red); }
+
+.exam-screen { display:none; flex:1; min-height:0; background:#fff; }
+.exam-screen.active { display:flex; flex-direction:column; }
+
+.audio-strip { background:#f7f7f7; border-bottom:1px solid #ccc; padding:12px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.audio-strip audio { height:34px; flex:1; min-width:300px; }
+.audio-note { font-size:12px; color:#555; }
+
+.scroll-area { flex:1; overflow:auto; padding:20px; }
+.paper-card { max-width:980px; margin:0 auto 18px; background:#fff; border:1px solid #ddd; padding:22px 28px; }
+.paper-card h2 { font-size:18px; margin:0 0 12px; }
+.paper-card h3 { font-size:16px; margin:16px 0 10px; }
+.center-title { text-align:center; }
+.instruction { background:#f5f5f5; border-left:4px solid var(--ielts-red); padding:10px 12px; margin:10px 0 16px; line-height:1.45; font-size:14px; }
+.q-list { padding-left:28px; line-height:2.0; }
+.q-list li { margin-bottom:8px; }
+.ans-input, .ans-select { border:1px solid #888; border-radius:2px; padding:5px 7px; font-size:14px; background:#fff; margin:0 4px; min-height:30px; }
+.ans-input:focus, .ans-select:focus { outline:2px solid rgba(200,16,46,.18); border-color:var(--ielts-red); }
+.question { border-top:1px solid #e2e2e2; padding-top:14px; margin-top:14px; }
+.qnum { display:inline-block; min-width:26px; height:26px; line-height:24px; text-align:center; border:1px solid #777; font-weight:700; margin-bottom:8px; }
+.options { display:flex; flex-direction:column; gap:8px; }
+.option { display:flex; gap:9px; align-items:flex-start; border:1px solid #ddd; border-radius:3px; padding:9px 10px; cursor:pointer; background:#fff; }
+.option:hover, .option.selected { background:#fff7f7; border-color:var(--ielts-red); }
+.choice-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px; background:#fafafa; border:1px solid #ddd; padding:12px; margin:12px 0; font-size:14px; line-height:1.4; }
+.notes { background:#fafafa; border:1px solid #ddd; padding:16px 18px; line-height:1.9; }
+.notes p { margin:6px 0; }
+.subhead { font-weight:700; margin-top:12px!important; }
+.map-wrap { background:#fff; border:1px solid #ddd; padding:10px; overflow:auto; margin:12px 0; }
+.school-map { width:100%; max-width:760px; display:block; margin:auto; }
+.maptxt { font:15px Arial; fill:#111; }
+.mapnum { font:bold 16px Arial; fill:#111; }
+.maptitle { font:bold 18px Arial; fill:#111; }
+
+.bottom-submit { flex:0 0 auto; border-top:1px solid #ccc; background:#fff; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.bottom-submit.sticky-low { position:relative; z-index:2; }
+.qnav { flex:1; display:flex; align-items:center; gap:10px; overflow-x:auto; padding:2px 0; }
+.qnav-part { display:flex; gap:4px; align-items:center; }
+.qnav-part-label { font-size:11px; font-weight:700; color:#777; margin-right:2px; white-space:nowrap; }
+.qnav-btn { width:26px; height:26px; flex:0 0 auto; border:1px solid #aaa; background:#fff; font-size:11px; font-weight:700; cursor:pointer; border-radius:2px; color:#333; }
+.qnav-btn:hover { border-color:var(--ielts-red); }
+.qnav-btn.answered { background:#e8f5ec; border-color:var(--green); color:var(--green); }
+.qnav-btn.current { outline:2px solid var(--ielts-red); outline-offset:1px; }
+.qnav-summary { font-size:12px; color:#555; white-space:nowrap; flex:0 0 auto; border-left:1px solid #ddd; padding-left:12px; margin-left:2px; }
+.audio-strip .restricted-audio { display:flex; align-items:center; gap:10px; flex:1; min-width:280px; background:#fff; border:1px solid #ccc; border-radius:3px; padding:8px 12px; }
+.audio-strip .restricted-audio button.play-once-btn { border:1px solid var(--ielts-red); background:var(--ielts-red); color:#fff; border-radius:50%; width:34px; height:34px; font-size:14px; cursor:pointer; flex:0 0 auto; }
+.audio-strip .restricted-audio button.play-once-btn:disabled { background:#bbb; border-color:#bbb; cursor:not-allowed; }
+.audio-strip .vol-wrap { display:flex; align-items:center; gap:6px; flex:1; }
+.audio-strip .vol-wrap input[type=range] { flex:1; }
+.audio-strip .aud-status { font-size:12px; color:#666; white-space:nowrap; }
+
+.part-tabs { max-width:980px; margin:0 auto 16px; display:flex; border:1px solid #bbb; background:#eee; }
+.part-tabs button { flex:1; border:0; background:#eee; padding:10px; cursor:pointer; font-weight:700; }
+.part-tabs button.active { background:#fff; color:var(--ielts-red); border-bottom:3px solid var(--ielts-red); }
+
+.reading-main { flex:1; min-height:0; display:flex; overflow:hidden; }
+.read-pane { overflow:auto; padding:18px; }
+#readLeft { width:52%; min-width:300px; }
+#readRight { flex:1; min-width:330px; border-left:1px solid #cfcfcf; }
+.dragbar { width:8px; background:#e1e1e1; border-left:1px solid #c3c3c3; border-right:1px solid #c3c3c3; cursor:col-resize; display:flex; align-items:center; justify-content:center; color:#999; }
+.dragbar:hover, .dragbar.active { background:var(--ielts-red); color:#fff; }
+.passage-text { font-size:15px; line-height:1.72; max-width:780px; margin:0 auto; }
+.passage-text h2 { text-align:center; margin-top:0; font-size:20px; }
+.passage-text h3 { text-align:center; font-size:16px; margin-top:-8px; }
+.passage-text p { margin:0 0 14px; text-align:justify; }
+.passage-nav { display:flex; gap:6px; padding:10px 18px; border-bottom:1px solid #ccc; background:#f4f4f4; }
+.passage-nav button { border:1px solid #aaa; background:#fff; padding:8px 14px; cursor:pointer; font-weight:700; }
+.passage-nav button.active { background:var(--ielts-red); color:#fff; border-color:var(--ielts-red); }
+
+.writing-screen { flex:1; min-height:0; display:flex; flex-direction:column; background:#fff; }
+.writing-head { background:#f0f0eb; border-bottom:1px solid #d5d5d5; padding:12px 16px; line-height:1.45; }
+.writing-head b { display:block; margin-bottom:5px; }
+.writing-body { flex:1; min-height:0; display:flex; overflow:hidden; }
+.w-left, .w-right { width:50%; overflow:auto; padding:22px; }
+.w-left { border-right:1px solid #d2d2d2; }
+.w-prompt { border:1px solid #ddd; padding:22px; margin-bottom:22px; font-weight:700; font-style:italic; line-height:1.4; font-size:18px; }
+.w-task-img { max-width:100%; border:1px solid #ccc; display:block; margin:auto; }
+.w-textarea { width:100%; height:calc(100% - 36px); min-height:340px; border:1px solid #cfcfcf; padding:18px; resize:none; font-size:15px; line-height:1.6; outline:none; }
+.word-count { text-align:right; color:#666; font-size:13px; margin-top:8px; }
+.w-bottom { height:58px; border-top:1px solid #d0d0d0; display:flex; align-items:center; justify-content:center; background:#fff; gap:200px; flex:0 0 auto; }
+.w-tab { text-align:center; font-weight:700; cursor:pointer; padding:8px 24px; border-radius:3px; }
+.w-tab.active { background:#f0f6ff; outline:2px solid #d8e8ff; }
+.blue-check { position:absolute; right:28px; bottom:74px; width:48px; height:48px; border-radius:50%; background:#4a90e2; color:#fff; border:0; font-size:26px; font-weight:900; cursor:pointer; }
+
+.hl-popup, .clear-popup { position:fixed; z-index:10000; background:#fff; border:1px solid #999; box-shadow:0 4px 18px rgba(0,0,0,.22); border-radius:4px; display:none; overflow:hidden; }
+.hl-popup button, .clear-popup button { display:block; width:100%; border:0; background:#fff; padding:9px 16px; text-align:left; cursor:pointer; font-size:13px; }
+.hl-popup button:hover, .clear-popup button:hover { background:#f5f5f5; }
+.mark-yellow { background:#fff176; border-radius:2px; cursor:pointer; }
+.mark-note { background:#b3e5fc; border-radius:2px; cursor:pointer; position:relative; }
+.note-tip { position:fixed; z-index:10001; display:none; background:#333; color:#fff; padding:7px 10px; border-radius:4px; max-width:280px; font-size:12px; line-height:1.4; white-space:pre-wrap; box-shadow:0 4px 16px rgba(0,0,0,.3); }
+.note-modal { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:10002; display:none; align-items:center; justify-content:center; }
+.note-box { width:min(360px,90vw); background:#fff; border-radius:4px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,.25); }
+.note-box h3 { margin:0 0 10px; font-size:16px; }
+.note-box textarea { width:100%; height:110px; border:1px solid #aaa; padding:8px; resize:none; font-size:14px; }
+.note-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+.note-actions button { padding:8px 14px; border:1px solid #aaa; background:#fff; cursor:pointer; }
+.note-actions .save { background:var(--ielts-red); color:#fff; border-color:var(--ielts-red); }
+
+.result-card { width:min(760px,96vw); text-align:center; }
+.result-card h1 { margin:20px 0 10px; }
+.result-message { border:1px solid #ddd; background:#fafafa; padding:24px; margin:20px 0; font-size:18px; line-height:1.6; }
+.result-footer { margin-top:16px; font-size:15px; }
+.result-footer a { color:#229ED9; font-weight:700; }
+.result-actions { display:flex; justify-content:center; gap:10px; margin-top:20px; flex-wrap:wrap; }
+
+@media(max-width:800px){
+  .intro-grid { grid-template-columns:1fr; }
+  .reading-main, .writing-body { flex-direction:column; }
+  #readLeft { width:100%!important; min-height:45%; }
+  #readRight { border-left:0; border-top:1px solid #ccc; }
+  .dragbar { display:none; }
+  .w-left, .w-right { width:100%; min-height:45%; }
+  .w-bottom { gap:30px; }
+}
+
+.review-box { display:none; margin-top:22px; text-align:left; border:1px solid #ddd; border-radius:4px; background:#fff; padding:16px; max-height:52vh; overflow:auto; }
+.review-box h2 { font-size:18px; margin:0 0 12px; color:#111; }
+.review-summary { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:12px; }
+.review-summary div { background:#f7f7f7; border:1px solid #e0e0e0; padding:10px; border-radius:3px; font-size:14px; }
+.review-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.review-table th { background:#f2f2f2; border:1px solid #ddd; padding:7px; text-align:left; }
+.review-table td { border:1px solid #eee; padding:6px 7px; vertical-align:top; }
+.review-ok { color:#118847; font-weight:700; }
+.review-bad { color:#c8102e; font-weight:700; }
+.review-empty { color:#777; font-weight:700; }
+
+@media print {
+  body { background:#fff; }
+  #login,#intro,#exam,.mark-popup,.note-modal,.note-tip,.options-overlay { display:none!important; }
+  #result { display:block!important; min-height:auto; padding:0; }
+  .result-card { box-shadow:none; border:0; width:100%; }
+  .result-actions { display:none; }
+  .brand { justify-content:center; margin-bottom:18px; }
+  .result-message { border:1px solid #000; }
+}
+</style>
+
+      <style>
+        .brand-badge, 
+        .brand, 
+        .gate-footer, 
+        .tg-circle, 
+        [title*="Telegram"], 
+        [title*="blog"], 
+        [alt*="IELTS Mock Team"], 
+        a[href*="t.me"] {
+          display: none !important;
+          opacity: 0 !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+        }
+      </style>
+      </head>
+      
+<body>
+
+<div id="login">
+  <div class="login-card">
+    <a class="brand" href="#" target="_blank"><span class="logo">IELTS</span><span class="tg-circle">✈</span><span>IELTS Mock Test Center</span></a>
+    <h1>Full IELTS Computer-delivered Test</h1>
+    <p style="color:#555;line-height:1.5">Listening, Reading and Writing sections. Enter your candidate details to begin.</p>
+    <div class="form-row"><label>Candidate ID</label><input id="candId" placeholder="e.g. STUDENT"></div>
+    <div class="form-row"><label>Access code</label><input id="accessCode" placeholder="Optional" type="password" onkeydown="if(event.key==='Enter')showIntro()"></div>
+    <button class="main-btn" onclick="showIntro()">Start</button>
+  </div>
+</div>
+
+<div id="intro" class="hidden">
+  <div class="intro-card">
+    <a class="brand" href="#" target="_blank"><span class="logo">IELTS</span><span class="tg-circle">✈</span><span>IELTS Mock Test Center</span></a>
+    <h1>IELTS Full Test</h1>
+    <p id="welcomeName" style="color:#555"></p>
+    <div class="intro-grid">
+      <div class="intro-box"><b>40</b><span>Listening questions</span></div>
+      <div class="intro-box"><b>40</b><span>Reading questions</span></div>
+      <div class="intro-box"><b>2</b><span>Writing tasks</span></div>
+    </div>
+    <p style="color:#666">The timer starts when you press Begin Test. Once you submit a section, you move to the next section.</p>
+    <button class="main-btn" onclick="beginExam()">Begin Test →</button>
+  </div>
+</div>
+
+<div id="exam" class="hidden">
+  <div class="topbar">
+    <div class="top-left">
+      <a class="brand" href="#" target="_blank"><span class="logo">IELTS</span><span class="tg-circle">✈</span><span>IELTS Mock Test Center</span></a>
+      <span class="candidate">ID: <b id="topCid">—</b></span>
+    </div>
+    <div class="top-right">
+      <div class="timer" id="timer">--:--</div>
+      <button type="button" class="icon-btn" tabindex="-1" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 10h2v7H3zM8 6h2v11H8zM13 12h2v5h-2zM18 3h2v14h-2z" fill="#555"/></svg>
+      </button>
+      <button type="button" class="icon-btn" tabindex="-1" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="#555"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="menuBtn" onclick="openOptions()" aria-label="Options">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z" fill="#333"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="section-banner"><b id="bannerTitle">Listening</b><span id="bannerText">You should answer all questions.</span></div>
+  <div class="section-tabs">
+    <button id="tabListening" class="active">Listening</button>
+    <button id="tabReading">Reading</button>
+    <button id="tabWriting">Writing</button>
+  </div>
+
+  <main id="listening" class="exam-screen active">
+    <div class="audio-strip">
+      <b>IELTS Listening Audio</b>
+      <audio id="audio" preload="none" src="https://files.catbox.moe/hp82vm.mp3" style="display:none"></audio>
+      <div class="restricted-audio">
+        <button type="button" class="play-once-btn" id="playOnceBtn" onclick="playAudioOnce()">▶</button>
+        <div class="vol-wrap">
+          <span style="font-size:12px">🔊</span>
+          <input type="range" id="volSlider" min="0" max="1" step="0.05" value="1" oninput="document.getElementById('audio').volume=this.value">
+        </div>
+        <span class="aud-status" id="audStatus">Not started</span>
+      </div>
+      <span class="audio-note">As in the real test, the recording plays <b>once only</b> and cannot be rewound, paused, or replayed.</span>
+    </div>
+    <div class="scroll-area" id="listeningScroll">
+      <div class="part-tabs">
+        <button class="active" onclick="showListenPart(1,this)">Part 1</button>
+        <button onclick="showListenPart(2,this)">Part 2</button>
+        <button onclick="showListenPart(3,this)">Part 3</button>
+        <button onclick="showListenPart(4,this)">Part 4</button>
+      </div>
+
+
+      <div id="listenPart1">
+<section class="paper-card">
+  <h2>PART 1</h2>
+  <div class="instruction">Questions 1–7<br>Complete the table below.<br>Write <b>NO MORE THAN TWO WORDS</b> for each answer.</div>
+  <h3 class="center-title">Renfrew Activity Centre</h3>
+  <div class="notes" style="overflow:auto">
+    <table style="width:100%;border-collapse:collapse;line-height:1.55;font-size:14px">
+      <tr>
+        <th style="border:1px solid #bbb;padding:9px">Activity</th>
+        <th style="border:1px solid #bbb;padding:9px">Location</th>
+        <th style="border:1px solid #bbb;padding:9px">Basic skill learned</th>
+        <th style="border:1px solid #bbb;padding:9px">Price per person</th>
+        <th style="border:1px solid #bbb;padding:9px">Price includes</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #bbb;padding:9px"><i>Example</i><br><b>Rock climbing</b></td>
+        <td style="border:1px solid #bbb;padding:9px">Centre grounds</td>
+        <td style="border:1px solid #bbb;padding:9px">using the <input class="ans-input" data-q="l1" type="text" placeholder="answer" style="width:140px"></td>
+        <td style="border:1px solid #bbb;padding:9px">£60<br><span style="font-size:12px">(for a group of twelve)</span></td>
+        <td style="border:1px solid #bbb;padding:9px"><input class="ans-input" data-q="l2" type="text" placeholder="answer" style="width:140px"></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #bbb;padding:9px"><b>Mountain biking</b></td>
+        <td style="border:1px solid #bbb;padding:9px">in the mountains</td>
+        <td style="border:1px solid #bbb;padding:9px">doing <input class="ans-input" data-q="l3" type="text" placeholder="answer" style="width:130px"> checks</td>
+        <td style="border:1px solid #bbb;padding:9px">£70</td>
+        <td style="border:1px solid #bbb;padding:9px">services of a <input class="ans-input" data-q="l4" type="text" placeholder="answer" style="width:130px"></td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #bbb;padding:9px"><b>Wild camping</b></td>
+        <td style="border:1px solid #bbb;padding:9px">in the <input class="ans-input" data-q="l5" type="text" placeholder="answer" style="width:130px"></td>
+        <td style="border:1px solid #bbb;padding:9px">finding out about plants</td>
+        <td style="border:1px solid #bbb;padding:9px">£50</td>
+        <td style="border:1px solid #bbb;padding:9px">Accommodation in tents</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #bbb;padding:9px"><b>Hill walking</b></td>
+        <td style="border:1px solid #bbb;padding:9px">in the National Park</td>
+        <td style="border:1px solid #bbb;padding:9px"><input class="ans-input" data-q="l6" type="text" placeholder="answer" style="width:130px"> skills</td>
+        <td style="border:1px solid #bbb;padding:9px">£90</td>
+        <td style="border:1px solid #bbb;padding:9px"><input class="ans-input" data-q="l7" type="text" placeholder="answer" style="width:130px"></td>
+      </tr>
+    </table>
+  </div>
+  <div class="instruction" style="margin-top:24px">Questions 8–10<br>Complete the notes below.<br>Write <b>NO MORE THAN TWO WORDS AND/OR A NUMBER</b> for each answer.</div>
+  <div class="notes">
+    <p><b>Deposit for group booking:</b> <input class="ans-input" data-q="l8" type="text" placeholder="answer" style="width:170px"> of full amount</p>
+    <p><b>Must bring suitable</b> <input class="ans-input" data-q="l9" type="text" placeholder="answer" style="width:170px"></p>
+    <p><b>Name of contact:</b> Gordon <input class="ans-input" data-q="l10" type="text" placeholder="answer" style="width:170px"></p>
+  </div>
+</section>
+</div>
+      <div id="listenPart2" class="hidden">
+<section class="paper-card">
+  <h2>PART 2</h2>
+  <div class="instruction">Questions 11–14<br>Choose the correct letter, <b>A, B or C</b>.</div>
+  <h3 class="center-title">Canadiana Festival Theatre</h3>
+  <div class="question"><div class="qnum">11</div><p>What special offer is there for regular theatre-goers this season?</p><div class="options"><label class="option"><input type="radio" name="l11" data-q="l11" value="A"><span>A. They can see a second play at a reduced price.</span></label><label class="option"><input type="radio" name="l11" data-q="l11" value="B"><span>B. They can buy two tickets and get two free.</span></label><label class="option"><input type="radio" name="l11" data-q="l11" value="C"><span>C. They can get a discount on Mondays.</span></label></div></div>
+  <div class="question"><div class="qnum">12</div><p>What information is given about the study guides?</p><div class="options"><label class="option"><input type="radio" name="l12" data-q="l12" value="A"><span>A. They are handed out at the theatre.</span></label><label class="option"><input type="radio" name="l12" data-q="l12" value="B"><span>B. They provide information on the actors.</span></label><label class="option"><input type="radio" name="l12" data-q="l12" value="C"><span>C. They give ideas for discussion.</span></label></div></div>
+  <div class="question"><div class="qnum">13</div><p>What information is given about the ‘Bring a friend’ special?</p><div class="options"><label class="option"><input type="radio" name="l13" data-q="l13" value="A"><span>A. It is only for those over 65.</span></label><label class="option"><input type="radio" name="l13" data-q="l13" value="B"><span>B. It applies to a number of productions.</span></label><label class="option"><input type="radio" name="l13" data-q="l13" value="C"><span>C. It includes a 5% reduction on gifts.</span></label></div></div>
+  <div class="question"><div class="qnum">14</div><p>What does Michael say about the actor Christopher Plunkett?</p><div class="options"><label class="option"><input type="radio" name="l14" data-q="l14" value="A"><span>A. He may retire from acting soon.</span></label><label class="option"><input type="radio" name="l14" data-q="l14" value="B"><span>B. He writes his own plays.</span></label><label class="option"><input type="radio" name="l14" data-q="l14" value="C"><span>C. He prefers acting in films to performing live.</span></label></div></div>
+  <div class="instruction" style="margin-top:24px">Questions 15–20<br>What is the main theme of each of the following musicals?<br>Choose <b>SIX</b> answers from the box and write the correct letter, <b>A–H</b>, next to questions 15–20.</div>
+  <div class="choice-grid">
+    <div>A. living in a different century</div><div>B. managing to achieve success</div><div>C. ageing slowly</div><div>D. growing up</div><div>E. experiencing disappointment</div><div>F. living in a magical place</div><div>G. overcoming poverty</div><div>H. handling conflict</div>
+  </div>
+  <ol class="q-list" start="15">
+    <li>The Climb <select class="ans-select" data-q="l15"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+    <li>The Voyagers <select class="ans-select" data-q="l16"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+    <li>Joey Brown <select class="ans-select" data-q="l17"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+    <li>Main Street <select class="ans-select" data-q="l18"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+    <li>Millie and Mike <select class="ans-select" data-q="l19"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+    <li>Windswept <select class="ans-select" data-q="l20"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+  </ol>
+</section>
+</div>
+      <div id="listenPart3" class="hidden">
+<section class="paper-card">
+  <h2>PART 3</h2>
+  <div class="instruction">Questions 21–26<br>Choose the correct letter, <b>A, B or C</b>.</div>
+  <h3 class="center-title">Presentation on the Problems and Potential of Biofuels</h3>
+  <div class="question"><div class="qnum">21</div><p>Mike suggests they begin their presentation by</p><div class="options"><label class="option"><input type="radio" name="l21" data-q="l21" value="A"><span>A. explaining what kind of harm is caused by fossil fuels.</span></label><label class="option"><input type="radio" name="l21" data-q="l21" value="B"><span>B. pointing out that biofuels were in use before fossil fuels.</span></label><label class="option"><input type="radio" name="l21" data-q="l21" value="C"><span>C. ensuring students know the difference between fossil fuels and biofuels.</span></label></div></div>
+  <div class="question"><div class="qnum">22</div><p>Karina doesn’t want to discuss the production of ethanol because</p><div class="options"><label class="option"><input type="radio" name="l22" data-q="l22" value="A"><span>A. other students will already be familiar with the process.</span></label><label class="option"><input type="radio" name="l22" data-q="l22" value="B"><span>B. there will not be time to cover more important information.</span></label><label class="option"><input type="radio" name="l22" data-q="l22" value="C"><span>C. they may not provide an accurate description.</span></label></div></div>
+  <div class="question"><div class="qnum">23</div><p>Which source of biofuel do the students agree is least environmentally friendly?</p><div class="options"><label class="option"><input type="radio" name="l23" data-q="l23" value="A"><span>A. sugar cane</span></label><label class="option"><input type="radio" name="l23" data-q="l23" value="B"><span>B. corn</span></label><label class="option"><input type="radio" name="l23" data-q="l23" value="C"><span>C. canola</span></label></div></div>
+  <div class="question"><div class="qnum">24</div><p>What is the main problem facing the development of the biofuel industry in the USA?</p><div class="options"><label class="option"><input type="radio" name="l24" data-q="l24" value="A"><span>A. inadequate infrastructure for transporting ethanol</span></label><label class="option"><input type="radio" name="l24" data-q="l24" value="B"><span>B. not enough farmers growing biofuel crops</span></label><label class="option"><input type="radio" name="l24" data-q="l24" value="C"><span>C. little government support of biofuel development</span></label></div></div>
+  <div class="question"><div class="qnum">25</div><p>Karina doubts that sugar cane production in Brazil will</p><div class="options"><label class="option"><input type="radio" name="l25" data-q="l25" value="A"><span>A. lead to the loss of wildlife habitats.</span></label><label class="option"><input type="radio" name="l25" data-q="l25" value="B"><span>B. create a large number of jobs in the biofuel sector.</span></label><label class="option"><input type="radio" name="l25" data-q="l25" value="C"><span>C. continue to provide enough energy for the country’s needs.</span></label></div></div>
+  <div class="question"><div class="qnum">26</div><p>Karina and Mike conclude that in order to increase the use of biofuels</p><div class="options"><label class="option"><input type="radio" name="l26" data-q="l26" value="A"><span>A. the price of fossil fuels must go up.</span></label><label class="option"><input type="radio" name="l26" data-q="l26" value="B"><span>B. more machinery must be adapted to use them.</span></label><label class="option"><input type="radio" name="l26" data-q="l26" value="C"><span>C. production methods must be more energy-efficient.</span></label></div></div>
+  <div class="instruction" style="margin-top:24px">Questions 27–30<br>Write <b>NO MORE THAN TWO WORDS</b> for each answer.</div>
+  <div class="notes">
+    <p><b>What TWO biofuel-related problems do Mike and Karina decide to focus on in the last section of their presentation?</b></p>
+    <p>• <input class="ans-input" data-q="l27" type="text" placeholder="answer" style="width:220px"></p>
+    <p>• <input class="ans-input" data-q="l28" type="text" placeholder="answer" style="width:220px"></p>
+    <p style="margin-top:18px"><b>Which TWO sources of biofuel do Mike and Karina say are being tried out?</b></p>
+    <p>• <input class="ans-input" data-q="l29" type="text" placeholder="answer" style="width:220px"></p>
+    <p>• algae</p>
+    <p>• <input class="ans-input" data-q="l30" type="text" placeholder="answer" style="width:220px"></p>
+  </div>
+</section>
+</div>
+      <div id="listenPart4" class="hidden">
+<section class="paper-card">
+  <h2>PART 4</h2>
+  <div class="instruction">Questions 31–40<br>Complete the notes below.<br>Write <b>NO MORE THAN THREE WORDS</b> for each answer.</div>
+  <h3 class="center-title">Health on the Night Shift</h3>
+  <div class="notes">
+    <p class="subhead">Background</p>
+    <p><input class="ans-input" data-q="l31" type="text" placeholder="answer" style="width:190px"> in number of night workers because of 24-hour shopping / services</p>
+    <p>Need to examine effects of changing work and sleep habits</p>
+    <p>US and British research found these lead to health problems</p>
+    <p class="subhead">Main Causes</p>
+    <p><b>A)</b> <input class="ans-input" data-q="l32" type="text" placeholder="answer" style="width:190px"></p>
+    <ul style="line-height:1.9">
+      <li>regulates daily life</li>
+      <li>connected to behavioural patterns and cycles of <input class="ans-input" data-q="l33" type="text" placeholder="answer" style="width:190px"></li>
+      <li>programmes us to be awake and asleep at certain times</li>
+    </ul>
+    <p><b>B)</b> Sleep Debt</p>
+    <ul style="line-height:1.9"><li>impossible to get enough sleep during daytime</li></ul>
+    <p><b>C)</b> <input class="ans-input" data-q="l34" type="text" placeholder="answer" style="width:190px"></p>
+    <ul style="line-height:1.9"><li>different working / sleeping times ➜ ‘dislocation’</li></ul>
+    <p class="subhead">Effects</p>
+    <p><b>A) Physical</b></p>
+    <ul style="line-height:1.9">
+      <li>higher incidence of <input class="ans-input" data-q="l35" type="text" placeholder="answer" style="width:210px"> problems</li>
+      <li>more minor illnesses, suggesting that immunity of shift workers is affected</li>
+    </ul>
+    <p><b>B) Psychological</b></p>
+    <ul style="line-height:1.9">
+      <li>most common: <input class="ans-input" data-q="l36" type="text" placeholder="answer" style="width:190px"></li>
+      <li><input class="ans-input" data-q="l37" type="text" placeholder="answer" style="width:190px"> affected, e.g. decision-making, planning, which regulate our <input class="ans-input" data-q="l38" type="text" placeholder="answer" style="width:170px"></li>
+    </ul>
+    <p><b>C) Social</b></p>
+    <p>Night shift work can lead to:</p>
+    <ul style="line-height:1.9">
+      <li>destruction of <input class="ans-input" data-q="l39" type="text" placeholder="answer" style="width:190px"> and other relationships, e.g. <input class="ans-input" data-q="l40" type="text" placeholder="answer" style="width:170px"></li>
+      <li>eventually, for individuals: social isolation</li>
+    </ul>
+  </div>
+</section>
+</div>
+    
+    </div>
+    <div class="bottom-submit sticky-low">
+      <div class="qnav" id="qnavListening"></div>
+      <span class="qnav-summary" id="qnavListeningSummary"></span>
+      <button class="main-btn" onclick="submitSection('listening')">Submit & Move to Reading</button>
+    </div>
+  </main>
+
+  <main id="reading" class="exam-screen">
+    <div class="passage-nav">
+      <button class="active" onclick="showReadingPassage(1,this)">Passage 1</button>
+      <button onclick="showReadingPassage(2,this)">Passage 2</button>
+      <button onclick="showReadingPassage(3,this)">Passage 3</button>
+    </div>
+    <div class="reading-main" id="readWrap">
+      <div class="read-pane" id="readLeft"><div id="passageText" class="passage-text">
+<h2>The Extraordinary Watkin Tench</h2>
+<p>At the end of 18th century, life for the average British citizen was changing. The population grew as health and industrialisation took hold of the country. However, land and resources were limited. Families could not guarantee jobs for all of their children. People who were poor or destitute had little option. To make things worse, the rate of people who turned to crime to make a living increased. In Britain, the prisons were no longer large enough to hold the convicted people of this growing criminal class. Many towns and governments were at a loss as to what to do. However, another phenomenon that was happening in the 18th century was exploration of other continents. There were many ships looking for crew members who would risk a month-long voyage across a vast ocean. This job was risky and dangerous, so few would willingly choose it. However, with so many citizens without jobs or with criminal convictions, they had little choice. One such member of this new lower class of British citizens was Watkin Tench.</p>
+<p>Between 1788 and 1868, approximately 161,700 convicts were transported to the Australian colonies of New South Wales, Van Diemen’s Land and Western Australia. Tench was one of these unlucky convicts to sign onto a dangerous journey. When his ship set out in 1788, he signed a three years’ service to the First Fleet. Apart from his years in Australia, people knew little about his life back in Britain. It was said he was born on 6 October 1758 at Chester in the county of Cheshire in England. He came from a decent background. Tench was a son of Fisher Tench, a dancing master who ran a boarding school in the town, and Margaritta Tarleton of the Liverpool Tarletons.</p>
+<p>He grew up around a finer class of British citizens, and his family helped instruct the children of the wealthy in formal dance lessons. Though we don’t know for sure how Tench was educated in this small British town, we do know that he was well educated. His diaries from his travels to Australia are written in excellent English, a skill that not everyone was lucky to possess in the 18th century. Aside from this, we know little of Tench’s beginnings. We don’t know how he ended up convicted of a crime. But after he started his voyage, his life changed dramatically.</p>
+<p>During the voyage, which was harsh and took many months, Tench described landscape of different places. While sailing to Australia, Tench saw landscapes that were unfamiliar and new to him. Arriving in Australia, the entire crew was uncertain of what was to come in their new life. When they arrived in Australia, they established a British colony. Governor Philip was vested with complete authority over the inhabitants of the colony. Though still a young man, Philip was enlightened for his age. From stories of other British colonies, Philip learnt that conflict with the original peoples of the land was often a source of strife and difficulties. To avoid this, Philip’s personal intent was to establish harmonious relations with local Aboriginal people. But Philip’s job was even more difficult considering his crew. Other colonies were established with middle-class merchants and craftsmen. His crew were convicts, who had few other skills outside of their criminal histories. Along with making peace with the Aboriginal people, Philip also had to try to reform as well as discipline the convicts of the colony.</p>
+<p>From the beginning, Tench stood out as different from the other convicts. During his initial time in Australia, he quickly rose in his rank, and was given extra power and responsibility over the convicted crew members. However, he was also still very different from the upper-class rulers who came to rule over the crew. He showed humanity towards the convicted workers. He didn’t want to treat them as common criminals, but as trained military men. Under Tench’s authority, he released the convicts’ chains which were used to control them during the voyage. Tench also showed mercy towards the Aboriginal people. Governor Philip often pursued violent solutions to conflicts with the Aboriginal peoples. Tench disagreed strongly with this method. At one point, he was unable to follow the order given by Governor Philip to punish the ten Aboriginals.</p>
+<p>When they first arrived, Tench was fearful and contemptuous towards the Aboriginals, because the two cultures did not understand each other. However, gradually he got to know them individually and became close friends with them. Tench knew that the Aboriginal people would not cause them conflict if they looked for a peaceful solution. Though there continued to be conflict and violence, Tench’s efforts helped establish a more peaceful negotiation between the two groups when they settled territory and land-use issues.</p>
+<p>Meanwhile, many changes were made to the new colony. The Hawkesbury River was named by Governor Philip in June 1789. Many native bird species to the river were hunted by travelling colonists. The colonists were having a great impact on the land and natural resources. Though the colonists had made a lot of progress in the untamed lands of Australia, there were still limits. The convicts were notoriously ill-informed about Australian geography, as was evident in the attempt by twenty absconders to walk from Sydney to China in 1791, believing: “China might be easily reached, being not more than a hundred miles distant, and separated only by a river.” In reality, miles of ocean separated the two.</p>
+<p>Much of Australia was unexplored by the convicts. Even Tench had little understanding of what existed beyond the established lines of their colony. Slowly, but surely, the colonists expanded into the surrounding area. A few days after arrival at Botany Bay, their original location, the fleet moved to the more suitable Port Jackson where a settlement was established at Sydney Cove on 26 January 1788. This second location was strange and unfamiliar, and the fleet was on alert for any kind of suspicious behaviours. Though Tench had made friends in Botany Bay with Aboriginal peoples, he could not be sure this new land would be uninhabited. He recalled the first time he stepped into this unfamiliar ground with a boy who helped Tench navigate. In these new lands, he met an old Aboriginal.</p>
+</div></div>
+      <div class="dragbar" id="dragbar">⋮</div>
+      <div class="read-pane" id="readRight">
+
+        <div id="rq1">
+
+<section class="paper-card">
+<h2>Questions 1–13</h2>
+<div class="instruction">Questions 1–6<br>Do the following statements agree with the information given in Reading Passage 1?<br>Write <b>TRUE</b>, <b>FALSE</b> or <b>NOT GIVEN</b>.</div>
+<ol class="q-list">
+<li>There was a great deal of information available about the life of Tench before he arrived in Australia. <select class="ans-select" data-q="r1"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+<li>Tench drew pictures to illustrate different places during the voyage. <select class="ans-select" data-q="r2"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+<li>Other military personnel in New South Wales did not treat convicts in the same way as Tench did. <select class="ans-select" data-q="r3"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+<li>Tench’s view towards the Aboriginals remained unchanged during his time in Australia. <select class="ans-select" data-q="r4"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+<li>An Aboriginal gave him gifts of food at the first time they met. <select class="ans-select" data-q="r5"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+<li>The convicts had a good knowledge of Australian geography. <select class="ans-select" data-q="r6"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+</ol>
+<div class="instruction">Questions 7–13<br>Answer the questions below. Choose <b>NO MORE THAN TWO WORDS AND/OR A NUMBER</b> from the passage for each answer.</div>
+<ol class="q-list" start="7">
+<li>What could be a concrete proof of Tench’s good education? <input class="ans-input" data-q="r7" type="text" placeholder="answer" style="width:200px"></li>
+<li>How many years did Tench sign the contract to the First Fleet? <input class="ans-input" data-q="r8" type="text" placeholder="answer" style="width:200px"></li>
+<li>What was used to control convicts during the voyage? <input class="ans-input" data-q="r9" type="text" placeholder="answer" style="width:200px"></li>
+<li>Who gave the order to punish the Aboriginals? <input class="ans-input" data-q="r10" type="text" placeholder="answer" style="width:200px"></li>
+<li>When did the name of Hawkesbury River come into being? <input class="ans-input" data-q="r11" type="text" placeholder="answer" style="width:200px"></li>
+<li>Where did the escaped convicts plan to go? <input class="ans-input" data-q="r12" type="text" placeholder="answer" style="width:200px"></li>
+<li>In which place did Tench feel unaccustomed? <input class="ans-input" data-q="r13" type="text" placeholder="answer" style="width:200px"></li>
+</ol>
+</section>
+
+</div>
+
+        <div id="rq2" class="hidden">
+
+<section class="paper-card">
+<h2>Questions 14–26</h2>
+<div class="instruction">Questions 14–18<br>Look at the following statements and the list of people below. Match each statement with the correct person, <b>A–D</b>.<br><br><b>List of People</b><br>A. Jan Eisner &nbsp;&nbsp; B. Vanessa Stoykov &nbsp;&nbsp; C. Gal Zauberman &nbsp;&nbsp; D. Neil Plumridge</div>
+<ol class="q-list" start="14">
+<li>Work stress usually happens in the high level of a business. <select class="ans-select" data-q="r14"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+<li>More people involved would be beneficial for stress relief. <select class="ans-select" data-q="r15"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+<li>Temporary holiday sometimes doesn’t mean less work. <select class="ans-select" data-q="r16"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+<li>Stress leads to a wrong direction when trying to satisfy customers. <select class="ans-select" data-q="r17"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+<li>It is commonly accepted that stress at present is more severe than in the future. <select class="ans-select" data-q="r18"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+</ol>
+<div class="instruction">Questions 19–21<br>Choose the correct letter, <b>A, B, C or D</b>.</div>
+<div class="question"><div class="qnum">19</div><p>Which of the following workplace stress is <b>NOT</b> mentioned according to Plumridge?</p><div class="options"><label class="option"><input type="radio" name="r19" data-q="r19" value="A"><span>A. not enough time spent on family</span></label><label class="option"><input type="radio" name="r19" data-q="r19" value="B"><span>B. unable to concentrate on work</span></label><label class="option"><input type="radio" name="r19" data-q="r19" value="C"><span>C. inadequate time of sleep</span></label><label class="option"><input type="radio" name="r19" data-q="r19" value="D"><span>D. alteration of appointment</span></label></div></div>
+<div class="question"><div class="qnum">20</div><p>Which of the following solution is <b>NOT</b> mentioned in helping reduce work pressure according to Plumridge?</p><div class="options"><label class="option"><input type="radio" name="r20" data-q="r20" value="A"><span>A. allocate more personnel</span></label><label class="option"><input type="radio" name="r20" data-q="r20" value="B"><span>B. increase more time</span></label><label class="option"><input type="radio" name="r20" data-q="r20" value="C"><span>C. lower expectation</span></label><label class="option"><input type="radio" name="r20" data-q="r20" value="D"><span>D. do sports and massage</span></label></div></div>
+<div class="question"><div class="qnum">21</div><p>What is the point of view of Jan Eisner towards work stress?</p><div class="options"><label class="option"><input type="radio" name="r21" data-q="r21" value="A"><span>A. Medical test can only reveal part of the data needed to cope with stress</span></label><label class="option"><input type="radio" name="r21" data-q="r21" value="B"><span>B. Index of body samples plays determined role.</span></label><label class="option"><input type="radio" name="r21" data-q="r21" value="C"><span>C. Emotional affection is superior to physical one.</span></label><label class="option"><input type="radio" name="r21" data-q="r21" value="D"><span>D. One well designed solution can release all stress.</span></label></div></div>
+<div class="instruction">Questions 22–26<br>Complete the summary below. Choose <b>NO MORE THAN TWO WORDS AND/OR A NUMBER</b> from the passage for each answer.</div>
+<div class="notes">
+<p>Statistics from National worker’s compensation indicate stress plays the most important role in <input class="ans-input" data-q="r22" type="text" placeholder="answer" style="width:190px">. Staff take about <input class="ans-input" data-q="r23" type="text" placeholder="answer" style="width:170px"> for absence from work caused by stress. Not just time is our main concern but great expenses generated consequently. An official insurer wrote sometime that about <input class="ans-input" data-q="r24" type="text" placeholder="answer" style="width:130px"> of all claims were mental issues whereas nearly 27% costs in all claims. Sports such as <input class="ans-input" data-q="r25" type="text" placeholder="answer" style="width:130px">, as well as <input class="ans-input" data-q="r26" type="text" placeholder="answer" style="width:130px"> could be a treatment to release stress; however, specialists recommended another practical way out, analyse workloads once again.</p>
+</div>
+</section>
+
+</div>
+
+        <div id="rq3" class="hidden">
+
+<section class="paper-card">
+<h2>Questions 27–40</h2>
+<div class="instruction">Questions 27–32<br>Look at the following statements and the list of people or organisation below. Match each statement with the correct person or organisation, <b>A–D</b>.<br><br>A. Thea Swayne &nbsp;&nbsp; B. Child Accident Prevention Trust &nbsp;&nbsp; C. Richard Mawle &nbsp;&nbsp; D. Karel van der Waarde</div>
+<ol class="q-list" start="27">
+<li>Elderly people may have the same problem with children if the lids of containers require too much strength to open. <select class="ans-select" data-q="r27"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+<li>Adapting packaging for the blind may disadvantage the sighted people. <select class="ans-select" data-q="r28"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+<li>Specially designed lids cannot eliminate the possibility of children swallowing pills accidentally. <select class="ans-select" data-q="r29"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+<li>Container design should consider situations, such as drug used at home. <select class="ans-select" data-q="r30"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+<li>Governing bodies should investigate many different container cases rather than individual ones. <select class="ans-select" data-q="r31"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+<li>Information on the list of a leaflet hasn’t been in the right order. <select class="ans-select" data-q="r32"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></li>
+</ol>
+<div class="instruction">Questions 33–37<br>Complete the notes using the list of words, <b>A–G</b>, below.</div>
+<div class="choice-grid"><div>A. consumers</div><div>B. marketing teams</div><div>C. pharmaceutical industry</div><div>D. external designers</div><div>E. in-house designers</div><div>F. design engineers</div><div>G. pharmacist</div></div>
+<div class="notes">
+<p class="subhead">Packaging in pharmaceutical industry</p>
+<p><b>Designs for over-the-counter medicines</b></p>
+<p>First, <select class="ans-select" data-q="r33"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select> make the proposal, then pass them to the <select class="ans-select" data-q="r34"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select>. Finally, these designs will be tested by <select class="ans-select" data-q="r35"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select>.</p>
+<p><b>Prescription-only</b></p>
+<p>First, the design is made by <select class="ans-select" data-q="r36"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select> and then subjected to <select class="ans-select" data-q="r37"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select>.</p>
+</div>
+<div class="instruction">Questions 38–40<br>Choose the correct letter, <b>A, B, C or D</b>.</div>
+<div class="question"><div class="qnum">38</div><p>What may cause the accident in “design container”?</p><div class="options"><label class="option"><input type="radio" name="r38" data-q="r38" value="A"><span>A. a print error</span></label><label class="option"><input type="radio" name="r38" data-q="r38" value="B"><span>B. style of print</span></label><label class="option"><input type="radio" name="r38" data-q="r38" value="C"><span>C. wrong label</span></label><label class="option"><input type="radio" name="r38" data-q="r38" value="D"><span>D. the shape of the bottle</span></label></div></div>
+<div class="question"><div class="qnum">39</div><p>What do people think about the black and white only print?</p><div class="options"><label class="option"><input type="radio" name="r39" data-q="r39" value="A"><span>A. Consumers dislike these products.</span></label><label class="option"><input type="radio" name="r39" data-q="r39" value="B"><span>B. People have to pay more attention to the information.</span></label><label class="option"><input type="radio" name="r39" data-q="r39" value="C"><span>C. That makes all products look alike.</span></label><label class="option"><input type="radio" name="r39" data-q="r39" value="D"><span>D. Sighted people may feel it more helpful.</span></label></div></div>
+<div class="question"><div class="qnum">40</div><p>Why does the writer mention “popper” and “pluspoint”?</p><div class="options"><label class="option"><input type="radio" name="r40" data-q="r40" value="A"><span>A. to show that container design has made some progress</span></label><label class="option"><input type="radio" name="r40" data-q="r40" value="B"><span>B. to illustrate an example of inappropriate design which can lead to accidents</span></label><label class="option"><input type="radio" name="r40" data-q="r40" value="C"><span>C. to show that the industry still needs more to improve</span></label><label class="option"><input type="radio" name="r40" data-q="r40" value="D"><span>D. to point out that consumers should be more informed about the information</span></label></div></div>
+</section>
+
+</div>
+            </div>
+    </div>
+    <div class="bottom-submit sticky-low">
+      <div class="qnav" id="qnavReading"></div>
+      <span class="qnav-summary" id="qnavReadingSummary"></span>
+      <button class="main-btn" onclick="submitSection('reading')">Submit & Move to Writing</button>
+    </div>
+  </main>
+
+  <main id="writing" class="exam-screen">
+    <div class="writing-screen">
+      <div class="writing-head" id="writingHead"><b>Writing Task 1</b>You should spend about 20 minutes on this task. Write at least 150 words.</div>
+      <div class="writing-body">
+        <div class="w-left" id="writingPrompt">
+          <div class="w-prompt">The table below gives information about employment patterns for men and women in New Zealand in two separate years. Provide an overview of the information by identifying and describing the key details, and include comparisons where appropriate.</div>
+          <img class="w-task-img" src="https://engnovatewebsitestorage.blob.core.windows.net/ielts-writing-task-1-images/c51f8a47aa62aacc" alt="Writing Task 1 table">
+        </div>
+        <div class="w-right">
+          <textarea class="w-textarea" id="wText1" placeholder="Start writing your response here..." oninput="updateWords()"></textarea>
+          <div class="word-count" id="wc1">Words: 0</div>
+          <textarea class="w-textarea hidden" id="wText2" placeholder="Start writing your response here..." oninput="updateWords()"></textarea>
+          <div class="word-count hidden" id="wc2">Words: 0</div>
+        </div>
+      </div>
+      <button class="blue-check" onclick="submitSection('writing')">✓</button>
+      <div class="w-bottom">
+        <div id="wtab1" class="w-tab active" onclick="showWritingTask(1)">Part 1<br><span id="wprog1">0 of 1</span></div>
+        <div id="wtab2" class="w-tab" onclick="showWritingTask(2)">Part 2<br><span id="wprog2">0 of 1</span></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="result" class="hidden">
+  <div class="result-card">
+    <a class="brand" href="#" target="_blank"><span class="logo">IELTS</span><span class="tg-circle">✈</span><span>IELTS Mock Test Center</span></a>
+    <h1>Test Submitted</h1>
+    <div class="result-message">
+      <b>Results will be communicated to you separately.</b>
+      <div class="result-footer">
+        <a href="#" target="_blank">IELTS Mock Test Center</a>
+        (<a href="#" target="_blank"></a> - for more real exam tests
+      </div>
+    </div>
+    <p id="resultMeta" style="color:#555"></p>
+    <div class="result-actions">
+      <button class="main-btn" onclick="downloadPDF()">Save PDF Report</button>
+      <button class="secondary-btn" onclick="toggleReview()">Check Answers</button>
+      <button class="secondary-btn" onclick="location.reload()">Restart</button>
+    </div>
+    <div id="reviewBox" class="review-box"></div>
+  </div>
+</div>
+
+<div class="mark-popup" id="markPopup">
+  <button id="mpHighlight" onclick="mpHighlight()"><span class="mp-icon">🖊️</span>Highlight</button>
+  <button id="mpComment" onclick="mpComment()"><span class="mp-icon">💬</span>Comment</button>
+  <button id="mpClear" onclick="mpClearAll()"><span class="mp-icon">✳️</span>Clear All</button>
+</div>
+<div class="note-tip" id="noteTip"></div>
+<div class="note-modal" id="noteModal">
+  <div class="note-box">
+    <h3>Enter your note</h3>
+    <textarea id="noteText" placeholder="Enter your note"></textarea>
+    <div class="note-actions">
+      <button onclick="closeNote()">Cancel</button>
+      <button class="save" onclick="saveNote()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="options-overlay" id="optionsOverlay" onmousedown="closeOptionsIfOutside(event)">
+  <div class="options-panel" id="optionsPanel">
+    <div class="opt-page" id="optPageMain">
+      <div class="opt-header opt-header-main"><span>Options</span><button class="opt-close" onclick="closeOptions()">✕</button></div>
+      <div class="opt-body">
+        <button class="opt-submit-btn" onclick="showOptPage('submit')">Submit Answers<span class="opt-arrow">→</span></button>
+        <button class="opt-row" onclick="showOptPage('contrast')"><span>Contrast</span><span class="opt-row-arrow">→</span></button>
+        <button class="opt-row" onclick="showOptPage('textsize')"><span>Text size</span><span class="opt-row-arrow">→</span></button>
+      </div>
+    </div>
+    <div class="opt-page hidden" id="optPageSubmit">
+      <div class="opt-header"><button class="opt-back" onclick="showOptPage('main')">← Options</button><span>Submit</span><button class="opt-close" onclick="closeOptions()">✕</button></div>
+      <div class="opt-body opt-center">
+        <div class="opt-submit-graphic">⬆</div>
+        <h3>Ready to submit?</h3>
+        <p>Once submitted you will see your results.<br>Make sure all answers are filled in.</p>
+        <button class="opt-confirm-btn" onclick="confirmSubmitFromMenu()">✓ Confirm &amp; Submit</button>
+      </div>
+    </div>
+    <div class="opt-page hidden" id="optPageContrast">
+      <div class="opt-header"><button class="opt-back" onclick="showOptPage('main')">← Options</button><span>Contrast</span><button class="opt-close" onclick="closeOptions()">✕</button></div>
+      <div class="opt-body">
+        <button class="opt-row opt-choice active" data-theme="default" onclick="setContrastTheme('default')">Black on white</button>
+        <button class="opt-row opt-choice" data-theme="invert" onclick="setContrastTheme('invert')">White on black</button>
+        <button class="opt-row opt-choice" data-theme="yellow" onclick="setContrastTheme('yellow')">Yellow on black</button>
+      </div>
+    </div>
+    <div class="opt-page hidden" id="optPageTextSize">
+      <div class="opt-header"><button class="opt-back" onclick="showOptPage('main')">← Options</button><span>Text size</span><button class="opt-close" onclick="closeOptions()">✕</button></div>
+      <div class="opt-body">
+        <button class="opt-row opt-choice active" data-size="regular" onclick="setTextSize('regular')">Regular</button>
+        <button class="opt-row opt-choice" data-size="large" onclick="setTextSize('large')">Large</button>
+        <button class="opt-row opt-choice" data-size="xlarge" onclick="setTextSize('xlarge')">Extra large</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+        // Auto-login extension injected by IELTS Mock Platform
+        window.addEventListener('DOMContentLoaded', () => {
+          const params = new URLSearchParams(window.location.search);
+          const sId = params.get('studentId') || 'STUDENT';
+          const tId = params.get('testId') || '3';
+          
+          candidate = sId;
+          const loginScreen = document.getElementById('login');
+          if (loginScreen) loginScreen.classList.add('hidden');
+          
+          const introScreen = document.getElementById('intro');
+          if (introScreen) introScreen.classList.remove('hidden');
+          
+          const welcomeName = document.getElementById('welcomeName');
+          if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
+        });
+        
+</script>
+<script>
+const ANSWERS = {"l1": ["Ropes", "rope"], "l2": ["Equipment"], "l3": ["Safety"], "l4": ["Guide"], "l5": ["Forest"], "l6": ["Navigation"], "l7": ["Lunch"], "l8": ["20 percent", "20%", "twenty percent"], "l9": ["Shoes", "shoe"], "l10": ["Arkwright"], "l11": ["A"], "l12": ["C"], "l13": ["B"], "l14": ["A"], "l15": ["B"], "l16": ["A"], "l17": ["H"], "l18": ["E"], "l19": ["D"], "l20": ["F"], "l21": ["B"], "l22": ["C"], "l23": ["B"], "l24": ["A"], "l25": ["C"], "l26": ["C"], "l27": ["Global hunger"], "l28": ["Pollution"], "l29": ["Wood"], "l30": ["Grasses", "Grass"], "l31": ["Huge Increase", "Increase"], "l32": ["Internal clock"], "l33": ["Light and dark"], "l34": ["Unsocial hours"], "l35": ["Heart and stomach"], "l36": ["Depression"], "l37": ["Mental ability"], "l38": ["Performance"], "l39": ["Family life"], "l40": ["Friends", "Friend"], "r1": ["FALSE"], "r2": ["NOT GIVEN"], "r3": ["TRUE"], "r4": ["FALSE"], "r5": ["NOT GIVEN"], "r6": ["FALSE"], "r7": ["His diaries", "diaries"], "r8": ["3 years", "Three years", "3", "three"], "r9": ["Chains", "chain"], "r10": ["Governor Philip", "Governor", "Philip"], "r11": ["June 1789"], "r12": ["China"], "r13": ["Botany Bay"], "r14": ["A"], "r15": ["D"], "r16": ["B"], "r17": ["D"], "r18": ["C"], "r19": ["B"], "r20": ["D"], "r21": ["A"], "r22": ["workplace injury"], "r23": ["16.6 weeks"], "r24": ["7%", "7 percent"], "r25": ["golf"], "r26": ["massage"], "r27": ["C"], "r28": ["D"], "r29": ["B"], "r30": ["A"], "r31": ["D"], "r32": ["C"], "r33": ["B"], "r34": ["D"], "r35": ["A"], "r36": ["E"], "r37": ["F"], "r38": ["B"], "r39": ["B"], "r40": ["A"]};
+const DISPLAY_ANSWERS = {"l1": "Ropes", "l2": "Equipment", "l3": "Safety", "l4": "Guide", "l5": "Forest", "l6": "Navigation", "l7": "Lunch", "l8": "20 percent", "l9": "Shoes", "l10": "Arkwright", "l11": "A", "l12": "C", "l13": "B", "l14": "A", "l15": "B", "l16": "A", "l17": "H", "l18": "E", "l19": "D", "l20": "F", "l21": "B", "l22": "C", "l23": "B", "l24": "A", "l25": "C", "l26": "C", "l27": "Global hunger", "l28": "Pollution", "l29": "Wood", "l30": "Grasses", "l31": "(Huge) Increase", "l32": "Internal clock", "l33": "Light and dark", "l34": "Unsocial hours", "l35": "Heart and stomach", "l36": "Depression", "l37": "Mental ability", "l38": "Performance", "l39": "Family life", "l40": "Friends", "r1": "FALSE", "r2": "NOT GIVEN", "r3": "TRUE", "r4": "FALSE", "r5": "NOT GIVEN", "r6": "FALSE", "r7": "His diaries", "r8": "3/Three years", "r9": "Chains", "r10": "Governor Philip", "r11": "June 1789", "r12": "China", "r13": "Botany Bay", "r14": "A", "r15": "D", "r16": "B", "r17": "D", "r18": "C", "r19": "B", "r20": "D", "r21": "A", "r22": "workplace injury", "r23": "16.6 weeks", "r24": "7%", "r25": "golf", "r26": "massage", "r27": "C", "r28": "D", "r29": "B", "r30": "A", "r31": "D", "r32": "C", "r33": "B", "r34": "D", "r35": "A", "r36": "E", "r37": "F", "r38": "B", "r39": "B", "r40": "A"};
+let currentSection='listening';
+let timerInt=null;
+let remaining=0;
+let candidate='STUDENT';
+let savedRange=null;
+let clickedMark=null;
+
+function showIntro(){
+  candidate = document.getElementById('candId').value.trim() || 'STUDENT';
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('intro').classList.remove('hidden');
+  document.getElementById('welcomeName').textContent = 'Candidate ID: ' + candidate;
+}
+function beginExam(){
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('exam').classList.remove('hidden');
+  document.getElementById('topCid').textContent = candidate;
+  switchSection('listening', 40*60);
+  refreshPalettes();
+}
+function switchSection(sec, secs){
+  currentSection=sec;
+  ['listening','reading','writing'].forEach(s=>document.getElementById(s).classList.toggle('active', s===sec));
+  ['tabListening','tabReading','tabWriting'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  document.getElementById(sec==='listening'?'tabListening':sec==='reading'?'tabReading':'tabWriting').classList.add('active');
+  const title = sec.charAt(0).toUpperCase()+sec.slice(1);
+  document.getElementById('bannerTitle').textContent = title;
+  document.getElementById('bannerText').textContent = sec==='listening' ? 'You will hear a recording and answer Questions 1–40.' : sec==='reading' ? 'You should spend about 60 minutes on Questions 1–40.' : 'You should spend about 60 minutes on Tasks 1 and 2.';
+  startTimer(secs);
+  refreshPalettes();
+}
+function startTimer(secs){
+  clearInterval(timerInt);
+  remaining=secs;
+  updateTimer();
+  timerInt=setInterval(()=>{
+    remaining--;
+    updateTimer();
+    if(remaining<=0){
+      clearInterval(timerInt);
+      if(currentSection==='listening') submitSection('listening', true);
+      else if(currentSection==='reading') submitSection('reading', true);
+      else submitSection('writing', true);
+    }
+  },1000);
+}
+function updateTimer(){
+  const t=document.getElementById('timer');
+  const m=Math.max(0, Math.floor(remaining/60));
+  const s=Math.max(0, remaining%60);
+  t.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  t.classList.toggle('warn', remaining<=180);
+  if(currentSection==='listening' || currentSection==='reading') refreshPalettes();
+}
+function submitSection(sec, auto=false){
+  if(!auto){
+    let msg;
+    if(sec==='writing'){
+      msg='Submit the full test?';
+    } else {
+      const prefix = sec==='listening' ? 'l' : 'r';
+      const unanswered = 40 - countAnswered(prefix,40);
+      msg = unanswered>0
+        ? `You have ${unanswered} unanswered question${unanswered===1?'':'s'} in this section. Submit anyway and move to the next section?`
+        : 'Submit this section and move to the next section?';
+    }
+    if(!confirm(msg)) return;
+  }
+  if(sec==='listening') switchSection('reading', 60*60);
+  else if(sec==='reading') switchSection('writing', 60*60);
+  else finishTest();
+}
+function finishTest(){
+          clearInterval(timerInt);
+          document.getElementById('exam').classList.add('hidden');
+          document.getElementById('result').classList.remove('hidden');
+          const lAnswered = countAnswered('l',40);
+          const rAnswered = countAnswered('r',40);
+          const w1 = wordCount(document.getElementById('wText1').value);
+          const w2 = wordCount(document.getElementById('wText2').value);
+          document.getElementById('resultMeta').textContent = `Candidate ID: ${candidate} | Listening answered: ${lAnswered}/40 | Reading answered: ${rAnswered}/40 | Writing words: Task 1 — ${w1}, Task 2 — ${w2}`;
+          buildReview();
+
+          // Extract answers
+          const listeningAnswers = {};
+          for (let i = 1; i <= 40; i++) {
+            listeningAnswers[i] = getAnswer('l' + i).join(', ');
+          }
+          const readingAnswers = {};
+          for (let i = 1; i <= 40; i++) {
+            readingAnswers[i] = getAnswer('r' + i).join(', ');
+          }
+          const writingAnswers = {
+            task1: document.getElementById('wText1').value,
+            task2: document.getElementById('wText2').value
+          };
+
+          const lScore = scoreSection('l');
+          const rScore = scoreSection('r');
+
+          // Estimate IELTS bands
+          const getIeltsBand = (correct) => {
+            if (correct >= 39) return 9.0;
+            if (correct >= 37) return 8.5;
+            if (correct >= 35) return 8.0;
+            if (correct >= 32) return 7.5;
+            if (correct >= 30) return 7.0;
+            if (correct >= 27) return 6.5;
+            if (correct >= 23) return 6.0;
+            if (correct >= 20) return 5.5;
+            if (correct >= 16) return 5.0;
+            if (correct >= 13) return 4.5;
+            return 4.0;
+          };
+
+          const params = new URLSearchParams(window.location.search);
+          const sId = params.get('studentId') || candidate;
+          const tId = params.get('testId') || '3';
+
+          fetch('http://localhost:5000/api/student/submit/' + tId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              studentId: sId,
+              listeningAnswers,
+              readingAnswers,
+              writingAnswers,
+              listeningScore: getIeltsBand(lScore),
+              readingScore: getIeltsBand(rScore)
+            })
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log('Submission synced to backend successfully:', data);
+            if (window.parent) {
+              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+            }
+          })
+          .catch(err => console.error('Failed to submit to database backend:', err));
+
+          setTimeout(()=>downloadPDF(true), 500);
+          return;
+        
+  clearInterval(timerInt);
+  document.getElementById('exam').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  const lAnswered = countAnswered('l',40);
+  const rAnswered = countAnswered('r',40);
+  const w1 = wordCount(document.getElementById('wText1').value);
+  const w2 = wordCount(document.getElementById('wText2').value);
+  document.getElementById('resultMeta').textContent = `Candidate ID: ${candidate} | Listening answered: ${lAnswered}/40 | Reading answered: ${rAnswered}/40 | Writing words: Task 1 — ${w1}, Task 2 — ${w2}`;
+  buildReview();
+  setTimeout(()=>downloadPDF(true), 500);
+}
+function countAnswered(prefix,total){
+  let n=0;
+  for(let i=1;i<=total;i++){ if(getAnswer(prefix+i).length) n++; }
+  return n;
+}
+
+// ---- Restricted single-play audio (matches real IELTS: play once, no rewind/pause) ----
+let audioStarted=false, audioMaxTime=0;
+function initAudioRestrictions(){
+  const a=document.getElementById('audio');
+  if(!a) return;
+  a.addEventListener('timeupdate', ()=>{ if(a.currentTime>audioMaxTime) audioMaxTime=a.currentTime; });
+  a.addEventListener('seeking', ()=>{ if(a.currentTime < audioMaxTime - 0.4) a.currentTime = audioMaxTime; });
+  a.addEventListener('ended', ()=>{
+    document.getElementById('audStatus').textContent='Finished — the recording has now ended.';
+    document.getElementById('playOnceBtn').textContent='✓';
+  });
+  a.addEventListener('pause', ()=>{
+    if(audioStarted && a.currentTime < a.duration - 0.3 && !a.ended){ a.play(); }
+  });
+}
+function playAudioOnce(){
+  if(audioStarted) return;
+  audioStarted=true;
+  const a=document.getElementById('audio');
+  const btn=document.getElementById('playOnceBtn');
+  btn.disabled=true;
+  btn.textContent='▶';
+  document.getElementById('audStatus').textContent='Playing…';
+  a.play().catch(()=>{
+    document.getElementById('audStatus').textContent='Tap play to start audio.';
+    btn.disabled=false; audioStarted=false;
+  });
+}
+
+// ---- Question navigator (palette), like the real IELTS on-screen test ----
+const SECTION_GROUPS = {
+  listening: [ {label:'Part 1', from:1, to:10}, {label:'Part 2', from:11, to:20}, {label:'Part 3', from:21, to:30}, {label:'Part 4', from:31, to:40} ],
+  reading: [ {label:'Passage 1', from:1, to:13}, {label:'Passage 2', from:14, to:26}, {label:'Passage 3', from:27, to:40} ]
+};
+function buildPalette(sec){
+  const prefix = sec==='listening' ? 'l' : 'r';
+  const container = document.getElementById(sec==='listening'?'qnavListening':'qnavReading');
+  const summaryEl = document.getElementById(sec==='listening'?'qnavListeningSummary':'qnavReadingSummary');
+  if(!container) return;
+  const frag=document.createDocumentFragment();
+  let answeredCount=0;
+  SECTION_GROUPS[sec].forEach(g=>{
+    const wrap=document.createElement('div'); wrap.className='qnav-part';
+    const lbl=document.createElement('span'); lbl.className='qnav-part-label'; lbl.textContent=g.label;
+    wrap.appendChild(lbl);
+    for(let i=g.from;i<=g.to;i++){
+      const q=prefix+i;
+      const btn=document.createElement('button');
+      btn.type='button'; btn.className='qnav-btn'; btn.textContent=i;
+      if(getAnswer(q).length){ btn.classList.add('answered'); answeredCount++; }
+      btn.addEventListener('click', ()=>jumpToQuestion(sec,i));
+      wrap.appendChild(btn);
+    }
+    frag.appendChild(wrap);
+  });
+  container.innerHTML='';
+  container.appendChild(frag);
+  if(summaryEl) summaryEl.textContent = answeredCount+' of 40 answered';
+}
+function jumpToQuestion(sec,num){
+  if(sec==='listening'){
+    const part = num<=10?1:num<=20?2:num<=30?3:4;
+    const btn=document.querySelectorAll('.part-tabs button')[part-1];
+    showListenPart(part, btn);
+  } else {
+    const passage = num<=13?1:num<=26?2:3;
+    const btn=document.querySelectorAll('.passage-nav button')[passage-1];
+    showReadingPassage(passage, btn);
+  }
+  const prefix = sec==='listening' ? 'l' : 'r';
+  setTimeout(()=>{
+    const el=document.querySelector(`[data-q="${prefix}${num}"]`);
+    if(el){
+      const target = el.closest('.question') || el.closest('li') || el;
+      const old = target.style.backgroundColor;
+      target.scrollIntoView({behavior:'smooth', block:'center'});
+      target.style.transition='background-color 0.4s';
+      target.style.backgroundColor='#fff3cd';
+      setTimeout(()=>{ target.style.backgroundColor=old; },1000);
+      if(el.matches('input,select,textarea')) el.focus({preventScroll:true});
+    }
+  }, 80);
+}
+function refreshPalettes(){
+  buildPalette('listening');
+  buildPalette('reading');
+}
+
+const TG_URL='#';
+const TWO_GROUPS={};
+function answerText(q){
+  const a=getAnswer(q);
+  return Array.isArray(a) && a.length ? a.join(', ') : '—';
+}
+function displayCorrect(q){ return DISPLAY_ANSWERS[q] || (ANSWERS[q]||[]).join(' / ') || '—'; }
+function sameSet(a,b){
+  const x=a.map(norm).filter(Boolean).sort(); const y=b.map(norm).filter(Boolean).sort();
+  return x.length===y.length && x.every((v,i)=>v===y[i]);
+}
+function groupResult(mainQ){
+  const g=TWO_GROUPS[mainQ];
+  const got=getAnswer(mainQ).map(norm).filter(Boolean);
+  const key=g[2].map(norm);
+  return sameSet(got,key) ? 'correct' : (got.length ? 'wrong' : 'empty');
+}
+function qResult(q){
+  if(TWO_GROUPS[q]) return groupResult(q);
+  const got=getAnswer(q);
+  if(!got.length) return 'empty';
+  return isCorrect(q) ? 'correct' : 'wrong';
+}
+function scoreSection(prefix){
+  let score=0;
+  for(let i=1;i<=40;i++) if(qResult(prefix+i)==='correct') score++;
+  return score;
+}
+function buildReview(){
+  const box=document.getElementById('reviewBox');
+  const lScore=scoreSection('l'), rScore=scoreSection('r');
+  const w1=wordCount(document.getElementById('wText1').value), w2=wordCount(document.getElementById('wText2').value);
+  let html=`<h2>Answer Check</h2><div class="review-summary"><div><b>Listening:</b> ${lScore}/40</div><div><b>Reading:</b> ${rScore}/40</div><div><b>Writing Task 1 words:</b> ${w1}</div><div><b>Writing Task 2 words:</b> ${w2}</div></div>`;
+  function rows(prefix, title){
+    html+=`<h2>${title}</h2><table class="review-table"><thead><tr><th>Q</th><th>Your answer</th><th>Correct answer</th><th>Status</th></tr></thead><tbody>`;
+    for(let i=1;i<=40;i++) addRow(prefix+i, i);
+    html+='</tbody></table>';
+  }
+  function statusLabel(res){
+    if(res==='correct') return '<span class="review-ok">Correct</span>';
+    if(res==='wrong') return '<span class="review-bad">Incorrect</span>';
+    return '<span class="review-empty">Empty</span>';
+  }
+  function addRow(q,label){
+    const res=qResult(q);
+    html+=`<tr><td>${label}</td><td>${escapeHTML(answerText(q))}</td><td>${escapeHTML(displayCorrect(q))}</td><td>${statusLabel(res)}</td></tr>`;
+  }
+  rows('l','Listening'); rows('r','Reading');
+  box.innerHTML=html;
+}
+function toggleReview(){
+  const box=document.getElementById('reviewBox');
+  if(!box.innerHTML.trim()) buildReview();
+  box.style.display = box.style.display==='block' ? 'none' : 'block';
+}
+function escapeHTML(s){return String(s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function downloadPDF(silent=false){
+  try{
+    if(!window.jspdf || !window.jspdf.jsPDF){ if(!silent) window.print(); return; }
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const M=14, W=182;
+    const now=new Date();
+    const lScore=scoreSection('l'), rScore=scoreSection('r');
+    const w1txt=document.getElementById('wText1').value.trim() || '[No response]';
+    const w2txt=document.getElementById('wText2').value.trim() || '[No response]';
+    const w1=wordCount(w1txt==='[No response]'?'':w1txt), w2=wordCount(w2txt==='[No response]'?'':w2txt);
+    function header(){
+      doc.setFillColor(200,16,46); doc.rect(0,0,210,18,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.setFillColor(34,158,217); doc.circle(M+3,9,3,'F'); doc.setTextColor(255,255,255); doc.setFontSize(5.5); doc.text('TG',M+0.5,10.4);
+      doc.setTextColor(255,255,255); doc.setFontSize(11); doc.text('IELTS Mock Team\'s Blog',M+9,11);
+      doc.link(M,4,62,10,{url:TG_URL});
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text(TG_URL,210-M,11,{align:'right'});
+      doc.link(210-M-54,4,54,10,{url:TG_URL});
+    }
+    function footer(){
+      doc.setFontSize(8); doc.setTextColor(120,120,120);
+      doc.text('IELTS Mock Team\'s Blog ('+TG_URL+') - for more real exam tests',M,285);
+      doc.link(M,280,130,7,{url:TG_URL});
+    }
+    function newPage(){ footer(); doc.addPage(); header(); return 28; }
+    function title(){
+      header();
+      doc.setTextColor(20,20,20); doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text('IELTS Full Test — Answer Report',M,30);
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      doc.text('Candidate ID: '+candidate,M,38);
+      doc.text('Date: '+now.toLocaleString(),M,44);
+      doc.setFont('helvetica','bold'); doc.text('Results will be communicated to you separately.',M,52);
+      doc.setFont('helvetica','normal'); doc.setTextColor(35,35,35);
+      doc.text('Listening checked: '+lScore+'/40',M,62); doc.text('Reading checked: '+rScore+'/40',M+70,62);
+      doc.text('Writing words: Task 1 — '+w1+', Task 2 — '+w2,M,69);
+      return 80;
+    }
+    let y=title();
+    function colHeader(){
+      if(y>270) y=newPage();
+      doc.setFillColor(228,228,228); doc.rect(M,y,W,7,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(70,70,70);
+      doc.text('Q',M+2,y+5);
+      doc.text('Your answer',M+16,y+5);
+      doc.text('Correct answer',M+82,y+5);
+      doc.text('Status',M+150,y+5);
+      y+=9;
+    }
+    function section(label){
+      if(y>260) y=newPage();
+      doc.setFillColor(242,242,242); doc.rect(M,y,W,8,'F');
+      doc.setTextColor(0,0,0); doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text(label,M+3,y+5.5);
+      y+=11;
+      colHeader();
+    }
+    function row(q,label){
+      const res=qResult(q), your=answerText(q), cor=displayCorrect(q);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+      const yourLines=doc.splitTextToSize(String(your),62);
+      const corLines=doc.splitTextToSize(String(cor),64);
+      const lines=Math.max(yourLines.length,corLines.length,1);
+      const rh=Math.max(9, 4+lines*4.2);
+      if(y+rh>276){ y=newPage(); colHeader(); }
+      doc.setDrawColor(225,225,225);
+      doc.setFillColor(res==='correct'?232:res==='wrong'?253:248, res==='correct'?248:res==='wrong'?235:248, res==='correct'?238:res==='wrong'?235:248);
+      doc.rect(M,y,W,rh,'F'); doc.rect(M,y,W,rh);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(20,20,20);
+      doc.text(String(label),M+2,y+6);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(40,40,40);
+      doc.text(yourLines,M+16,y+5.5);
+      doc.setTextColor(17,136,71);
+      doc.text(corLines,M+82,y+5.5);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8);
+      doc.setTextColor(res==='correct'?17:res==='wrong'?200:110, res==='correct'?136:res==='wrong'?16:110, res==='correct'?71:res==='wrong'?46:110);
+      doc.text(res==='correct'?'Correct':res==='wrong'?'Incorrect':'Empty',M+150,y+6);
+      y+=rh;
+    }
+    function group(q,label){ row(q,label); }
+    section('Listening  ('+lScore+'/40)');
+    for(let i=1;i<=40;i++) row('l'+i,i);
+    section('Reading  ('+rScore+'/40)');
+    for(let i=1;i<=40;i++) row('r'+i,i);
+    section('Writing Task 1  ('+w1+' words)');
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    const t1lines=doc.splitTextToSize(w1txt,W); for(const ln of t1lines){ if(y>274)y=newPage(); doc.text(ln,M,y); y+=5; }
+    y+=6;
+    section('Writing Task 2  ('+w2+' words)');
+    const t2lines=doc.splitTextToSize(w2txt,W); for(const ln of t2lines){ if(y>274)y=newPage(); doc.text(ln,M,y); y+=5; }
+    footer();
+    const totalPages=doc.internal.getNumberOfPages();
+    for(let p=1;p<=totalPages;p++){
+      doc.setPage(p);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(150,150,150);
+      doc.text('Page '+p+' of '+totalPages, 210-M, 292, {align:'right'});
+    }
+    doc.save('IELTS_Answer_Report_'+candidate.replace(/[^a-z0-9_-]/gi,'_')+'.pdf');
+  }catch(err){ console.error(err); if(!silent) window.print(); }
+}
+
+
+function showListenPart(n,btn){
+  for(let i=1;i<=4;i++) document.getElementById('listenPart'+i).classList.toggle('hidden', i!==n);
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('listeningScroll').scrollTop=0;
+}
+const READING_PASSAGES = ["<h2>The Extraordinary Watkin Tench</h2>\n<p>At the end of 18th century, life for the average British citizen was changing. The population grew as health and industrialisation took hold of the country. However, land and resources were limited. Families could not guarantee jobs for all of their children. People who were poor or destitute had little option. To make things worse, the rate of people who turned to crime to make a living increased. In Britain, the prisons were no longer large enough to hold the convicted people of this growing criminal class. Many towns and governments were at a loss as to what to do. However, another phenomenon that was happening in the 18th century was exploration of other continents. There were many ships looking for crew members who would risk a month-long voyage across a vast ocean. This job was risky and dangerous, so few would willingly choose it. However, with so many citizens without jobs or with criminal convictions, they had little choice. One such member of this new lower class of British citizens was Watkin Tench.</p>\n<p>Between 1788 and 1868, approximately 161,700 convicts were transported to the Australian colonies of New South Wales, Van Diemen’s Land and Western Australia. Tench was one of these unlucky convicts to sign onto a dangerous journey. When his ship set out in 1788, he signed a three years’ service to the First Fleet. Apart from his years in Australia, people knew little about his life back in Britain. It was said he was born on 6 October 1758 at Chester in the county of Cheshire in England. He came from a decent background. Tench was a son of Fisher Tench, a dancing master who ran a boarding school in the town, and Margaritta Tarleton of the Liverpool Tarletons.</p>\n<p>He grew up around a finer class of British citizens, and his family helped instruct the children of the wealthy in formal dance lessons. Though we don’t know for sure how Tench was educated in this small British town, we do know that he was well educated. His diaries from his travels to Australia are written in excellent English, a skill that not everyone was lucky to possess in the 18th century. Aside from this, we know little of Tench’s beginnings. We don’t know how he ended up convicted of a crime. But after he started his voyage, his life changed dramatically.</p>\n<p>During the voyage, which was harsh and took many months, Tench described landscape of different places. While sailing to Australia, Tench saw landscapes that were unfamiliar and new to him. Arriving in Australia, the entire crew was uncertain of what was to come in their new life. When they arrived in Australia, they established a British colony. Governor Philip was vested with complete authority over the inhabitants of the colony. Though still a young man, Philip was enlightened for his age. From stories of other British colonies, Philip learnt that conflict with the original peoples of the land was often a source of strife and difficulties. To avoid this, Philip’s personal intent was to establish harmonious relations with local Aboriginal people. But Philip’s job was even more difficult considering his crew. Other colonies were established with middle-class merchants and craftsmen. His crew were convicts, who had few other skills outside of their criminal histories. Along with making peace with the Aboriginal people, Philip also had to try to reform as well as discipline the convicts of the colony.</p>\n<p>From the beginning, Tench stood out as different from the other convicts. During his initial time in Australia, he quickly rose in his rank, and was given extra power and responsibility over the convicted crew members. However, he was also still very different from the upper-class rulers who came to rule over the crew. He showed humanity towards the convicted workers. He didn’t want to treat them as common criminals, but as trained military men. Under Tench’s authority, he released the convicts’ chains which were used to control them during the voyage. Tench also showed mercy towards the Aboriginal people. Governor Philip often pursued violent solutions to conflicts with the Aboriginal peoples. Tench disagreed strongly with this method. At one point, he was unable to follow the order given by Governor Philip to punish the ten Aboriginals.</p>\n<p>When they first arrived, Tench was fearful and contemptuous towards the Aboriginals, because the two cultures did not understand each other. However, gradually he got to know them individually and became close friends with them. Tench knew that the Aboriginal people would not cause them conflict if they looked for a peaceful solution. Though there continued to be conflict and violence, Tench’s efforts helped establish a more peaceful negotiation between the two groups when they settled territory and land-use issues.</p>\n<p>Meanwhile, many changes were made to the new colony. The Hawkesbury River was named by Governor Philip in June 1789. Many native bird species to the river were hunted by travelling colonists. The colonists were having a great impact on the land and natural resources. Though the colonists had made a lot of progress in the untamed lands of Australia, there were still limits. The convicts were notoriously ill-informed about Australian geography, as was evident in the attempt by twenty absconders to walk from Sydney to China in 1791, believing: “China might be easily reached, being not more than a hundred miles distant, and separated only by a river.” In reality, miles of ocean separated the two.</p>\n<p>Much of Australia was unexplored by the convicts. Even Tench had little understanding of what existed beyond the established lines of their colony. Slowly, but surely, the colonists expanded into the surrounding area. A few days after arrival at Botany Bay, their original location, the fleet moved to the more suitable Port Jackson where a settlement was established at Sydney Cove on 26 January 1788. This second location was strange and unfamiliar, and the fleet was on alert for any kind of suspicious behaviours. Though Tench had made friends in Botany Bay with Aboriginal peoples, he could not be sure this new land would be uninhabited. He recalled the first time he stepped into this unfamiliar ground with a boy who helped Tench navigate. In these new lands, he met an old Aboriginal.</p>", "<h2>Stress of Workplace</h2>\n<p><b>A</b><br>How busy is too busy? For some it means having to miss the occasional long lunch; for others it means missing lunch altogether. For a few, it is not being able to take a “sickie” once a month. Then there is a group of people for whom working every evening and weekend is normal, and franticness is the tempo of their lives. For most senior executives, workloads swing between extremely busy and frenzied. The vice-president of the management consultancy AT Kearney and its head of telecommunications for the Asia-Pacific region, Neil Plumridge, says his work weeks vary from a “manageable” 45 hours to 80 hours, but average 60 hours.</p>\n<p><b>B</b><br>Three warning signs alert Plumridge about his workload: sleep, scheduling and family. He knows he has too much on when he gets less than six hours of sleep for three consecutive nights; when he is constantly having to reschedule appointments; “and the third one is on the family side”, says Plumridge, the father of a three-year-old daughter, and expecting a second child in October. “If I happen to miss a birthday or anniversary, I know things are out of control.” Being “too busy” is highly subjective. But for any individual, the perception of being too busy over a prolonged period can start showing up as stress: disturbed sleep, and declining mental and physical health. National workers’ compensation figures show stress causes the most lost time of any workplace injury. Employees suffering stress are off work an average of 16.6 weeks. The effects of stress are also expensive. Comcare, the Federal Government insurer, reports that in 2003-04, claims for psychological injury accounted for 7% of claims but almost 27% of claim costs. Experts say the key to dealing with stress is not to focus on relief—a game of golf or a massage—but to reassess workloads. Neil Plumridge says he makes it a priority to work out what has to change; that might mean allocating extra resources to a job, allowing more time or changing expectations. The decision may take several days. He also relies on the advice of colleagues, saying his peers coach each other with business problems. “Just a fresh pair of eyes over an issue can help,” he says.</p>\n<p><b>C</b><br>Executive stress is not confined to big organisations. Vanessa Stoykov has been running her own advertising and public relations business for seven years, specialising in work for financial and professional services firms. Evolution Media has grown so fast that it debuted on the BRW Fast 100 list of fastest-growing small enterprises last year—just after Stoykov had her first child. Stoykov thrives on the mental stimulation of running her own business. “Like everyone, I have the occasional day when I think my head’s going to blow off,” she says. Because of the growth phase the business is in, Stoykov has to concentrate on short-term stress relief—weekends in the mountains, the occasional “mental health” day—rather than delegating more work. She says: “We’re hiring more people, but you need to train them, teach them about the culture and the clients, so it’s actually more work rather than less.”</p>\n<p><b>D</b><br>Identify the causes: Jan Eisner, Melbourne psychologist who specialises in executive coaching, says thriving on a demanding workload is typical of senior executives and other high-potential business people. Some people thrive on periods of adrenalin followed by quieter patches, while others thrive under sustained pressure. “We could take urine and blood hormonal measures and pass a judgement of whether someone’s physiologically stressed or not,” she says. “But that’s not going to give us an indicator of what their experience of stress is, and what the emotional and cognitive impacts of stress are going to be.”</p>\n<p><b>E</b><br>Eisner’s practice is informed by a movement known as positive psychology, a school of thought that argues “positive” experiences—feeling engaged, challenged, and that one is making a contribution to something meaningful—do not balance out negative ones such as stress; instead, they help people increase their resilience over time. Good stress, or positive experiences of being challenged and rewarded, is thus cumulative in the same way as bad stress. Eisner says many of the senior business people she coaches are relying more on regulating bad stress through methods such as meditation and yoga. She points to research showing that meditation can alter the biochemistry of the brain and actually help people “retrain” the way their brains and bodies react to stress. “Meditation and yoga enable you to shift the way that your brain reacts, so if you get proficient at it you’re in control.”</p>\n<p><b>F</b><br>Recent research, such as last year’s study of public servants by the British epidemiologist Sir Michael Marmot, shows the most important predictor of stress is the level of job control a person has. This debunks the theory that stress is the prerogative of high-achieving executives with type-A personalities and crazy working hours. Instead, Marmot’s and other research reveals they have the best kind of job: one that combines high demands (challenging work) with high control (autonomy). “The worst jobs are those that combine high demands and low control. People with demanding jobs but little autonomy have up to four times the probability of depression and more than double the risk of heart disease,” LaMontagne says. “Those two alone count for an enormous part of chronic diseases, and they represent a potentially preventable part.” Overseas, particularly in Europe, such research is leading companies to redesign organisational practices to increase employees’ autonomy, cutting absenteeism and lifting productivity.</p>\n<p><b>G</b><br>The Australian vice-president of AT Kearney, Neil Plumridge says, “Often stress is caused by our setting unrealistic expectations of ourselves. I’ll promise a client I’ll do something tomorrow, and then promise another client the same thing, when I really know it’s not going to happen. I’ve put stress on myself when I could have said to the clients: Why don’t I give that to you in 48 hours? The client doesn’t care.” Overcommitting is something people experience as an individual problem. We explain it as the result of procrastination or Parkinson’s law: that work expands to fill the time available. New research indicates that people may be hard-wired to do it.</p>\n<p><b>H</b><br>A study in the February issue of the Journal of Experimental Psychology shows that people always believe they will be less busy in the future than now. This is a misapprehension, according to the authors of the report, Professor Gal Zauberman, of the University of North Carolina, and Professor John Lynch, of Duke University. “On average, an individual will be just as busy two weeks or a month from now as he or she is today. But that is not how it appears to be in everyday life,” they wrote. “People often make commitments long in advance that they would never make if the same commitments required immediate action. That is, they discount future time investments relatively steeply.” Why do we perceive a greater “surplus” of time in the future than in the present? The researchers suggest that people underestimate completion times for tasks stretching into the future, and that they are bad at imagining future competition for their time.</p>", "<h2>Improving Patient Safety</h2>\n<h3>Packaging</h3>\n<p>One of the most prominent design issues in pharmacy is that of drug packaging and patient information leaflets (PILs). Many letters have appeared in The Journal’s letters pages over the years from pharmacists dismayed at the designs of packaging that are “accidents waiting to happen”. Packaging design in the pharmaceutical industry is handled by either in-house teams or design agencies. Designs for over-the-counter medicines, where characteristics such as attractiveness and distinguishability are regarded as significant, are usually commissioned from design agencies. A marketing team will prepare a brief and the designers will come up with perhaps six or seven designs. These are whittled down to two or three that might be tested on a consumer group. In contrast, most designs for prescription-only products are created in-house. In some cases, this may simply involve applying a company’s house design (ie, logo, colour, font, etc). The chosen design is then handed over to design engineers who work out how the packaging will be produced.</p>\n<h3>Design considerations</h3>\n<p>The author of the recently published “Information design for patient safety,” Thea Swayne, tracked the journey of a medicine from manufacturing plant, through distribution warehouses, pharmacies and hospital wards, to patients’ homes. Her book highlights a multitude of design problems with current packaging, such as look-alikes and sound-alikes, small type sizes and glare on blister foils. Situations in which medicines are used include a parent giving a cough medicine to a child in the middle of the night and a busy pharmacist selecting one box from hundreds. It is argued that packaging should be designed for moments such as these. “Manufacturers are not aware of the complex situations into which products go. As designers, we are interested in not what is supposed to happen in hospital wards, but what happens in the real world,” Ms Swayne said.</p>\n<p>Incidents where vincristine has been injected intrathecally instead of intravenously are a classic example of how poor design can contribute to harm. Investigations following these tragedies have attributed some blame to poor typescript.</p>\n<h3>Safety and compliance</h3>\n<p>Child protection is another area that gives designers opportunities to improve safety. According to the Child Accident Prevention Trust, seven out of 10 children admitted to hospital with suspected poisoning have swallowed medicines. Although child-resistant closures have reduced the number of incidents, they are not fully child-proof. The definition of such a closure is one that not more than 15 percent of children aged between 42 and 51 months can open within five minutes. There is scope for improving what is currently available, according to Richard Mawle, a freelance product designer. “Many child-resistant packs are based on strength. They do not necessarily prevent a child from access, but may prevent people with a disability,” he told The Journal. “The legal requirements are there for a good reason, but they are not good enough in terms of the users,” he said. “Older people, especially those with arthritis, may have the same level of strength as a child,” he explained, and suggested that better designs could rely on cognitive skills or be based on the physical size of hands.</p>\n<p>Mr Mawle worked with GlaxoSmithKline on a project to improve compliance through design, which involved applying his skills to packaging and PILs. Commenting on the information presented, he said: “There can be an awful lot of junk at the beginning of PILs. For example, why are company details listed towards the beginning of a leaflet when what might be more important for the patient is that the medicine should not be taken with alcohol?”</p>\n<h3>Design principles and guidelines</h3>\n<p>Look-alike boxes present a potential for picking errors and an obvious solution would be to use colours to highlight different strengths. However, according to Ms Swayne, colour differentiation needs to be approached with care. Not only should strong colour contrasts be used, but designating a colour to a particular strength (colour coding) is not recommended because this could lead to the user not reading the text on a box. Design features can provide the basis for lengthy debates. For example, one argument is that if all packaging is white with black lettering, people would have no choice but to read every box carefully. The problem is that trials of drug packaging design are few—common studies of legibility and comprehensibility concern road traffic signs and visual display units. Although some designers take results from such studies into account, proving that a particular feature is beneficial can be difficult. For example, EU legislation requires that packaging must now include the name of the medicine in Braille but, according to Karel van der Waarde, a design consultant to the pharmaceutical industry, “it is not known how much visually impaired patients will benefit nor how much the reading of visually able patients will be impaired”.</p>\n<p>More evidence might, however, soon be available. EU legislation requires PILs to reflect consultations with target patient groups to ensure they are legible, clear and easy to use. This implies that industry will have to start conducting tests. Dr van der Waarde has performed readability studies on boxes and PILs for industry. A typical study involves showing a leaflet or package to a small group and asking them questions to test understanding. Results and comments are used to modify the material, which is then tested on a larger group. A third group is used to show that any further changes made are an improvement. Dr van der Waarde is, however, sceptical about the legal requirements and says that many regulatory authorities do not have the resources to handle packaging information properly. “They do not look at the use of packaging in a practical context—they only see one box at a time and not several together as pharmacists would do,” he said.</p>\n<h3>Innovations</h3>\n<p>The RCA innovation exhibition this year revealed designs for a number of innovative objects. “The popper”, by Hugo Glover, aims to help arthritis sufferers remove tablets from blister packs, and “pluspoint”, by James Cobb, is an adrenaline auto-injector that aims to overcome the fact that many patients do not carry their auto-injectors due to their prohibitive size. The aim of good design, according Roger Coleman, professor of inclusive design at the RCA, is to try to make things more user-friendly as well as safer. Surely, in a patient-centred health system, that can only be a good thing. “Information design for patient safety” is not intended to be mandatory. Rather, its purpose is to create a basic design standard and to stimulate innovation. The challenge for the pharmaceutical industry, as a whole, is to adopt such a standard.</p>"];
+function showReadingPassage(n,btn){
+  document.getElementById('passageText').innerHTML = READING_PASSAGES[n-1];
+  for(let i=1;i<=3;i++) document.getElementById('rq'+i).classList.toggle('hidden', i!==n);
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('readLeft').scrollTop=0; document.getElementById('readRight').scrollTop=0;
+}
+function showWritingTask(task){
+  const head=document.getElementById('writingHead');
+  const prompt=document.getElementById('writingPrompt');
+  const t1=document.getElementById('wText1'), t2=document.getElementById('wText2');
+  const wc1=document.getElementById('wc1'), wc2=document.getElementById('wc2');
+  document.getElementById('wtab1').classList.toggle('active', task===1);
+  document.getElementById('wtab2').classList.toggle('active', task===2);
+  t1.classList.toggle('hidden', task!==1); wc1.classList.toggle('hidden', task!==1);
+  t2.classList.toggle('hidden', task!==2); wc2.classList.toggle('hidden', task!==2);
+  if(task===1){
+    head.innerHTML='<b>Writing Task 1</b>You should spend about 20 minutes on this task. Write at least 150 words.';
+    prompt.innerHTML=`<div class="w-prompt">The table below gives information about employment patterns for men and women in New Zealand in two separate years. Provide an overview of the information by identifying and describing the key details, and include comparisons where appropriate.</div>
+          <img class="w-task-img" src="https://engnovatewebsitestorage.blob.core.windows.net/ielts-writing-task-1-images/c51f8a47aa62aacc" alt="Writing Task 1 table">`;
+  } else {
+    head.innerHTML='<b>Writing Task 2</b>You should spend about 40 minutes on this task. Write at least 250 words.';
+    prompt.innerHTML=`<div class="w-prompt" style="font-style:normal;font-weight:400">In many countries, people now wear western clothes (suits, jeans) rather than the traditional clothing.<br><br>Why? Give reasons and relevant examples. Is this a positive or negative development?</div>`;
+  }
+}
+function wordCount(v){
+  return (v.trim().match(/\b\S+\b/g)||[]).length;
+}
+function updateWords(){
+  const w1=wordCount(document.getElementById('wText1').value);
+  const w2=wordCount(document.getElementById('wText2').value);
+  document.getElementById('wc1').textContent='Words: '+w1;
+  document.getElementById('wc2').textContent='Words: '+w2;
+  document.getElementById('wprog1').textContent=(w1>0?'1':'0')+' of 1';
+  document.getElementById('wprog2').textContent=(w2>0?'1':'0')+' of 1';
+}
+
+document.addEventListener('change', e=>{
+  if(e.target.matches('input[type="radio"], input[type="checkbox"], select[data-q]')){
+    if(e.target.matches('input[type="radio"]')){
+      document.querySelectorAll(`input[name="${e.target.name}"]`).forEach(inp=>inp.closest('.option')?.classList.toggle('selected', inp.checked));
+    }
+    if(e.target.matches('input[type="checkbox"]')){
+      e.target.closest('.option')?.classList.toggle('selected', e.target.checked);
+    }
+    refreshPalettes();
+  }
+});
+document.addEventListener('input', e=>{
+  if(e.target.matches('input.ans-input[data-q]')) refreshPalettes();
+});
+initAudioRestrictions();
+function getAnswer(q){
+  const checks = [...document.querySelectorAll(`input[type="checkbox"][data-q="${q}"]:checked`)].map(x=>x.value);
+  if(checks.length) return checks;
+  const radio = document.querySelector(`input[type="radio"][data-q="${q}"]:checked`);
+  if(radio) return [radio.value];
+  const el = document.querySelector(`[data-q="${q}"]`);
+  if(el && !el.matches('input[type="checkbox"],input[type="radio"]')) return [el.value.trim()].filter(Boolean);
+  return [];
+}
+function norm(x){
+  return String(x||'').trim().toLowerCase()
+    .replace(/[’‘]/g,"'")
+    .replace(/[“”]/g,'"')
+    .replace(/\s+/g,' ')
+    .replace(/\.$/,'');
+}
+function isCorrect(q){
+  const got=getAnswer(q).map(norm).filter(Boolean);
+  const key=(ANSWERS[q]||[]).map(norm);
+  if(!key.length) return false;
+  return got.some(v=>key.includes(v));
+}
+
+
+// Reading split drag
+(function(){
+  const handle=document.getElementById('dragbar'), left=document.getElementById('readLeft'), wrap=document.getElementById('readWrap');
+  let drag=false, startX=0, startW=0;
+  handle.addEventListener('mousedown', e=>{drag=true;startX=e.clientX;startW=left.offsetWidth;handle.classList.add('active');document.body.style.cursor='col-resize';document.body.style.userSelect='none';e.preventDefault();});
+  document.addEventListener('mousemove', e=>{ if(!drag)return; const total=wrap.offsetWidth-handle.offsetWidth; let w=Math.max(300,Math.min(total-330,startW+(e.clientX-startX))); left.style.width=w+'px'; });
+  document.addEventListener('mouseup',()=>{ if(!drag)return; drag=false; handle.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; });
+})();
+
+// Highlight and Note (unified popup, matches real IELTS: Highlight / Comment / Clear All)
+const markPopup=document.getElementById('markPopup');
+const noteModal=document.getElementById('noteModal');
+const noteTip=document.getElementById('noteTip');
+document.addEventListener('mouseup', e=>{
+  if(['INPUT','TEXTAREA','SELECT','BUTTON','A','AUDIO'].includes(e.target.tagName)) return;
+  setTimeout(()=>{
+    const mark=e.target.closest('.mark-yellow,.mark-note');
+    const sel=window.getSelection();
+    const txt=sel ? sel.toString().trim() : '';
+    if(txt){
+      savedRange=sel.getRangeAt(0).cloneRange(); clickedMark=null;
+      document.getElementById('mpHighlight').disabled=false;
+      showAt(markPopup, e.clientX, e.clientY);
+    } else if(mark){
+      clickedMark=mark; savedRange=null;
+      document.getElementById('mpHighlight').disabled=true;
+      showAt(markPopup, e.clientX, e.clientY);
+    }
+  },0);
+});
+document.addEventListener('mousedown', e=>{
+  if(!markPopup.contains(e.target) && !noteModal.contains(e.target)){
+    markPopup.style.display='none';
+  }
+});
+function showAt(el,x,y){
+  el.style.display='block';
+  const pad=10;
+  el.style.left=Math.min(x, window.innerWidth-el.offsetWidth-pad)+'px';
+  el.style.top=Math.min(y+8, window.innerHeight-el.offsetHeight-pad)+'px';
+}
+function wrapSelection(cls,note=''){
+  if(!savedRange) return;
+  const sp=document.createElement('span');
+  sp.className=cls;
+  if(note) sp.dataset.note=note;
+  try{ savedRange.surroundContents(sp); }
+  catch(e){ const frag=savedRange.extractContents(); sp.appendChild(frag); savedRange.insertNode(sp); }
+  window.getSelection().removeAllRanges();
+  savedRange=null;
+}
+function mpHighlight(){
+  markPopup.style.display='none';
+  wrapSelection('mark-yellow');
+}
+function mpComment(){
+  markPopup.style.display='none';
+  document.getElementById('noteText').value = clickedMark ? (clickedMark.dataset.note||'') : '';
+  noteModal.style.display='flex';
+  document.getElementById('noteText').focus();
+}
+function closeNote(){ noteModal.style.display='none'; savedRange=null; clickedMark=null; }
+function saveNote(){
+  const v=document.getElementById('noteText').value.trim();
+  if(clickedMark){
+    if(v){ clickedMark.dataset.note=v; clickedMark.classList.remove('mark-yellow'); clickedMark.classList.add('mark-note'); }
+    clickedMark=null;
+  } else if(v){
+    wrapSelection('mark-note', v);
+  }
+  noteModal.style.display='none';
+}
+function mpClearAll(){
+  markPopup.style.display='none';
+  if(clickedMark){
+    const p=clickedMark.parentNode;
+    while(clickedMark.firstChild) p.insertBefore(clickedMark.firstChild, clickedMark);
+    p.removeChild(clickedMark);
+    clickedMark=null;
+  } else {
+    if(!confirm('Clear all highlights and comments in this passage?')) return;
+    document.querySelectorAll('.mark-yellow,.mark-note').forEach(m=>{
+      const p=m.parentNode;
+      while(m.firstChild) p.insertBefore(m.firstChild, m);
+      p.removeChild(m);
+    });
+    savedRange=null;
+  }
+}
+document.addEventListener('mouseover', e=>{
+  const n=e.target.closest('.mark-note');
+  if(n && n.dataset.note){
+    noteTip.textContent=n.dataset.note;
+    noteTip.style.display='block';
+    const r=n.getBoundingClientRect();
+    noteTip.style.left=Math.min(r.left, window.innerWidth-300)+'px';
+    noteTip.style.top=Math.max(8, r.top-noteTip.offsetHeight-10)+'px';
+  }
+});
+document.addEventListener('mouseout', e=>{
+  if(e.target.closest('.mark-note')) noteTip.style.display='none';
+});
+
+// ---- Options menu (top-right hamburger): Submit / Contrast / Text size ----
+function openOptions(){
+  document.getElementById('optionsOverlay').classList.add('open');
+  showOptPage('main');
+}
+function closeOptions(){
+  document.getElementById('optionsOverlay').classList.remove('open');
+}
+function closeOptionsIfOutside(e){
+  if(e.target.id==='optionsOverlay') closeOptions();
+}
+function showOptPage(name){
+  const map={main:'optPageMain', submit:'optPageSubmit', contrast:'optPageContrast', textsize:'optPageTextSize'};
+  document.querySelectorAll('.opt-page').forEach(p=>p.classList.add('hidden'));
+  document.getElementById(map[name]).classList.remove('hidden');
+}
+function confirmSubmitFromMenu(){
+  closeOptions();
+  submitSection(currentSection, true);
+}
+function setContrastTheme(t){
+  document.body.classList.remove('theme-invert','theme-yellow');
+  if(t==='invert') document.body.classList.add('theme-invert');
+  if(t==='yellow') document.body.classList.add('theme-yellow');
+  document.querySelectorAll('#optPageContrast .opt-choice').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`#optPageContrast .opt-choice[data-theme="${t}"]`).classList.add('active');
+}
+function setTextSize(t){
+  document.body.classList.remove('text-large','text-xlarge');
+  if(t==='large') document.body.classList.add('text-large');
+  if(t==='xlarge') document.body.classList.add('text-xlarge');
+  document.querySelectorAll('#optPageTextSize .opt-choice').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`#optPageTextSize .opt-choice[data-size="${t}"]`).classList.add('active');
+}
+</script>
+</body>
+</html>

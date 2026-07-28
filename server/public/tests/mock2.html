@@ -1,0 +1,1307 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Mock Test Center </title>
+<style>
+:root {
+  --ielts-red:#c8102e;
+  --ielts-dark:#222;
+  --line:#d7d7d7;
+  --panel:#f4f4f2;
+  --blue:#3d8fe3;
+  --green:#118847;
+}
+* { box-sizing:border-box; }
+html,body { margin:0; height:100%; font-family:Arial, Helvetica, sans-serif; color:#111; background:#fff; }
+button, input, textarea, select { font-family:Arial, Helvetica, sans-serif; }
+a { color:inherit; }
+.hidden { display:none!important; }
+
+#login, #intro, #result { min-height:100vh; display:flex; align-items:center; justify-content:center; background:#f1f1ed; padding:24px; }
+.login-card, .intro-card, .result-card { background:#fff; border:1px solid #ddd; border-radius:4px; width:min(560px,96vw); padding:34px; box-shadow:0 8px 30px rgba(0,0,0,.12); }
+.brand { display:flex; align-items:center; gap:10px; text-decoration:none; font-weight:700; color:#111; }
+.brand .logo { background:var(--ielts-red); color:#fff; font-weight:900; letter-spacing:2px; padding:5px 10px; }
+.tg-circle { width:22px; height:22px; border-radius:50%; background:#229ED9; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:14px; font-weight:700; flex:0 0 auto; }
+.login-card h1, .intro-card h1 { margin:20px 0 8px; font-size:24px; }
+.form-row { margin:14px 0; }
+.form-row label { display:block; margin-bottom:6px; font-size:13px; font-weight:700; }
+.form-row input { width:100%; padding:12px; border:1px solid #aaa; border-radius:3px; font-size:15px; }
+.main-btn { background:var(--ielts-red); color:#fff; border:0; border-radius:3px; padding:12px 22px; font-weight:700; cursor:pointer; }
+.secondary-btn { background:#f5f5f5; color:#111; border:1px solid #aaa; border-radius:3px; padding:11px 18px; font-weight:700; cursor:pointer; }
+.main-btn:hover { background:#a70d25; }
+.intro-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:24px 0; }
+.intro-box { border:1px solid #ddd; background:#fafafa; padding:16px; border-radius:3px; text-align:center; }
+.intro-box b { display:block; font-size:28px; margin-bottom:4px; }
+.intro-box span { font-size:12px; color:#555; }
+
+#exam { height:100vh; display:flex; flex-direction:column; background:#fff; }
+.topbar { height:54px; border-bottom:1px solid #cfcfcf; display:flex; align-items:center; justify-content:space-between; padding:0 18px; background:#fff; flex:0 0 auto; }
+.top-left { display:flex; gap:16px; align-items:center; }
+.top-right { display:flex; align-items:center; gap:6px; }
+.icon-btn { border:0; background:transparent; padding:7px; cursor:default; display:flex; align-items:center; justify-content:center; border-radius:4px; }
+.icon-btn:hover { background:#f2f2f2; }
+#menuBtn { cursor:pointer; }
+
+.options-overlay { position:fixed; inset:0; background:rgba(0,0,0,.28); z-index:9000; display:none; }
+.options-overlay.open { display:block; }
+.options-panel { position:absolute; top:0; right:0; height:100%; width:340px; max-width:92vw; background:#fff; box-shadow:-6px 0 24px rgba(0,0,0,.2); display:flex; flex-direction:column; animation:slideInOpt .18s ease; }
+@keyframes slideInOpt { from{ transform:translateX(100%);} to{ transform:translateX(0);} }
+.opt-page { display:flex; flex-direction:column; height:100%; }
+.opt-page.hidden { display:none; }
+.opt-header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; padding:16px; border-bottom:1px solid #e2e2e2; font-size:15px; }
+.opt-header > span { text-align:center; font-weight:700; grid-column:2; }
+.opt-header .opt-back { justify-self:start; grid-column:1; background:none; border:0; color:#111; font-weight:700; cursor:pointer; font-size:14px; padding:0; }
+.opt-header .opt-close { justify-self:end; grid-column:3; background:none; border:0; font-size:18px; cursor:pointer; color:#333; padding:0; }
+.opt-header.opt-header-main > span { grid-column:1; text-align:left; }
+.opt-body { padding:16px; display:flex; flex-direction:column; gap:10px; overflow:auto; flex:1; }
+.opt-submit-btn { display:flex; align-items:center; gap:10px; background:var(--ielts-red); color:#fff; border:0; border-radius:6px; padding:16px; font-weight:700; font-size:15px; cursor:pointer; }
+.opt-submit-btn .opt-arrow { margin-left:auto; }
+.opt-row { display:flex; align-items:center; justify-content:space-between; background:#fff; border:1px solid #e2e2e2; border-radius:4px; padding:14px; font-size:14px; cursor:pointer; color:#111; text-align:left; }
+.opt-row:hover { background:#fafafa; }
+.opt-row-arrow { color:#999; }
+.opt-choice.active { background:#f0f0f0; font-weight:700; }
+.opt-center { align-items:center; text-align:center; justify-content:center; flex:1; }
+.opt-submit-graphic { width:56px; height:56px; border-radius:50%; background:#eaf2ff; display:flex; align-items:center; justify-content:center; font-size:24px; color:#3d8fe3; margin:10px auto 6px; }
+.opt-center h3 { margin:4px 0; font-size:16px; }
+.opt-center p { color:#666; font-size:13px; line-height:1.5; margin:0 0 6px; }
+.opt-confirm-btn { background:var(--ielts-red); color:#fff; border:0; border-radius:6px; padding:14px 20px; font-weight:700; cursor:pointer; margin-top:14px; width:100%; }
+
+body.theme-invert #exam { filter:invert(1) hue-rotate(180deg); }
+body.theme-invert #exam img, body.theme-invert #exam svg.school-map { filter:invert(1) hue-rotate(180deg); }
+body.theme-yellow #exam { background:#000; }
+body.theme-yellow #exam .topbar, body.theme-yellow #exam .section-banner, body.theme-yellow #exam .section-tabs,
+body.theme-yellow #exam .part-tabs, body.theme-yellow #exam .passage-nav, body.theme-yellow #exam .audio-strip,
+body.theme-yellow #exam .bottom-submit, body.theme-yellow #exam .paper-card, body.theme-yellow #exam .passage-text,
+body.theme-yellow #exam .notes, body.theme-yellow #exam .writing-head, body.theme-yellow #exam .read-pane,
+body.theme-yellow #exam .w-left, body.theme-yellow #exam .w-right, body.theme-yellow #exam .w-bottom,
+body.theme-yellow #exam .choice-grid, body.theme-yellow #exam .option, body.theme-yellow #exam .instruction,
+body.theme-yellow #exam .qnav-btn, body.theme-yellow #exam .w-prompt { background:#000 !important; color:#ffd400 !important; border-color:#665500 !important; }
+body.theme-yellow #exam .ans-input, body.theme-yellow #exam .ans-select, body.theme-yellow #exam .w-textarea { background:#111 !important; color:#ffd400 !important; border-color:#665500 !important; }
+body.theme-yellow #exam .qnav-btn.answered { background:#332b00 !important; border-color:#ffd400 !important; }
+body.theme-yellow #exam .timer { background:#111 !important; color:#ffd400 !important; border-color:#665500 !important; }
+body.theme-yellow #exam h2, body.theme-yellow #exam h3, body.theme-yellow #exam b, body.theme-yellow #exam .qnum { color:#ffd400 !important; }
+body.text-large #exam { zoom:1.15; }
+body.text-xlarge #exam { zoom:1.3; }
+
+.mark-popup { position:fixed; z-index:10000; background:#fff; border:1px solid #d5d5d5; box-shadow:0 6px 22px rgba(0,0,0,.2); border-radius:6px; display:none; overflow:hidden; min-width:160px; }
+.mark-popup button { display:flex; align-items:center; gap:10px; width:100%; border:0; background:#fff; padding:11px 16px; text-align:left; cursor:pointer; font-size:14px; font-weight:600; color:#111; }
+.mark-popup button + button { border-top:1px solid #eee; }
+.mark-popup button:hover { background:#f5f5f5; }
+.mark-popup button:disabled { color:#c2c2c2; cursor:not-allowed; }
+.mark-popup button:disabled:hover { background:#fff; }
+.mp-icon { width:16px; text-align:center; flex:0 0 auto; }
+.topbar .brand { font-size:14px; }
+.candidate { font-size:13px; color:#444; }
+.timer { border:1px solid #bbb; background:#f8f8f8; padding:7px 14px; border-radius:3px; font-weight:700; min-width:88px; text-align:center; }
+.timer.warn { color:var(--ielts-red); border-color:var(--ielts-red); background:#fff3f3; }
+.section-banner { background:#f4f4f2; border-bottom:1px solid #d4d4d4; padding:10px 18px; font-size:14px; flex:0 0 auto; }
+.section-banner b { display:block; margin-bottom:3px; }
+.section-tabs { display:flex; align-items:center; gap:2px; background:#e8e8e5; border-bottom:1px solid #ccc; flex:0 0 auto; }
+.section-tabs button { border:0; background:#e8e8e5; padding:9px 22px; cursor:pointer; font-weight:700; color:#555; }
+.section-tabs button.active { background:#fff; color:var(--ielts-red); border-bottom:3px solid var(--ielts-red); }
+
+.exam-screen { display:none; flex:1; min-height:0; background:#fff; }
+.exam-screen.active { display:flex; flex-direction:column; }
+
+.audio-strip { background:#f7f7f7; border-bottom:1px solid #ccc; padding:12px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.audio-strip audio { height:34px; flex:1; min-width:300px; }
+.audio-note { font-size:12px; color:#555; }
+
+.scroll-area { flex:1; overflow:auto; padding:20px; }
+.paper-card { max-width:980px; margin:0 auto 18px; background:#fff; border:1px solid #ddd; padding:22px 28px; }
+.paper-card h2 { font-size:18px; margin:0 0 12px; }
+.paper-card h3 { font-size:16px; margin:16px 0 10px; }
+.center-title { text-align:center; }
+.instruction { background:#f5f5f5; border-left:4px solid var(--ielts-red); padding:10px 12px; margin:10px 0 16px; line-height:1.45; font-size:14px; }
+.q-list { padding-left:28px; line-height:2.0; }
+.q-list li { margin-bottom:8px; }
+.ans-input, .ans-select { border:1px solid #888; border-radius:2px; padding:5px 7px; font-size:14px; background:#fff; margin:0 4px; min-height:30px; }
+.ans-input:focus, .ans-select:focus { outline:2px solid rgba(200,16,46,.18); border-color:var(--ielts-red); }
+.question { border-top:1px solid #e2e2e2; padding-top:14px; margin-top:14px; }
+.qnum { display:inline-block; min-width:26px; height:26px; line-height:24px; text-align:center; border:1px solid #777; font-weight:700; margin-bottom:8px; }
+.options { display:flex; flex-direction:column; gap:8px; }
+.option { display:flex; gap:9px; align-items:flex-start; border:1px solid #ddd; border-radius:3px; padding:9px 10px; cursor:pointer; background:#fff; }
+.option:hover, .option.selected { background:#fff7f7; border-color:var(--ielts-red); }
+.choice-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px; background:#fafafa; border:1px solid #ddd; padding:12px; margin:12px 0; font-size:14px; line-height:1.4; }
+.notes { background:#fafafa; border:1px solid #ddd; padding:16px 18px; line-height:1.9; }
+.notes p { margin:6px 0; }
+.subhead { font-weight:700; margin-top:12px!important; }
+.map-wrap { background:#fff; border:1px solid #ddd; padding:10px; overflow:auto; margin:12px 0; }
+.school-map { width:100%; max-width:760px; display:block; margin:auto; }
+.maptxt { font:15px Arial; fill:#111; }
+.mapnum { font:bold 16px Arial; fill:#111; }
+.maptitle { font:bold 18px Arial; fill:#111; }
+
+.bottom-submit { flex:0 0 auto; border-top:1px solid #ccc; background:#fff; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.bottom-submit.sticky-low { position:relative; z-index:2; }
+.qnav { flex:1; display:flex; align-items:center; gap:10px; overflow-x:auto; padding:2px 0; }
+.qnav-part { display:flex; gap:4px; align-items:center; }
+.qnav-part-label { font-size:11px; font-weight:700; color:#777; margin-right:2px; white-space:nowrap; }
+.qnav-btn { width:26px; height:26px; flex:0 0 auto; border:1px solid #aaa; background:#fff; font-size:11px; font-weight:700; cursor:pointer; border-radius:2px; color:#333; }
+.qnav-btn:hover { border-color:var(--ielts-red); }
+.qnav-btn.answered { background:#e8f5ec; border-color:var(--green); color:var(--green); }
+.qnav-btn.current { outline:2px solid var(--ielts-red); outline-offset:1px; }
+.qnav-summary { font-size:12px; color:#555; white-space:nowrap; flex:0 0 auto; border-left:1px solid #ddd; padding-left:12px; margin-left:2px; }
+.audio-strip .restricted-audio { display:flex; align-items:center; gap:10px; flex:1; min-width:280px; background:#fff; border:1px solid #ccc; border-radius:3px; padding:8px 12px; }
+.audio-strip .restricted-audio button.play-once-btn { border:1px solid var(--ielts-red); background:var(--ielts-red); color:#fff; border-radius:50%; width:34px; height:34px; font-size:14px; cursor:pointer; flex:0 0 auto; }
+.audio-strip .restricted-audio button.play-once-btn:disabled { background:#bbb; border-color:#bbb; cursor:not-allowed; }
+.audio-strip .vol-wrap { display:flex; align-items:center; gap:6px; flex:1; }
+.audio-strip .vol-wrap input[type=range] { flex:1; }
+.audio-strip .aud-status { font-size:12px; color:#666; white-space:nowrap; }
+
+.part-tabs { max-width:980px; margin:0 auto 16px; display:flex; border:1px solid #bbb; background:#eee; }
+.part-tabs button { flex:1; border:0; background:#eee; padding:10px; cursor:pointer; font-weight:700; }
+.part-tabs button.active { background:#fff; color:var(--ielts-red); border-bottom:3px solid var(--ielts-red); }
+
+.reading-main { flex:1; min-height:0; display:flex; overflow:hidden; }
+.read-pane { overflow:auto; padding:18px; }
+#readLeft { width:52%; min-width:300px; }
+#readRight { flex:1; min-width:330px; border-left:1px solid #cfcfcf; }
+.dragbar { width:8px; background:#e1e1e1; border-left:1px solid #c3c3c3; border-right:1px solid #c3c3c3; cursor:col-resize; display:flex; align-items:center; justify-content:center; color:#999; }
+.dragbar:hover, .dragbar.active { background:var(--ielts-red); color:#fff; }
+.passage-text { font-size:15px; line-height:1.72; max-width:780px; margin:0 auto; }
+.passage-text h2 { text-align:center; margin-top:0; font-size:20px; }
+.passage-text h3 { text-align:center; font-size:16px; margin-top:-8px; }
+.passage-text p { margin:0 0 14px; text-align:justify; }
+.passage-nav { display:flex; gap:6px; padding:10px 18px; border-bottom:1px solid #ccc; background:#f4f4f4; }
+.passage-nav button { border:1px solid #aaa; background:#fff; padding:8px 14px; cursor:pointer; font-weight:700; }
+.passage-nav button.active { background:var(--ielts-red); color:#fff; border-color:var(--ielts-red); }
+
+.writing-screen { flex:1; min-height:0; display:flex; flex-direction:column; background:#fff; }
+.writing-head { background:#f0f0eb; border-bottom:1px solid #d5d5d5; padding:12px 16px; line-height:1.45; }
+.writing-head b { display:block; margin-bottom:5px; }
+.writing-body { flex:1; min-height:0; display:flex; overflow:hidden; }
+.w-left, .w-right { width:50%; overflow:auto; padding:22px; }
+.w-left { border-right:1px solid #d2d2d2; }
+.w-prompt { border:1px solid #ddd; padding:22px; margin-bottom:22px; font-weight:700; font-style:italic; line-height:1.4; font-size:18px; }
+.w-task-img { max-width:100%; border:1px solid #ccc; display:block; margin:auto; }
+.w-textarea { width:100%; height:calc(100% - 36px); min-height:340px; border:1px solid #cfcfcf; padding:18px; resize:none; font-size:15px; line-height:1.6; outline:none; }
+.word-count { text-align:right; color:#666; font-size:13px; margin-top:8px; }
+.w-bottom { height:58px; border-top:1px solid #d0d0d0; display:flex; align-items:center; justify-content:center; background:#fff; gap:200px; flex:0 0 auto; }
+.w-tab { text-align:center; font-weight:700; cursor:pointer; padding:8px 24px; border-radius:3px; }
+.w-tab.active { background:#f0f6ff; outline:2px solid #d8e8ff; }
+.blue-check { position:absolute; right:28px; bottom:74px; width:48px; height:48px; border-radius:50%; background:#4a90e2; color:#fff; border:0; font-size:26px; font-weight:900; cursor:pointer; }
+
+.hl-popup, .clear-popup { position:fixed; z-index:10000; background:#fff; border:1px solid #999; box-shadow:0 4px 18px rgba(0,0,0,.22); border-radius:4px; display:none; overflow:hidden; }
+.hl-popup button, .clear-popup button { display:block; width:100%; border:0; background:#fff; padding:9px 16px; text-align:left; cursor:pointer; font-size:13px; }
+.hl-popup button:hover, .clear-popup button:hover { background:#f5f5f5; }
+.mark-yellow { background:#fff176; border-radius:2px; cursor:pointer; }
+.mark-note { background:#b3e5fc; border-radius:2px; cursor:pointer; position:relative; }
+.note-tip { position:fixed; z-index:10001; display:none; background:#333; color:#fff; padding:7px 10px; border-radius:4px; max-width:280px; font-size:12px; line-height:1.4; white-space:pre-wrap; box-shadow:0 4px 16px rgba(0,0,0,.3); }
+.note-modal { position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:10002; display:none; align-items:center; justify-content:center; }
+.note-box { width:min(360px,90vw); background:#fff; border-radius:4px; padding:18px; box-shadow:0 8px 30px rgba(0,0,0,.25); }
+.note-box h3 { margin:0 0 10px; font-size:16px; }
+.note-box textarea { width:100%; height:110px; border:1px solid #aaa; padding:8px; resize:none; font-size:14px; }
+.note-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+.note-actions button { padding:8px 14px; border:1px solid #aaa; background:#fff; cursor:pointer; }
+.note-actions .save { background:var(--ielts-red); color:#fff; border-color:var(--ielts-red); }
+
+.result-card { width:min(760px,96vw); text-align:center; }
+.result-card h1 { margin:20px 0 10px; }
+.result-message { border:1px solid #ddd; background:#fafafa; padding:24px; margin:20px 0; font-size:18px; line-height:1.6; }
+.result-footer { margin-top:16px; font-size:15px; }
+.result-footer a { color:#229ED9; font-weight:700; }
+.result-actions { display:flex; justify-content:center; gap:10px; margin-top:20px; flex-wrap:wrap; }
+
+@media(max-width:800px){
+  .intro-grid { grid-template-columns:1fr; }
+  .reading-main, .writing-body { flex-direction:column; }
+  #readLeft { width:100%!important; min-height:45%; }
+  #readRight { border-left:0; border-top:1px solid #ccc; }
+  .dragbar { display:none; }
+  .w-left, .w-right { width:100%; min-height:45%; }
+  .w-bottom { gap:30px; }
+}
+
+.review-box { display:none; margin-top:22px; text-align:left; border:1px solid #ddd; border-radius:4px; background:#fff; padding:16px; max-height:52vh; overflow:auto; }
+.review-box h2 { font-size:18px; margin:0 0 12px; color:#111; }
+.review-summary { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:12px; }
+.review-summary div { background:#f7f7f7; border:1px solid #e0e0e0; padding:10px; border-radius:3px; font-size:14px; }
+.review-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+.review-table th { background:#f2f2f2; border:1px solid #ddd; padding:7px; text-align:left; }
+.review-table td { border:1px solid #eee; padding:6px 7px; vertical-align:top; }
+.review-ok { color:#118847; font-weight:700; }
+.review-bad { color:#c8102e; font-weight:700; }
+.review-empty { color:#777; font-weight:700; }
+
+@media print {
+  body { background:#fff; }
+  #login,#intro,#exam,.mark-popup,.note-modal,.note-tip,.options-overlay { display:none!important; }
+  #result { display:block!important; min-height:auto; padding:0; }
+  .result-card { box-shadow:none; border:0; width:100%; }
+  .result-actions { display:none; }
+  .brand { justify-content:center; margin-bottom:18px; }
+  .result-message { border:1px solid #000; }
+}
+</style>
+
+      <style>
+        .brand-badge, 
+        .brand, 
+        .gate-footer, 
+        .tg-circle, 
+        [title*="Telegram"], 
+        [title*="blog"], 
+        [alt*="IELTS Mock Team"], 
+        a[href*="t.me"] {
+          display: none !important;
+          opacity: 0 !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+        }
+      </style>
+      </head>
+      
+<body>
+
+<div id="login">
+  <div class="login-card">
+    <a class="brand" href="#" target="_blank"><span class="logo">IELTS</span><span class="tg-circle">✈</span><span>IELTS Mock Test Center</span></a>
+    <h1>Full IELTS Computer-delivered Test</h1>
+    <p style="color:#555;line-height:1.5">Listening, Reading and Writing sections. Enter your candidate details to begin.</p>
+    <div class="form-row"><label>Candidate ID</label><input id="candId" placeholder="e.g. STUDENT"></div>
+    <div class="form-row"><label>Access code</label><input id="accessCode" placeholder="Optional" type="password" onkeydown="if(event.key==='Enter')showIntro()"></div>
+    <button class="main-btn" onclick="showIntro()">Start</button>
+  </div>
+</div>
+
+<div id="intro" class="hidden">
+  <div class="intro-card">
+    <a class="brand" href="#" target="_blank"><span class="logo">IELTS</span><span class="tg-circle">✈</span><span>IELTS Mock Test Center</span></a>
+    <h1>IELTS Full Test 40</h1>
+    <p id="welcomeName" style="color:#555"></p>
+    <div class="intro-grid">
+      <div class="intro-box"><b>40</b><span>Listening questions</span></div>
+      <div class="intro-box"><b>40</b><span>Reading questions</span></div>
+      <div class="intro-box"><b>2</b><span>Writing tasks</span></div>
+    </div>
+    <p style="color:#666">The timer starts when you press Begin Test. Once you submit a section, you move to the next section.</p>
+    <button class="main-btn" onclick="beginExam()">Begin Test →</button>
+  </div>
+</div>
+
+<div id="exam" class="hidden">
+  <div class="topbar">
+    <div class="top-left">
+      <a class="brand" href="#" target="_blank"><span class="logo">IELTS</span><span class="tg-circle">✈</span><span>IELTS Mock Test Center</span></a>
+      <span class="candidate">ID: <b id="topCid">—</b></span>
+    </div>
+    <div class="top-right">
+      <div class="timer" id="timer">--:--</div>
+      <button type="button" class="icon-btn" tabindex="-1" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 10h2v7H3zM8 6h2v11H8zM13 12h2v5h-2zM18 3h2v14h-2z" fill="#555"/></svg>
+      </button>
+      <button type="button" class="icon-btn" tabindex="-1" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 22c1.1 0 2-.9 2-2h-4a2 2 0 0 0 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" fill="#555"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="menuBtn" onclick="openOptions()" aria-label="Options">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z" fill="#333"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="section-banner"><b id="bannerTitle">Listening</b><span id="bannerText">You should answer all questions.</span></div>
+  <div class="section-tabs">
+    <button id="tabListening" class="active">Listening</button>
+    <button id="tabReading">Reading</button>
+    <button id="tabWriting">Writing</button>
+  </div>
+
+  <main id="listening" class="exam-screen active">
+    <div class="audio-strip">
+      <b>IELTS Listening Audio</b>
+      <audio id="audio" preload="none" src="https://files.catbox.moe/v74cap.mp3" style="display:none"></audio>
+      <div class="restricted-audio">
+        <button type="button" class="play-once-btn" id="playOnceBtn" onclick="playAudioOnce()">▶</button>
+        <div class="vol-wrap">
+          <span style="font-size:12px">🔊</span>
+          <input type="range" id="volSlider" min="0" max="1" step="0.05" value="1" oninput="document.getElementById('audio').volume=this.value">
+        </div>
+        <span class="aud-status" id="audStatus">Not started</span>
+      </div>
+      <span class="audio-note">As in the real test, the recording plays <b>once only</b> and cannot be rewound, paused, or replayed.</span>
+    </div>
+    <div class="scroll-area" id="listeningScroll">
+      <div class="part-tabs">
+        <button class="active" onclick="showListenPart(1,this)">Part 1</button>
+        <button onclick="showListenPart(2,this)">Part 2</button>
+        <button onclick="showListenPart(3,this)">Part 3</button>
+        <button onclick="showListenPart(4,this)">Part 4</button>
+      </div>
+
+      <div id="listenPart1">
+<section class="paper-card">
+  <h2>PART 1</h2>
+  <div class="instruction">Questions 1–6<br>Complete the form below.<br>Write <b>NO MORE THAN TWO WORDS AND/OR A NUMBER</b> for each answer.</div>
+  <h3 class="center-title">Moving Company Service Report</h3>
+  <div class="notes">
+    <p><i>Example</i> &nbsp;&nbsp; Full Name: <b>Jane Bond</b></p>
+    <p><b>Phone Number:</b> <input class="ans-input" data-q="l1" type="text" placeholder="answer" style="width:180px"></p>
+    <p><b>USA Address:</b> 509 <input class="ans-input" data-q="l2" type="text" placeholder="answer" style="width:190px"><br>1137 <input class="ans-input" data-q="l3" type="text" placeholder="answer" style="width:210px">, Seattle</p>
+    <p><b>Packing Day:</b> <input class="ans-input" data-q="l4" type="text" placeholder="answer" style="width:160px"></p>
+    <p><b>Date:</b> 11th March</p>
+    <p><b>Clean-up by:</b> 5:00 p.m.</p>
+    <p><b>Day:</b> <input class="ans-input" data-q="l5" type="text" placeholder="answer" style="width:160px"> 14th</p>
+    <p><b>About the Price:</b> Rather expensive</p>
+    <p><b>Storage Time:</b> <input class="ans-input" data-q="l6" type="text" placeholder="answer" style="width:160px"></p>
+  </div>
+  <div class="instruction" style="margin-top:24px">Questions 7–10<br>Where does the speaker decide to put items in?<br>Write the correct letter, <b>A, B, or C</b>, next to questions 7–10.</div>
+  <div class="choice-grid">
+    <div>A. in emergency pack</div><div>B. in personal package</div><div>C. in storage with the furniture</div>
+  </div>
+  <ol class="q-list" start="7">
+    <li>cutlery and dishes <select class="ans-select" data-q="l7"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></li>
+    <li>kettle <select class="ans-select" data-q="l8"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></li>
+    <li>alarm clock <select class="ans-select" data-q="l9"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></li>
+    <li>CD player <select class="ans-select" data-q="l10"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></li>
+  </ol>
+</section>
+</div>
+      <div id="listenPart2" class="hidden">
+<section class="paper-card">
+  <h2>PART 2</h2>
+  <div class="instruction">Questions 11–16<br>Complete the table below.<br>Write <b>NO MORE THAN THREE WORDS AND/OR A NUMBER</b> for each answer.</div>
+  <h3 class="center-title">ANNUAL WULLABALLOO CONFERENCE</h3>
+  <div class="notes">
+    <p><b>9:00 a.m.</b> — Title of the lecture: <input class="ans-input" data-q="l11" type="text" placeholder="answer" style="width:220px"><br>Lecturer: John Smith from the <input class="ans-input" data-q="l12" type="text" placeholder="answer" style="width:240px"> <span style="float:right"><b>Location:</b> Main Hall</span></p>
+    <p><b>10:30 a.m.</b> — Presentation of papers <span style="float:right">Garden Room on the ground floor</span></p>
+    <p><b>11:15 a.m.</b> — Coffee break <span style="float:right">Main Hall</span></p>
+    <p><b>1:00 p.m.</b> — Lunch <span style="float:right">Sea View Restaurant on the <input class="ans-input" data-q="l13" type="text" placeholder="answer" style="width:150px"><br>The lift on the <input class="ans-input" data-q="l14" type="text" placeholder="answer" style="width:150px"></span></p>
+    <p style="clear:both"><b>2:00 p.m.</b> — Presentation of further papers <span style="float:right">Ballroom</span></p>
+    <p><input class="ans-input" data-q="l15" type="text" placeholder="answer" style="width:120px"> <b>p.m.</b> — Afternoon tea <span style="float:right">Ballroom</span></p>
+    <p><b>5:00 p.m.</b> — Conference will be finished <span style="float:right">Main Hall</span></p>
+    <p><b>5:10–6:10 p.m.</b> — Informal reception <span style="float:right"><input class="ans-input" data-q="l16" type="text" placeholder="answer" style="width:170px"></span></p>
+  </div>
+  <div class="instruction" style="margin-top:24px">Questions 17–20<br>Choose the correct letter, <b>A, B, or C</b>.</div>
+  <div class="question"><div class="qnum">17</div><p>Tickets are available</p><div class="options"><label class="option"><input type="radio" name="l17" data-q="l17" value="A"><span>A. only at the reception desk.</span></label><label class="option"><input type="radio" name="l17" data-q="l17" value="B"><span>B. tomorrow evening.</span></label><label class="option"><input type="radio" name="l17" data-q="l17" value="C"><span>C. at any time before the reception.</span></label></div></div>
+  <div class="question"><div class="qnum">18</div><p>The delegates will be charged</p><div class="options"><label class="option"><input type="radio" name="l18" data-q="l18" value="A"><span>A. $6.50</span></label><label class="option"><input type="radio" name="l18" data-q="l18" value="B"><span>B. $15.00</span></label><label class="option"><input type="radio" name="l18" data-q="l18" value="C"><span>C. $25.00</span></label></div></div>
+  <div class="question"><div class="qnum">19</div><p>The restaurant is famous for</p><div class="options"><label class="option"><input type="radio" name="l19" data-q="l19" value="A"><span>A. steak.</span></label><label class="option"><input type="radio" name="l19" data-q="l19" value="B"><span>B. fish.</span></label><label class="option"><input type="radio" name="l19" data-q="l19" value="C"><span>C. barbecue.</span></label></div></div>
+  <div class="question"><div class="qnum">20</div><p>The trip on Sunday costs</p><div class="options"><label class="option"><input type="radio" name="l20" data-q="l20" value="A"><span>A. $35 in total.</span></label><label class="option"><input type="radio" name="l20" data-q="l20" value="B"><span>B. $35 plus entrance fees.</span></label><label class="option"><input type="radio" name="l20" data-q="l20" value="C"><span>C. $35 plus lunch.</span></label></div></div>
+</section>
+</div>
+      <div id="listenPart3" class="hidden">
+<section class="paper-card">
+  <h2>PART 3</h2>
+  <div class="instruction">Questions 21–26<br>Choose the correct letter, <b>A, B, or C</b>.</div>
+  <h3 class="center-title">GENERAL COURSE DETAILS</h3>
+  <div class="question"><div class="qnum">21</div><p>What is the defining characteristic of a specialised course?</p><div class="options"><label class="option"><input type="radio" name="l21" data-q="l21" value="A"><span>A. Taking a proficiency exam</span></label><label class="option"><input type="radio" name="l21" data-q="l21" value="B"><span>B. Attending the class frequently</span></label><label class="option"><input type="radio" name="l21" data-q="l21" value="C"><span>C. Compulsory and regular</span></label></div></div>
+  <div class="question"><div class="qnum">22</div><p>The Microbiology courses are available for</p><div class="options"><label class="option"><input type="radio" name="l22" data-q="l22" value="A"><span>A. full-time and flexible-time students.</span></label><label class="option"><input type="radio" name="l22" data-q="l22" value="B"><span>B. Microbiology students only.</span></label><label class="option"><input type="radio" name="l22" data-q="l22" value="C"><span>C. students on a flexible schedule.</span></label></div></div>
+  <div class="question"><div class="qnum">23</div><p>The Biology courses are available for</p><div class="options"><label class="option"><input type="radio" name="l23" data-q="l23" value="A"><span>A. all students.</span></label><label class="option"><input type="radio" name="l23" data-q="l23" value="B"><span>B. full-time students only.</span></label><label class="option"><input type="radio" name="l23" data-q="l23" value="C"><span>C. freshmen only.</span></label></div></div>
+  <div class="question"><div class="qnum">24</div><p>Who are interested in Microbiology courses?</p><div class="options"><label class="option"><input type="radio" name="l24" data-q="l24" value="A"><span>A. People who need work experience</span></label><label class="option"><input type="radio" name="l24" data-q="l24" value="B"><span>B. People from off-campus</span></label><label class="option"><input type="radio" name="l24" data-q="l24" value="C"><span>C. People who work at hospital</span></label></div></div>
+  <div class="question"><div class="qnum">25</div><p>A Medical Science course will be opened next year because</p><div class="options"><label class="option"><input type="radio" name="l25" data-q="l25" value="A"><span>A. there are no experimental facilities.</span></label><label class="option"><input type="radio" name="l25" data-q="l25" value="B"><span>B. the lab equipment is too expensive.</span></label><label class="option"><input type="radio" name="l25" data-q="l25" value="C"><span>C. the building is damaged.</span></label></div></div>
+  <div class="question"><div class="qnum">26</div><p>Which is the quickest increasing subject in enrolment?</p><div class="options"><label class="option"><input type="radio" name="l26" data-q="l26" value="A"><span>A. Medical Science</span></label><label class="option"><input type="radio" name="l26" data-q="l26" value="B"><span>B. Statistics</span></label><label class="option"><input type="radio" name="l26" data-q="l26" value="C"><span>C. Environmental Science</span></label></div></div>
+  <div class="instruction" style="margin-top:24px">Questions 27–29<br>Choose <b>THREE</b> letters, <b>A–G</b>, and write each next to questions 27–29.<br>Which THREE compulsory courses must be taken?</div>
+  <div class="choice-grid">
+    <div>A. Medical Science</div><div>B. Computing</div><div>C. Mathematics</div><div>D. Laboratory Techniques</div><div>E. Statistics</div><div>F. Medicine</div><div>G. Environmental Science</div>
+  </div>
+  <ol class="q-list" start="27">
+    <li>Compulsory course <select class="ans-select" data-q="l27"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></li>
+    <li>Compulsory course <select class="ans-select" data-q="l28"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></li>
+    <li>Compulsory course <select class="ans-select" data-q="l29"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></li>
+  </ol>
+  <div class="instruction" style="margin-top:24px">Question 30<br>Complete the sentence below.<br>Write <b>NO MORE THAN TWO WORDS</b> for the answer.</div>
+  <p>There are three full scholarships that cover tuition and provide $1,500 cash as a <input class="ans-input" data-q="l30" type="text" placeholder="answer" style="width:220px">.</p>
+</section>
+</div>
+      <div id="listenPart4" class="hidden">
+<section class="paper-card">
+  <h2>PART 4</h2>
+  <div class="instruction">Questions 31–37<br>Complete the notes below.<br>Write <b>NO MORE THAN TWO WORDS</b> for each answer.</div>
+  <h3 class="center-title">How to Choose Flooring Materials</h3>
+  <div class="notes">
+    <p class="subhead">Source</p>
+    <p>There are some man-made materials like <input class="ans-input" data-q="l31" type="text" placeholder="answer" style="width:160px">.</p>
+    <p>Before being used, material undergoes <input class="ans-input" data-q="l32" type="text" placeholder="answer" style="width:170px">.</p>
+    <p>Wood should be cut and <input class="ans-input" data-q="l33" type="text" placeholder="answer" style="width:190px">.</p>
+    <p>Stone should be cut and <input class="ans-input" data-q="l34" type="text" placeholder="answer" style="width:170px">.</p>
+    <p class="subhead">Selection</p>
+    <p>Aside from environmental factors, one should take <input class="ans-input" data-q="l35" type="text" placeholder="answer" style="width:170px"> into account during construction.</p>
+    <p>Some properties of materials affect mood, such as <input class="ans-input" data-q="l36" type="text" placeholder="answer" style="width:180px">, texture, and colour.</p>
+    <p>Use a mathematical formula to choose the type of wood, because <input class="ans-input" data-q="l37" type="text" placeholder="answer" style="width:160px"> are subjective, which are ambiguous in verbal description.</p>
+  </div>
+  <div class="instruction" style="margin-top:24px">Questions 38–40<br>Complete the table below.<br>Write <b>NO MORE THAN TWO WORDS AND/OR A NUMBER</b> for each answer.</div>
+  <div class="notes">
+    <p><b>MATERIAL</b> <span style="display:inline-block;width:180px"></span> <b>REFLECTANCE RATE</b></p>
+    <p>Polished silver <span style="display:inline-block;width:190px"></span> Almost 1.0</p>
+    <p>White-painted plastic <span style="display:inline-block;width:145px"></span> Approximately <input class="ans-input" data-q="l38" type="text" placeholder="answer" style="width:120px"></p>
+    <p>Quarry tile <span style="display:inline-block;width:206px"></span> Approximately <input class="ans-input" data-q="l39" type="text" placeholder="answer" style="width:120px"></p>
+    <p><input class="ans-input" data-q="l40" type="text" placeholder="answer" style="width:160px"> <span style="display:inline-block;width:116px"></span> Almost 0.0</p>
+  </div>
+</section>
+</div>
+    </div>
+    <div class="bottom-submit sticky-low">
+      <div class="qnav" id="qnavListening"></div>
+      <span class="qnav-summary" id="qnavListeningSummary"></span>
+      <button class="main-btn" onclick="submitSection('listening')">Submit & Move to Reading</button>
+    </div>
+  </main>
+
+  <main id="reading" class="exam-screen">
+    <div class="passage-nav">
+      <button class="active" onclick="showReadingPassage(1,this)">Passage 1</button>
+      <button onclick="showReadingPassage(2,this)">Passage 2</button>
+      <button onclick="showReadingPassage(3,this)">Passage 3</button>
+    </div>
+    <div class="reading-main" id="readWrap">
+      <div class="read-pane" id="readLeft"><div id="passageText" class="passage-text">
+<h2>Insects and Inspired Artificial Robots</h2>
+<p><b>A</b><br>The creation of artificial devices with life-like characteristics has been pursued for over 2,000 years, beginning, as did so many things in our modern world, in Ancient Greece. For example, among the inventions of Hero of Alexandria were a windmill-operated pipe organ and a mechanical theatrical play.</p>
+<p><b>B</b><br>With the raise of cybernetic approaches in the late 1940s and early 1950s. A wide variety of electromechanical machines designed to mimic biological processes and systems were constructed. Perhaps the best-known and most directly relevant to biorobotics is W. Gray Walters’ robotic “tortoises” Elsie and Elmer. Walters was a physiologist who made important early contributions to electroencephalography and clinical neurophysiology. His tortoises were small mobile robots covered by a hard shell. The robots were driven by steerable motorized wheels and possessed a headlight, a light sensor, and a touch sensor that responded when the shell was hit. Their behavior was controlled by electronic circuit analogues of neural circuits. The behavioral repertoire of the tortoises included exploration, both positive and negative phototropism, and obstacle avoidance. The activation of these different behaviors in interaction with the robots’ environment could produce a variety of behavioral sequences. Although originally designed to explore Walters’ theories of brain function, the tortoises became objects of popular fascination in much the same way that ancient automata did.</p>
+<p><b>C</b><br>The seeds of the modern renaissance of biorobotics were sown from the mid 1980s to mid 1990s. A key event in this resurgence was Rodney Brooks’ work on behavior-based robots. Although not as directly based on biology as later work would be, Brooks argues that nontrivial and flexible behavior in a robot could be generated by the interaction between simple control machinery and its environment, demonstrating his point with robots accomplishing such tasks as insect-like walking. Another important milestone was Raibert’s work on hopping and legged robots, which emphasized the central role of energetics in the dynamic balance and locomotion of animals. Based on studies of serpentine motion, Hirose developed a number of snake-like locomotors and manipulators. In the early 1990s, Beer, Quinn, Chiel &amp; Ritzmann developed a series of hexapod robots based directly on cockroach and stick insect body morphology and neural control. Early biorobotic work on the sensory side includes Franceshini’s robotic compound eye based on studies of insect eyes and motion-sensitive neurons in the fly, Webb’s robotic model of cricket phonotaxis and Grasso et al’s robotic model of lobster chemical orientation strategies. An early example of robots whose control was based on theories of human brain function is given by the work of Edelman et al.</p>
+<p><b>D</b><br>There has been an explosion of work in biorobotics in recent years, with robotic vocal tracts, jaws, retinas, expressive faces, hands, arms, legs, etc. deployed on robotic worms, snakes, ants, flies, crickets, cockroaches, walking stick insects, dinosaurs, bats, lobsters, tuna, pickerel, turkeys, apes and humanoids. Thus, no brief survey could possibly do justice to the range of work being undertaken.</p>
+<p><b>E</b><br>A recent example of biologically-inspired robotics is Spenko et al’s work on a hexapedal robotic climber called RiSE. In order to grip a vertical surface, this robot combines both bonding mechanisms inspired by the structure of gecko feet and interlocking mechanisms inspired by the structure of insect spines and claws. In addition, its design is based on a set of principles that have been found to be common to many climbing animals: a sprawled posture keeps the body close to the surface so as to reduce the pitch-back moment; front limbs pull inward and rear limbs push outward so as to counteract the pitch-back moment; a long body reduces the pull-in force required of the front limbs; lateral forces act inward toward the central axis of the body; complaint legs, ankles and toes so as to distribute contact forces. Each of the six legs of RiSE have two degrees of freedom and the robot also possesses s static tail that presses against the surface to reduce the pull-in forces required of the front legs. The robot uses a wave gait in which only one leg at a time is lifted from the surface. In addition to an open-loop gait generator, RiSE utilizes a variety of feedback controllers, including traction force control, normal force control and gait regulation. In addition, the robot has a pawing behavior that allows a foot that fails to grasp on initial contact to reestablish a grip on the climbing surface. Spenko et al have demonstrated that RiSE is able to traverse a variety of horizontal and vertical surfaces, including climbing trees and brick or cinder block walls.</p>
+<p><b>F</b><br>A powerful example of biorobotic modeling is provided by the aerodynamics of insect flight. Although quasi-steady-state aerodynamical analyses of the sort used to understand aircraft have been successfully applied to larger animals, they have not been very successful for explaining the generation of lift in small flying insects due to the tiny wingspans, relatively slow flight speeds and extremely fast wing movements involved. However, a recent biorobotic model by Dickinson and colleagues has begun to shed considerable light on the unsteady aerodynamics insect flight. Because of the delicate size and high speed of insect wings, direct measurement of the forces involved is extremely difficult. For this reason, a robotic model with a 60 cm wingspan was used to explore the non-steady-state airflow during hovering by the fruit fly Drosophila melanogaster. In order to reproduce the Reynolds number relevant to small insects flying in air, their model was submerged in mineral oil and scaled both in space and time. Force sensors at the base of one wing allowed direct measurement of the forces produced and illumination of air bubbles in the tank allowed direct observation of the fluid flow around the robotic wings. Dickinson and colleagues found that three major mechanisms contributed to lift generation in the model. First, vortices formed at the leading edge of the wing produce lift during much of the power stroke. Second, additional lift is produced by circulation of air around the wings due to rapid rotation at the beginning and end of each stroke. Third, further forces are produces at the start of each upstroke and downstroke due to collisions of the wings with the swirling wake produced by the previous stroke, a mechanism termed wake capture. Due to the sensitivity of these latter two mechanisms to the timing of wing rotation, the model suggests that the control of small details of wing motion can be used in steering flight.</p>
+</div></div>
+      <div class="dragbar" id="dragbar">⋮</div>
+      <div class="read-pane" id="readRight">
+
+        <div id="rq1">
+<section class="paper-card">
+<h2>Questions 1–13</h2>
+<div class="instruction">Questions 1–6<br>Choose the most suitable headings for paragraphs A–F from the list of headings below. Write the appropriate number (<b>i–x</b>) in boxes 1–6.<br><br><b>NB</b> There are more headings than paragraphs, so you will not use them all.</div>
+<div class="choice-grid">
+<div>i. A biorobotic model exploring insect flight</div><div>ii. Modern practices of artificial device usage</div><div>iii. Robotic climber better than gecko</div><div>iv. Insect flight inspires the applications of steering operation</div><div>v. Prosperity of biorobot family</div><div>vi. The revival of modern biorobotics</div><div>vii. Combine machines and environment</div><div>viii. The advent of robots and their effects on modern society</div><div>ix. The most famous biorobot in early days</div><div>x. Bionics device is not a modern conception</div>
+</div>
+<ol class="q-list">
+<li>Paragraph A <select class="ans-select" data-q="r1"><option value="">—</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option><option value="ix">ix</option><option value="x">x</option></select></li>
+<li>Paragraph B <select class="ans-select" data-q="r2"><option value="">—</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option><option value="ix">ix</option><option value="x">x</option></select></li>
+<li>Paragraph C <select class="ans-select" data-q="r3"><option value="">—</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option><option value="ix">ix</option><option value="x">x</option></select></li>
+<li>Paragraph D <select class="ans-select" data-q="r4"><option value="">—</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option><option value="ix">ix</option><option value="x">x</option></select></li>
+<li>Paragraph E <select class="ans-select" data-q="r5"><option value="">—</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option><option value="ix">ix</option><option value="x">x</option></select></li>
+<li>Paragraph F <select class="ans-select" data-q="r6"><option value="">—</option><option value="i">i</option><option value="ii">ii</option><option value="iii">iii</option><option value="iv">iv</option><option value="v">v</option><option value="vi">vi</option><option value="vii">vii</option><option value="viii">viii</option><option value="ix">ix</option><option value="x">x</option></select></li>
+</ol>
+<div class="instruction">Questions 7–11<br>Use the information in the passage to match the people (A–E) with opinions or deeds below. <b>NB</b> Some people may match more than one discovery.</div>
+<div class="choice-grid"><div>A. W. Gray Walters</div><div>B. Rodney Brooks</div><div>C. Michael Dickinson</div><div>D. Spenko et al</div><div>E. Edelman et al</div></div>
+<ol class="q-list" start="7">
+<li>Made contributions to neurophysiology. <select class="ans-select" data-q="r7"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></li>
+<li>Endowed robots with agility from the innovation of machinery environmental fit. <select class="ans-select" data-q="r8"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></li>
+<li>Generated mechanical intelligence inspired by the way human brain works. <select class="ans-select" data-q="r9"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></li>
+<li>Modified mechanical models based on the structure of insects. <select class="ans-select" data-q="r10"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></li>
+<li>Found the mechanism of insect flight. <select class="ans-select" data-q="r11"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option></select></li>
+</ol>
+<div class="instruction">Questions 12–13<br>Choose words from the passage to answer the questions. Write <b>NO MORE THAN THREE WORDS</b> for each answer.</div>
+<ol class="q-list" start="12">
+<li>What plays the most critical role in Raibert’s hopping and legged robots? <input class="ans-input" data-q="r12" type="text" placeholder="answer" style="width:190px"></li>
+<li>What allowed direct measurement of the lifting forces of the biorobotic model? <input class="ans-input" data-q="r13" type="text" placeholder="answer" style="width:190px"></li>
+</ol>
+</section>
+</div>
+
+        <div id="rq2" class="hidden">
+<section class="paper-card">
+<h2>Questions 14–26</h2>
+<div class="instruction">Questions 14–16<br>Reading Passage 2 contains 8 paragraphs A–H. Which paragraphs state the following information?</div>
+<ol class="q-list" start="14">
+<li>Why did an interior Australian lake change to a dry flat? <select class="ans-select" data-q="r14"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+<li>When did an ostrich-sized bird go extinct? <select class="ans-select" data-q="r15"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+<li>Why did the ancient settlers in Australia burn the forests? <select class="ans-select" data-q="r16"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+</ol>
+<div class="instruction">Questions 17–20<br>Choose <b>ONE</b> phrase from the list of phrases A–G below to complete each of the sentences.</div>
+<div class="choice-grid">
+<div>A. Caused the failure of the annual Australian Monsoon by burning tracts.</div><div>B. Were responsible for the distinction of an Australian giant animal species because of their massive hunting.</div><div>C. Showed that in the past the interior of Australia was not a desert.</div><div>D. Altered the flora to decrease the exchange of water vapor between the biosphere and atmosphere.</div><div>E. Suggested that the changed climate of the Australian continent was led by the weakened penetration of monsoon moisture into the interior.</div><div>F. Indicated that the forests facilitated more rainfall.</div><div>G. Indicated that the extinction of an Australian species resulted from changes in the local ecosystem.</div>
+</div>
+<ol class="q-list" start="17">
+<li>Ancient hunters and gatherers <select class="ans-select" data-q="r17"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></li>
+<li>January issue of Geology <select class="ans-select" data-q="r18"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></li>
+<li>Fossil remains <select class="ans-select" data-q="r19"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></li>
+<li>A climate model <select class="ans-select" data-q="r20"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option></select></li>
+</ol>
+<div class="instruction">Questions 21–26<br>Do the following statements agree with the claims of the writer in Reading Passage 2?<br><br>Write <b>TRUE</b>, <b>FALSE</b> or <b>NOT GIVEN</b>.</div>
+<ol class="q-list" start="21">
+<li>According to the WWF, Australia has the worst record of animal extinction in the world. <select class="ans-select" data-q="r21"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+<li>In Australia, hundreds of endangered animals and plants species will keep disappearing. <select class="ans-select" data-q="r22"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+<li>The distinction of Australian giant animals was a knock-on effect after human burning ceased the monsoon. <select class="ans-select" data-q="r23"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+<li>Lake Eyre has always been filled with salty water. <select class="ans-select" data-q="r24"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+<li>It is a theoretic assumption that early humans burned massive tracts in Australia. <select class="ans-select" data-q="r25"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+<li>Varieties of plants from Australia’s interior have now adapted to recurrent fires. <select class="ans-select" data-q="r26"><option value="">—</option><option value="TRUE">TRUE</option><option value="FALSE">FALSE</option><option value="NOT GIVEN">NOT GIVEN</option></select></li>
+</ol>
+</section>
+</div>
+
+        <div id="rq3" class="hidden">
+<section class="paper-card">
+<h2>Questions 27–40</h2>
+<div class="instruction">Questions 27–33<br>Reading Passage 3 has eight paragraphs A–H. Which paragraph contains the following information?</div>
+<ol class="q-list" start="27">
+<li>The definition of phenology <select class="ans-select" data-q="r27"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+<li>How Sparks first became aware of amateur records <select class="ans-select" data-q="r28"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+<li>How people reacted to their involvement in data collection <select class="ans-select" data-q="r29"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+<li>The necessity to encourage amateur data collection <select class="ans-select" data-q="r30"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+<li>A description of using amateur records to make predictions <select class="ans-select" data-q="r31"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+<li>Records of a competition providing clues to climate change <select class="ans-select" data-q="r32"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+<li>A description of a very old record compiled by generations of amateur naturalists <select class="ans-select" data-q="r33"><option value="">—</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option><option value="E">E</option><option value="F">F</option><option value="G">G</option><option value="H">H</option></select></li>
+</ol>
+<div class="instruction">Questions 34–36<br>Complete the sentences below with <b>NO MORE THAN TWO WORDS</b> from the passage for each answer.</div>
+<ol class="q-list" start="34">
+<li>Walter Coates’s records largely contain the information of <input class="ans-input" data-q="r34" type="text" placeholder="answer" style="width:170px">.</li>
+<li>Robert Marsham is famous for recording the <input class="ans-input" data-q="r35" type="text" placeholder="answer" style="width:170px"> of animals and plants on his land.</li>
+<li>According to some phenologists, global warming may cause the number of waterfowl in North America to drop significantly due to increased <input class="ans-input" data-q="r36" type="text" placeholder="answer" style="width:170px">.</li>
+</ol>
+<div class="instruction">Questions 37–40<br>Choose the correct letter, <b>A, B, C or D</b>.</div>
+<div class="question"><div class="qnum">37</div><p>Why do a lot of scientists discredit the data collected by amateurs?</p><div class="options"><label class="option"><input type="radio" name="r37" data-q="r37" value="A"><span>A. Scientific methods were not used in data collection.</span></label><label class="option"><input type="radio" name="r37" data-q="r37" value="B"><span>B. Amateur observers are not careful in recording their data.</span></label><label class="option"><input type="radio" name="r37" data-q="r37" value="C"><span>C. Amateur data is not reliable.</span></label><label class="option"><input type="radio" name="r37" data-q="r37" value="D"><span>D. Amateur data is produced by wrong candidates.</span></label></div></div>
+<div class="question"><div class="qnum">38</div><p>Mark Schwartz used the example of leaves to illustrate that</p><div class="options"><label class="option"><input type="radio" name="r38" data-q="r38" value="A"><span>A. amateur records can’t be used.</span></label><label class="option"><input type="radio" name="r38" data-q="r38" value="B"><span>B. amateur records are always unsystematic.</span></label><label class="option"><input type="radio" name="r38" data-q="r38" value="C"><span>C. the colour change of leaves is hard to observe.</span></label><label class="option"><input type="radio" name="r38" data-q="r38" value="D"><span>D. valuable information is often precise.</span></label></div></div>
+<div class="question"><div class="qnum">39</div><p>How do the scientists suggest amateur data should be used?</p><div class="options"><label class="option"><input type="radio" name="r39" data-q="r39" value="A"><span>A. Using improved methods</span></label><label class="option"><input type="radio" name="r39" data-q="r39" value="B"><span>B. Being more careful in observation</span></label><label class="option"><input type="radio" name="r39" data-q="r39" value="C"><span>C. Using raw materials</span></label><label class="option"><input type="radio" name="r39" data-q="r39" value="D"><span>D. Applying statistical techniques in data collection</span></label></div></div>
+<div class="question"><div class="qnum">40</div><p>What’s the implication of phenology for ordinary people?</p><div class="options"><label class="option"><input type="radio" name="r40" data-q="r40" value="A"><span>A. It empowers the public.</span></label><label class="option"><input type="radio" name="r40" data-q="r40" value="B"><span>B. It promotes public relations.</span></label><label class="option"><input type="radio" name="r40" data-q="r40" value="C"><span>C. It warns people of animal infestation.</span></label><label class="option"><input type="radio" name="r40" data-q="r40" value="D"><span>D. It raises awareness about climate change in the public.</span></label></div></div>
+</section>
+</div>
+            </div>
+    </div>
+    <div class="bottom-submit sticky-low">
+      <div class="qnav" id="qnavReading"></div>
+      <span class="qnav-summary" id="qnavReadingSummary"></span>
+      <button class="main-btn" onclick="submitSection('reading')">Submit & Move to Writing</button>
+    </div>
+  </main>
+
+  <main id="writing" class="exam-screen">
+    <div class="writing-screen">
+      <div class="writing-head" id="writingHead"><b>Writing Task 1</b>You should spend about 20 minutes on this task. Write at least 150 words.</div>
+      <div class="writing-body">
+        <div class="w-left" id="writingPrompt">
+          <div class="w-prompt">The table shows information about the numbers of Australian people who visited the seven most popular destinations in 1999 and 2009.</div>
+          <img class="w-task-img" src="https://engnovatewebsitestorage.blob.core.windows.net/ielts-writing-task-1-images/e60c81c392969881" alt="Writing Task 1 table">
+        </div>
+        <div class="w-right">
+          <textarea class="w-textarea" id="wText1" placeholder="Start writing your response here..." oninput="updateWords()"></textarea>
+          <div class="word-count" id="wc1">Words: 0</div>
+          <textarea class="w-textarea hidden" id="wText2" placeholder="Start writing your response here..." oninput="updateWords()"></textarea>
+          <div class="word-count hidden" id="wc2">Words: 0</div>
+        </div>
+      </div>
+      <button class="blue-check" onclick="submitSection('writing')">✓</button>
+      <div class="w-bottom">
+        <div id="wtab1" class="w-tab active" onclick="showWritingTask(1)">Part 1<br><span id="wprog1">0 of 1</span></div>
+        <div id="wtab2" class="w-tab" onclick="showWritingTask(2)">Part 2<br><span id="wprog2">0 of 1</span></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="result" class="hidden">
+  <div class="result-card">
+    <a class="brand" href="#" target="_blank"><span class="logo">IELTS</span><span class="tg-circle">✈</span><span>IELTS Mock Test Center</span></a>
+    <h1>Test Submitted</h1>
+    <div class="result-message">
+      <b>Results will be communicated to you separately.</b>
+      <div class="result-footer">
+        <a href="#" target="_blank">IELTS Mock Test Center</a>
+        (<a href="#" target="_blank"></a> - for more real exam tests
+      </div>
+    </div>
+    <p id="resultMeta" style="color:#555"></p>
+    <div class="result-actions">
+      <button class="main-btn" onclick="downloadPDF()">Save PDF Report</button>
+      <button class="secondary-btn" onclick="toggleReview()">Check Answers</button>
+      <button class="secondary-btn" onclick="location.reload()">Restart</button>
+    </div>
+    <div id="reviewBox" class="review-box"></div>
+  </div>
+</div>
+
+<div class="mark-popup" id="markPopup">
+  <button id="mpHighlight" onclick="mpHighlight()"><span class="mp-icon">🖊️</span>Highlight</button>
+  <button id="mpComment" onclick="mpComment()"><span class="mp-icon">💬</span>Comment</button>
+  <button id="mpClear" onclick="mpClearAll()"><span class="mp-icon">✳️</span>Clear All</button>
+</div>
+<div class="note-tip" id="noteTip"></div>
+<div class="note-modal" id="noteModal">
+  <div class="note-box">
+    <h3>Enter your note</h3>
+    <textarea id="noteText" placeholder="Enter your note"></textarea>
+    <div class="note-actions">
+      <button onclick="closeNote()">Cancel</button>
+      <button class="save" onclick="saveNote()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="options-overlay" id="optionsOverlay" onmousedown="closeOptionsIfOutside(event)">
+  <div class="options-panel" id="optionsPanel">
+    <div class="opt-page" id="optPageMain">
+      <div class="opt-header opt-header-main"><span>Options</span><button class="opt-close" onclick="closeOptions()">✕</button></div>
+      <div class="opt-body">
+        <button class="opt-submit-btn" onclick="showOptPage('submit')">Submit Answers<span class="opt-arrow">→</span></button>
+        <button class="opt-row" onclick="showOptPage('contrast')"><span>Contrast</span><span class="opt-row-arrow">→</span></button>
+        <button class="opt-row" onclick="showOptPage('textsize')"><span>Text size</span><span class="opt-row-arrow">→</span></button>
+      </div>
+    </div>
+    <div class="opt-page hidden" id="optPageSubmit">
+      <div class="opt-header"><button class="opt-back" onclick="showOptPage('main')">← Options</button><span>Submit</span><button class="opt-close" onclick="closeOptions()">✕</button></div>
+      <div class="opt-body opt-center">
+        <div class="opt-submit-graphic">⬆</div>
+        <h3>Ready to submit?</h3>
+        <p>Once submitted you will see your results.<br>Make sure all answers are filled in.</p>
+        <button class="opt-confirm-btn" onclick="confirmSubmitFromMenu()">✓ Confirm &amp; Submit</button>
+      </div>
+    </div>
+    <div class="opt-page hidden" id="optPageContrast">
+      <div class="opt-header"><button class="opt-back" onclick="showOptPage('main')">← Options</button><span>Contrast</span><button class="opt-close" onclick="closeOptions()">✕</button></div>
+      <div class="opt-body">
+        <button class="opt-row opt-choice active" data-theme="default" onclick="setContrastTheme('default')">Black on white</button>
+        <button class="opt-row opt-choice" data-theme="invert" onclick="setContrastTheme('invert')">White on black</button>
+        <button class="opt-row opt-choice" data-theme="yellow" onclick="setContrastTheme('yellow')">Yellow on black</button>
+      </div>
+    </div>
+    <div class="opt-page hidden" id="optPageTextSize">
+      <div class="opt-header"><button class="opt-back" onclick="showOptPage('main')">← Options</button><span>Text size</span><button class="opt-close" onclick="closeOptions()">✕</button></div>
+      <div class="opt-body">
+        <button class="opt-row opt-choice active" data-size="regular" onclick="setTextSize('regular')">Regular</button>
+        <button class="opt-row opt-choice" data-size="large" onclick="setTextSize('large')">Large</button>
+        <button class="opt-row opt-choice" data-size="xlarge" onclick="setTextSize('xlarge')">Extra large</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+        // Auto-login extension injected by IELTS Mock Platform
+        window.addEventListener('DOMContentLoaded', () => {
+          const params = new URLSearchParams(window.location.search);
+          const sId = params.get('studentId') || 'STUDENT';
+          const tId = params.get('testId') || '2';
+          
+          candidate = sId;
+          const loginScreen = document.getElementById('login');
+          if (loginScreen) loginScreen.classList.add('hidden');
+          
+          const introScreen = document.getElementById('intro');
+          if (introScreen) introScreen.classList.remove('hidden');
+          
+          const welcomeName = document.getElementById('welcomeName');
+          if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
+        });
+        
+</script>
+<script>
+const ANSWERS = {"l1": ["94635550"], "l2": ["Clark House"], "l3": ["University Drive"], "l4": ["Monday"], "l5": ["Thursday"], "l6": ["A month", "month", "one month"], "l7": ["A"], "l8": ["C"], "l9": ["B"], "l10": ["C"], "l11": ["Computer as Teacher", "Computer As Teacher"], "l12": ["University of Melbourne", "the University of Melbourne"], "l13": ["top floor"], "l14": ["ground floor"], "l15": ["3:10", "3.10", "3:10 p.m.", "3.10 p.m.", "3:10 pm", "3.10 pm"], "l16": ["Palm Lounge"], "l17": ["C"], "l18": ["B"], "l19": ["B"], "l20": ["A"], "l21": ["C"], "l22": ["A"], "l23": ["B"], "l24": ["B"], "l25": ["A"], "l26": ["C"], "l27": ["C"], "l28": ["E"], "l29": ["F"], "l30": ["textbook allowance"], "l31": ["plastic"], "l32": ["processing"], "l33": ["seasoned", "properly seasoned"], "l34": ["polished"], "l35": ["cost", "the cost"], "l36": ["grain pattern", "grain patterns"], "l37": ["words"], "l38": ["0.8"], "l39": ["0.1"], "l40": ["black velvet"], "r1": ["x"], "r2": ["ix"], "r3": ["vi"], "r4": ["v"], "r5": ["iii"], "r6": ["i"], "r7": ["A"], "r8": ["B"], "r9": ["E"], "r10": ["D"], "r11": ["C"], "r12": ["Energetic", "energetics", "energy"], "r13": ["Force sensors", "force sensor"], "r14": ["D"], "r15": ["G"], "r16": ["E"], "r17": ["A"], "r18": ["E"], "r19": ["C"], "r20": ["F"], "r21": ["NOT GIVEN"], "r22": ["NOT GIVEN"], "r23": ["TRUE"], "r24": ["FALSE"], "r25": ["FALSE"], "r26": ["TRUE"], "r27": ["B"], "r28": ["C"], "r29": ["H"], "r30": ["G"], "r31": ["E"], "r32": ["D"], "r33": ["A"], "r34": ["bee-keeping", "bee keeping", "beekeeping"], "r35": ["life cycles"], "r36": ["droughts", "drought"], "r37": ["C"], "r38": ["A"], "r39": ["D"], "r40": ["D"]};
+const DISPLAY_ANSWERS = {"l1": "94635550", "l2": "Clark House", "l3": "University Drive", "l4": "Monday", "l5": "Thursday", "l6": "A month", "l7": "A", "l8": "C", "l9": "B", "l10": "C", "l11": "Computer as Teacher", "l12": "University of Melbourne", "l13": "top floor", "l14": "ground floor", "l15": "3:10", "l16": "Palm Lounge", "l17": "C", "l18": "B", "l19": "B", "l20": "A", "l21": "C", "l22": "A", "l23": "B", "l24": "B", "l25": "A", "l26": "C", "l27": "C", "l28": "E", "l29": "F", "l30": "textbook allowance", "l31": "plastic", "l32": "processing", "l33": "(properly) seasoned", "l34": "polished", "l35": "(the) cost", "l36": "grain pattern(s)", "l37": "words", "l38": "0.8", "l39": "0.1", "l40": "black velvet", "r1": "x", "r2": "ix", "r3": "vi", "r4": "v", "r5": "iii", "r6": "i", "r7": "A", "r8": "B", "r9": "E", "r10": "D", "r11": "C", "r12": "Energetic", "r13": "Force sensors", "r14": "D", "r15": "G", "r16": "E", "r17": "A", "r18": "E", "r19": "C", "r20": "F", "r21": "NOT GIVEN", "r22": "NOT GIVEN", "r23": "TRUE", "r24": "FALSE", "r25": "FALSE", "r26": "TRUE", "r27": "B", "r28": "C", "r29": "H", "r30": "G", "r31": "E", "r32": "D", "r33": "A", "r34": "bee-keeping", "r35": "life cycles", "r36": "drought(s)", "r37": "C", "r38": "A", "r39": "D", "r40": "D"};
+let currentSection='listening';
+let timerInt=null;
+let remaining=0;
+let candidate='STUDENT';
+let savedRange=null;
+let clickedMark=null;
+
+function showIntro(){
+  candidate = document.getElementById('candId').value.trim() || 'STUDENT';
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('intro').classList.remove('hidden');
+  document.getElementById('welcomeName').textContent = 'Candidate ID: ' + candidate;
+}
+function beginExam(){
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('exam').classList.remove('hidden');
+  document.getElementById('topCid').textContent = candidate;
+  switchSection('listening', 40*60);
+  refreshPalettes();
+}
+function switchSection(sec, secs){
+  currentSection=sec;
+  ['listening','reading','writing'].forEach(s=>document.getElementById(s).classList.toggle('active', s===sec));
+  ['tabListening','tabReading','tabWriting'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  document.getElementById(sec==='listening'?'tabListening':sec==='reading'?'tabReading':'tabWriting').classList.add('active');
+  const title = sec.charAt(0).toUpperCase()+sec.slice(1);
+  document.getElementById('bannerTitle').textContent = title;
+  document.getElementById('bannerText').textContent = sec==='listening' ? 'You will hear a recording and answer Questions 1–40.' : sec==='reading' ? 'You should spend about 60 minutes on Questions 1–40.' : 'You should spend about 60 minutes on Tasks 1 and 2.';
+  startTimer(secs);
+  refreshPalettes();
+}
+function startTimer(secs){
+  clearInterval(timerInt);
+  remaining=secs;
+  updateTimer();
+  timerInt=setInterval(()=>{
+    remaining--;
+    updateTimer();
+    if(remaining<=0){
+      clearInterval(timerInt);
+      if(currentSection==='listening') submitSection('listening', true);
+      else if(currentSection==='reading') submitSection('reading', true);
+      else submitSection('writing', true);
+    }
+  },1000);
+}
+function updateTimer(){
+  const t=document.getElementById('timer');
+  const m=Math.max(0, Math.floor(remaining/60));
+  const s=Math.max(0, remaining%60);
+  t.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  t.classList.toggle('warn', remaining<=180);
+  if(currentSection==='listening' || currentSection==='reading') refreshPalettes();
+}
+function submitSection(sec, auto=false){
+  if(!auto){
+    let msg;
+    if(sec==='writing'){
+      msg='Submit the full test?';
+    } else {
+      const prefix = sec==='listening' ? 'l' : 'r';
+      const unanswered = 40 - countAnswered(prefix,40);
+      msg = unanswered>0
+        ? `You have ${unanswered} unanswered question${unanswered===1?'':'s'} in this section. Submit anyway and move to the next section?`
+        : 'Submit this section and move to the next section?';
+    }
+    if(!confirm(msg)) return;
+  }
+  if(sec==='listening') switchSection('reading', 60*60);
+  else if(sec==='reading') switchSection('writing', 60*60);
+  else finishTest();
+}
+function finishTest(){
+          clearInterval(timerInt);
+          document.getElementById('exam').classList.add('hidden');
+          document.getElementById('result').classList.remove('hidden');
+          const lAnswered = countAnswered('l',40);
+          const rAnswered = countAnswered('r',40);
+          const w1 = wordCount(document.getElementById('wText1').value);
+          const w2 = wordCount(document.getElementById('wText2').value);
+          document.getElementById('resultMeta').textContent = `Candidate ID: ${candidate} | Listening answered: ${lAnswered}/40 | Reading answered: ${rAnswered}/40 | Writing words: Task 1 — ${w1}, Task 2 — ${w2}`;
+          buildReview();
+
+          // Extract answers
+          const listeningAnswers = {};
+          for (let i = 1; i <= 40; i++) {
+            listeningAnswers[i] = getAnswer('l' + i).join(', ');
+          }
+          const readingAnswers = {};
+          for (let i = 1; i <= 40; i++) {
+            readingAnswers[i] = getAnswer('r' + i).join(', ');
+          }
+          const writingAnswers = {
+            task1: document.getElementById('wText1').value,
+            task2: document.getElementById('wText2').value
+          };
+
+          const lScore = scoreSection('l');
+          const rScore = scoreSection('r');
+
+          // Estimate IELTS bands
+          const getIeltsBand = (correct) => {
+            if (correct >= 39) return 9.0;
+            if (correct >= 37) return 8.5;
+            if (correct >= 35) return 8.0;
+            if (correct >= 32) return 7.5;
+            if (correct >= 30) return 7.0;
+            if (correct >= 27) return 6.5;
+            if (correct >= 23) return 6.0;
+            if (correct >= 20) return 5.5;
+            if (correct >= 16) return 5.0;
+            if (correct >= 13) return 4.5;
+            return 4.0;
+          };
+
+          const params = new URLSearchParams(window.location.search);
+          const sId = params.get('studentId') || candidate;
+          const tId = params.get('testId') || '2';
+
+          fetch('http://localhost:5000/api/student/submit/' + tId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              studentId: sId,
+              listeningAnswers,
+              readingAnswers,
+              writingAnswers,
+              listeningScore: getIeltsBand(lScore),
+              readingScore: getIeltsBand(rScore)
+            })
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log('Submission synced to backend successfully:', data);
+            if (window.parent) {
+              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+            }
+          })
+          .catch(err => console.error('Failed to submit to database backend:', err));
+
+          setTimeout(()=>downloadPDF(true), 500);
+          return;
+        
+  clearInterval(timerInt);
+  document.getElementById('exam').classList.add('hidden');
+  document.getElementById('result').classList.remove('hidden');
+  const lAnswered = countAnswered('l',40);
+  const rAnswered = countAnswered('r',40);
+  const w1 = wordCount(document.getElementById('wText1').value);
+  const w2 = wordCount(document.getElementById('wText2').value);
+  document.getElementById('resultMeta').textContent = `Candidate ID: ${candidate} | Listening answered: ${lAnswered}/40 | Reading answered: ${rAnswered}/40 | Writing words: Task 1 — ${w1}, Task 2 — ${w2}`;
+  buildReview();
+  setTimeout(()=>downloadPDF(true), 500);
+}
+function countAnswered(prefix,total){
+  let n=0;
+  for(let i=1;i<=total;i++){ if(getAnswer(prefix+i).length) n++; }
+  return n;
+}
+
+// ---- Restricted single-play audio (matches real IELTS: play once, no rewind/pause) ----
+let audioStarted=false, audioMaxTime=0;
+function initAudioRestrictions(){
+  const a=document.getElementById('audio');
+  if(!a) return;
+  a.addEventListener('timeupdate', ()=>{ if(a.currentTime>audioMaxTime) audioMaxTime=a.currentTime; });
+  a.addEventListener('seeking', ()=>{ if(a.currentTime < audioMaxTime - 0.4) a.currentTime = audioMaxTime; });
+  a.addEventListener('ended', ()=>{
+    document.getElementById('audStatus').textContent='Finished — the recording has now ended.';
+    document.getElementById('playOnceBtn').textContent='✓';
+  });
+  a.addEventListener('pause', ()=>{
+    if(audioStarted && a.currentTime < a.duration - 0.3 && !a.ended){ a.play(); }
+  });
+}
+function playAudioOnce(){
+  if(audioStarted) return;
+  audioStarted=true;
+  const a=document.getElementById('audio');
+  const btn=document.getElementById('playOnceBtn');
+  btn.disabled=true;
+  btn.textContent='▶';
+  document.getElementById('audStatus').textContent='Playing…';
+  a.play().catch(()=>{
+    document.getElementById('audStatus').textContent='Tap play to start audio.';
+    btn.disabled=false; audioStarted=false;
+  });
+}
+
+// ---- Question navigator (palette), like the real IELTS on-screen test ----
+const SECTION_GROUPS = {
+  listening: [ {label:'Part 1', from:1, to:10}, {label:'Part 2', from:11, to:20}, {label:'Part 3', from:21, to:30}, {label:'Part 4', from:31, to:40} ],
+  reading: [ {label:'Passage 1', from:1, to:13}, {label:'Passage 2', from:14, to:26}, {label:'Passage 3', from:27, to:40} ]
+};
+function buildPalette(sec){
+  const prefix = sec==='listening' ? 'l' : 'r';
+  const container = document.getElementById(sec==='listening'?'qnavListening':'qnavReading');
+  const summaryEl = document.getElementById(sec==='listening'?'qnavListeningSummary':'qnavReadingSummary');
+  if(!container) return;
+  const frag=document.createDocumentFragment();
+  let answeredCount=0;
+  SECTION_GROUPS[sec].forEach(g=>{
+    const wrap=document.createElement('div'); wrap.className='qnav-part';
+    const lbl=document.createElement('span'); lbl.className='qnav-part-label'; lbl.textContent=g.label;
+    wrap.appendChild(lbl);
+    for(let i=g.from;i<=g.to;i++){
+      const q=prefix+i;
+      const btn=document.createElement('button');
+      btn.type='button'; btn.className='qnav-btn'; btn.textContent=i;
+      if(getAnswer(q).length){ btn.classList.add('answered'); answeredCount++; }
+      btn.addEventListener('click', ()=>jumpToQuestion(sec,i));
+      wrap.appendChild(btn);
+    }
+    frag.appendChild(wrap);
+  });
+  container.innerHTML='';
+  container.appendChild(frag);
+  if(summaryEl) summaryEl.textContent = answeredCount+' of 40 answered';
+}
+function jumpToQuestion(sec,num){
+  if(sec==='listening'){
+    const part = num<=10?1:num<=20?2:num<=30?3:4;
+    const btn=document.querySelectorAll('.part-tabs button')[part-1];
+    showListenPart(part, btn);
+  } else {
+    const passage = num<=13?1:num<=26?2:3;
+    const btn=document.querySelectorAll('.passage-nav button')[passage-1];
+    showReadingPassage(passage, btn);
+  }
+  const prefix = sec==='listening' ? 'l' : 'r';
+  setTimeout(()=>{
+    const el=document.querySelector(`[data-q="${prefix}${num}"]`);
+    if(el){
+      const target = el.closest('.question') || el.closest('li') || el;
+      const old = target.style.backgroundColor;
+      target.scrollIntoView({behavior:'smooth', block:'center'});
+      target.style.transition='background-color 0.4s';
+      target.style.backgroundColor='#fff3cd';
+      setTimeout(()=>{ target.style.backgroundColor=old; },1000);
+      if(el.matches('input,select,textarea')) el.focus({preventScroll:true});
+    }
+  }, 80);
+}
+function refreshPalettes(){
+  buildPalette('listening');
+  buildPalette('reading');
+}
+
+const TG_URL='#';
+const TWO_GROUPS={};
+function answerText(q){
+  const a=getAnswer(q);
+  return Array.isArray(a) && a.length ? a.join(', ') : '—';
+}
+function displayCorrect(q){ return DISPLAY_ANSWERS[q] || (ANSWERS[q]||[]).join(' / ') || '—'; }
+function sameSet(a,b){
+  const x=a.map(norm).filter(Boolean).sort(); const y=b.map(norm).filter(Boolean).sort();
+  return x.length===y.length && x.every((v,i)=>v===y[i]);
+}
+function groupResult(mainQ){
+  const g=TWO_GROUPS[mainQ];
+  const got=getAnswer(mainQ).map(norm).filter(Boolean);
+  const key=g[2].map(norm);
+  return sameSet(got,key) ? 'correct' : (got.length ? 'wrong' : 'empty');
+}
+function qResult(q){
+  if(TWO_GROUPS[q]) return groupResult(q);
+  const got=getAnswer(q);
+  if(!got.length) return 'empty';
+  return isCorrect(q) ? 'correct' : 'wrong';
+}
+function scoreSection(prefix){
+  let score=0;
+  for(let i=1;i<=40;i++) if(qResult(prefix+i)==='correct') score++;
+  return score;
+}
+function buildReview(){
+  const box=document.getElementById('reviewBox');
+  const lScore=scoreSection('l'), rScore=scoreSection('r');
+  const w1=wordCount(document.getElementById('wText1').value), w2=wordCount(document.getElementById('wText2').value);
+  let html=`<h2>Answer Check</h2><div class="review-summary"><div><b>Listening:</b> ${lScore}/40</div><div><b>Reading:</b> ${rScore}/40</div><div><b>Writing Task 1 words:</b> ${w1}</div><div><b>Writing Task 2 words:</b> ${w2}</div></div>`;
+  function rows(prefix, title){
+    html+=`<h2>${title}</h2><table class="review-table"><thead><tr><th>Q</th><th>Your answer</th><th>Correct answer</th><th>Status</th></tr></thead><tbody>`;
+    for(let i=1;i<=40;i++) addRow(prefix+i, i);
+    html+='</tbody></table>';
+  }
+  function statusLabel(res){
+    if(res==='correct') return '<span class="review-ok">Correct</span>';
+    if(res==='wrong') return '<span class="review-bad">Incorrect</span>';
+    return '<span class="review-empty">Empty</span>';
+  }
+  function addRow(q,label){
+    const res=qResult(q);
+    html+=`<tr><td>${label}</td><td>${escapeHTML(answerText(q))}</td><td>${escapeHTML(displayCorrect(q))}</td><td>${statusLabel(res)}</td></tr>`;
+  }
+  rows('l','Listening'); rows('r','Reading');
+  box.innerHTML=html;
+}
+function toggleReview(){
+  const box=document.getElementById('reviewBox');
+  if(!box.innerHTML.trim()) buildReview();
+  box.style.display = box.style.display==='block' ? 'none' : 'block';
+}
+function escapeHTML(s){return String(s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function downloadPDF(silent=false){
+  try{
+    if(!window.jspdf || !window.jspdf.jsPDF){ if(!silent) window.print(); return; }
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+    const M=14, W=182;
+    const now=new Date();
+    const lScore=scoreSection('l'), rScore=scoreSection('r');
+    const w1txt=document.getElementById('wText1').value.trim() || '[No response]';
+    const w2txt=document.getElementById('wText2').value.trim() || '[No response]';
+    const w1=wordCount(w1txt==='[No response]'?'':w1txt), w2=wordCount(w2txt==='[No response]'?'':w2txt);
+    function header(){
+      doc.setFillColor(200,16,46); doc.rect(0,0,210,18,'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.setFillColor(34,158,217); doc.circle(M+3,9,3,'F'); doc.setTextColor(255,255,255); doc.setFontSize(5.5); doc.text('TG',M+0.5,10.4);
+      doc.setTextColor(255,255,255); doc.setFontSize(11); doc.text('IELTS Mock Team\'s Blog',M+9,11);
+      doc.link(M,4,62,10,{url:TG_URL});
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text(TG_URL,210-M,11,{align:'right'});
+      doc.link(210-M-54,4,54,10,{url:TG_URL});
+    }
+    function footer(){
+      doc.setFontSize(8); doc.setTextColor(120,120,120);
+      doc.text('IELTS Mock Team\'s Blog ('+TG_URL+') - for more real exam tests',M,285);
+      doc.link(M,280,130,7,{url:TG_URL});
+    }
+    function newPage(){ footer(); doc.addPage(); header(); return 28; }
+    function title(){
+      header();
+      doc.setTextColor(20,20,20); doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text('IELTS Full Test — Answer Report',M,30);
+      doc.setFont('helvetica','normal'); doc.setFontSize(10);
+      doc.text('Candidate ID: '+candidate,M,38);
+      doc.text('Date: '+now.toLocaleString(),M,44);
+      doc.setFont('helvetica','bold'); doc.text('Results will be communicated to you separately.',M,52);
+      doc.setFont('helvetica','normal'); doc.setTextColor(35,35,35);
+      doc.text('Listening checked: '+lScore+'/40',M,62); doc.text('Reading checked: '+rScore+'/40',M+70,62);
+      doc.text('Writing words: Task 1 — '+w1+', Task 2 — '+w2,M,69);
+      return 80;
+    }
+    let y=title();
+    function colHeader(){
+      if(y>270) y=newPage();
+      doc.setFillColor(228,228,228); doc.rect(M,y,W,7,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(70,70,70);
+      doc.text('Q',M+2,y+5);
+      doc.text('Your answer',M+16,y+5);
+      doc.text('Correct answer',M+82,y+5);
+      doc.text('Status',M+150,y+5);
+      y+=9;
+    }
+    function section(label){
+      if(y>260) y=newPage();
+      doc.setFillColor(242,242,242); doc.rect(M,y,W,8,'F');
+      doc.setTextColor(0,0,0); doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text(label,M+3,y+5.5);
+      y+=11;
+      colHeader();
+    }
+    function row(q,label){
+      const res=qResult(q), your=answerText(q), cor=displayCorrect(q);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+      const yourLines=doc.splitTextToSize(String(your),62);
+      const corLines=doc.splitTextToSize(String(cor),64);
+      const lines=Math.max(yourLines.length,corLines.length,1);
+      const rh=Math.max(9, 4+lines*4.2);
+      if(y+rh>276){ y=newPage(); colHeader(); }
+      doc.setDrawColor(225,225,225);
+      doc.setFillColor(res==='correct'?232:res==='wrong'?253:248, res==='correct'?248:res==='wrong'?235:248, res==='correct'?238:res==='wrong'?235:248);
+      doc.rect(M,y,W,rh,'F'); doc.rect(M,y,W,rh);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(20,20,20);
+      doc.text(String(label),M+2,y+6);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(40,40,40);
+      doc.text(yourLines,M+16,y+5.5);
+      doc.setTextColor(17,136,71);
+      doc.text(corLines,M+82,y+5.5);
+      doc.setFont('helvetica','bold'); doc.setFontSize(8);
+      doc.setTextColor(res==='correct'?17:res==='wrong'?200:110, res==='correct'?136:res==='wrong'?16:110, res==='correct'?71:res==='wrong'?46:110);
+      doc.text(res==='correct'?'Correct':res==='wrong'?'Incorrect':'Empty',M+150,y+6);
+      y+=rh;
+    }
+    function group(q,label){ row(q,label); }
+    section('Listening  ('+lScore+'/40)');
+    for(let i=1;i<=40;i++) row('l'+i,i);
+    section('Reading  ('+rScore+'/40)');
+    for(let i=1;i<=40;i++) row('r'+i,i);
+    section('Writing Task 1  ('+w1+' words)');
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,30,30);
+    const t1lines=doc.splitTextToSize(w1txt,W); for(const ln of t1lines){ if(y>274)y=newPage(); doc.text(ln,M,y); y+=5; }
+    y+=6;
+    section('Writing Task 2  ('+w2+' words)');
+    const t2lines=doc.splitTextToSize(w2txt,W); for(const ln of t2lines){ if(y>274)y=newPage(); doc.text(ln,M,y); y+=5; }
+    footer();
+    const totalPages=doc.internal.getNumberOfPages();
+    for(let p=1;p<=totalPages;p++){
+      doc.setPage(p);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(150,150,150);
+      doc.text('Page '+p+' of '+totalPages, 210-M, 292, {align:'right'});
+    }
+    doc.save('IELTS_Answer_Report_'+candidate.replace(/[^a-z0-9_-]/gi,'_')+'.pdf');
+  }catch(err){ console.error(err); if(!silent) window.print(); }
+}
+
+
+function showListenPart(n,btn){
+  for(let i=1;i<=4;i++) document.getElementById('listenPart'+i).classList.toggle('hidden', i!==n);
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('listeningScroll').scrollTop=0;
+}
+const READING_PASSAGES = ["<h2>Insects and Inspired Artificial Robots</h2>\n<p><b>A</b><br>The creation of artificial devices with life-like characteristics has been pursued for over 2,000 years, beginning, as did so many things in our modern world, in Ancient Greece. For example, among the inventions of Hero of Alexandria were a windmill-operated pipe organ and a mechanical theatrical play.</p>\n<p><b>B</b><br>With the raise of cybernetic approaches in the late 1940s and early 1950s. A wide variety of electromechanical machines designed to mimic biological processes and systems were constructed. Perhaps the best-known and most directly relevant to biorobotics is W. Gray Walters’ robotic “tortoises” Elsie and Elmer. Walters was a physiologist who made important early contributions to electroencephalography and clinical neurophysiology. His tortoises were small mobile robots covered by a hard shell. The robots were driven by steerable motorized wheels and possessed a headlight, a light sensor, and a touch sensor that responded when the shell was hit. Their behavior was controlled by electronic circuit analogues of neural circuits. The behavioral repertoire of the tortoises included exploration, both positive and negative phototropism, and obstacle avoidance. The activation of these different behaviors in interaction with the robots’ environment could produce a variety of behavioral sequences. Although originally designed to explore Walters’ theories of brain function, the tortoises became objects of popular fascination in much the same way that ancient automata did.</p>\n<p><b>C</b><br>The seeds of the modern renaissance of biorobotics were sown from the mid 1980s to mid 1990s. A key event in this resurgence was Rodney Brooks’ work on behavior-based robots. Although not as directly based on biology as later work would be, Brooks argues that nontrivial and flexible behavior in a robot could be generated by the interaction between simple control machinery and its environment, demonstrating his point with robots accomplishing such tasks as insect-like walking. Another important milestone was Raibert’s work on hopping and legged robots, which emphasized the central role of energetics in the dynamic balance and locomotion of animals. Based on studies of serpentine motion, Hirose developed a number of snake-like locomotors and manipulators. In the early 1990s, Beer, Quinn, Chiel &amp; Ritzmann developed a series of hexapod robots based directly on cockroach and stick insect body morphology and neural control. Early biorobotic work on the sensory side includes Franceshini’s robotic compound eye based on studies of insect eyes and motion-sensitive neurons in the fly, Webb’s robotic model of cricket phonotaxis and Grasso et al’s robotic model of lobster chemical orientation strategies. An early example of robots whose control was based on theories of human brain function is given by the work of Edelman et al.</p>\n<p><b>D</b><br>There has been an explosion of work in biorobotics in recent years, with robotic vocal tracts, jaws, retinas, expressive faces, hands, arms, legs, etc. deployed on robotic worms, snakes, ants, flies, crickets, cockroaches, walking stick insects, dinosaurs, bats, lobsters, tuna, pickerel, turkeys, apes and humanoids. Thus, no brief survey could possibly do justice to the range of work being undertaken.</p>\n<p><b>E</b><br>A recent example of biologically-inspired robotics is Spenko et al’s work on a hexapedal robotic climber called RiSE. In order to grip a vertical surface, this robot combines both bonding mechanisms inspired by the structure of gecko feet and interlocking mechanisms inspired by the structure of insect spines and claws. In addition, its design is based on a set of principles that have been found to be common to many climbing animals: a sprawled posture keeps the body close to the surface so as to reduce the pitch-back moment; front limbs pull inward and rear limbs push outward so as to counteract the pitch-back moment; a long body reduces the pull-in force required of the front limbs; lateral forces act inward toward the central axis of the body; complaint legs, ankles and toes so as to distribute contact forces. Each of the six legs of RiSE have two degrees of freedom and the robot also possesses s static tail that presses against the surface to reduce the pull-in forces required of the front legs. The robot uses a wave gait in which only one leg at a time is lifted from the surface. In addition to an open-loop gait generator, RiSE utilizes a variety of feedback controllers, including traction force control, normal force control and gait regulation. In addition, the robot has a pawing behavior that allows a foot that fails to grasp on initial contact to reestablish a grip on the climbing surface. Spenko et al have demonstrated that RiSE is able to traverse a variety of horizontal and vertical surfaces, including climbing trees and brick or cinder block walls.</p>\n<p><b>F</b><br>A powerful example of biorobotic modeling is provided by the aerodynamics of insect flight. Although quasi-steady-state aerodynamical analyses of the sort used to understand aircraft have been successfully applied to larger animals, they have not been very successful for explaining the generation of lift in small flying insects due to the tiny wingspans, relatively slow flight speeds and extremely fast wing movements involved. However, a recent biorobotic model by Dickinson and colleagues has begun to shed considerable light on the unsteady aerodynamics insect flight. Because of the delicate size and high speed of insect wings, direct measurement of the forces involved is extremely difficult. For this reason, a robotic model with a 60 cm wingspan was used to explore the non-steady-state airflow during hovering by the fruit fly Drosophila melanogaster. In order to reproduce the Reynolds number relevant to small insects flying in air, their model was submerged in mineral oil and scaled both in space and time. Force sensors at the base of one wing allowed direct measurement of the forces produced and illumination of air bubbles in the tank allowed direct observation of the fluid flow around the robotic wings. Dickinson and colleagues found that three major mechanisms contributed to lift generation in the model. First, vortices formed at the leading edge of the wing produce lift during much of the power stroke. Second, additional lift is produced by circulation of air around the wings due to rapid rotation at the beginning and end of each stroke. Third, further forces are produces at the start of each upstroke and downstroke due to collisions of the wings with the swirling wake produced by the previous stroke, a mechanism termed wake capture. Due to the sensitivity of these latter two mechanisms to the timing of wing rotation, the model suggests that the control of small details of wing motion can be used in steering flight.</p>", "<h2>Extinction of Aussie Animals</h2>\n<p><b>A</b><br>World Wildlife Fund Australia has revealed its list of extinct wildlife to coincide with Australia Day. The list covers a wide range of species, from birds to reptiles, marsupials, insects and even flowers. Top of the list is the green and gold frog which has had its home decimated by drought.” Many Aussie spices need our help in order to survive,” WWF threatened species program manager Kat Miller said. “Without knowing the reason many had disappeared for, we will risk losing another 346 animal and 1249 plant species listed as threatened under federal legislation. Australia has the one of the worst record of mammal extinction in the world”. WWF Australia said 9 percent of birds, 7 percent of reptiles and 16 percent of amphibians are extinct since early human settlement.</p>\n<p><b>B</b><br>The conservation group said half the mammals that have become extinct globally in the last 200 years have been Australian species. Ancient hunters and gatherers may have triggered the failure of the annual Australian Monsoon some 12,000 years ago by burning massive tracts of the country’s interior, resulting in the desertification that is evident today, says a new study. Researcher Gifford Miller of the University of Colorado at Boulder said the new study builds on his research group’s previous findings that dozens of giant animal species became extinct in Australia 50,000 years ago due to ecosystem changes caused by human burning. This study, appearing in Geology, indicates such burning may have altered the flora enough to decrease the exchange of water vapor between the biosphere and atmosphere, causing the failure of the Australian Monsoon over the interior.</p>\n<p><b>C</b><br>“The question is whether localized burning 50,000 years ago could have had a continentalscale effect,” said Miller. “The implications are that the burning practices of early humans may have changed the climate of the Australian continent by weakening the penetration of monsoon moisture into the interior”. A paper on the subject by Miller appears in the January issue of Geology. Co-authors include CU Boulder’s Jennifer Mangan, David Pollard, Starley Thompson and Benjamin Felzer of the National Center for Atmospheric Research in Boulder and John Magee of Australian National University in Canberra.</p>\n<p><b>D</b><br>Geologic evidence indicates the interior of Australia was much wetter about 125,000 years ago during the last interglacial period. Although planetary and meteorological conditions during the most recent ice age caused Earth’s major monsoons to waver, all except the Australian Monsoon were “reinvigorated” to full force during the Holocene Period beginning about 12,000 years ago, he said. Although the Australian Monsoon delivers about 39 inches of rain annually to the north coast as it moves south from Asia, only about 13 inches of rain now falls on the continent’s interior each year, said Miller. Lake Eyre, a deep-water lake in the continent’s interior that was filled by regular monsoon rains about 60,000 years ago, is now a huge salt flat that is occasionally covered by a thin layer of salty water.</p>\n<p><b>E</b><br>The earliest human colonizers are believed to have arrived in Australia by sea from Indonesia about 50,000 years ago, using fire as a tool to hunt, clear paths, signal each other and promote the growth of certain plants, he said. Fossil remains of browsedependent birds and marsupials indicate the interior was made up of trees, shrubs and grasses rather than the desert scrub environment present today.</p>\n<p><b>F</b><br>The researchers used global climate model simulations to evaluate the atmospheric and meteorological conditions in Australia over time, as well as the sensitivity of the monsoon to different vegetation and soil types. A climate model simulating a forested Australia produced twice as much annual monsoon precipitation over the continental interior as the model simulating arid scrub conditions, he said.</p>\n<p><b>G</b><br>“Systematic burning across the semiarid zone, where nutrients are the lowest of any continental region, may have been responsible for the rapid transformation of a droughttolerant ecosystem high in broad-leaf species to the modern desert scrub,” he said. “In the process, vegetation feedbacks promoting the penetration of monsoon moisture into the continental interior would have been disrupted”. More than 85 percent of Australia’s mega fauna weighing more than 100 pounds went extinct roughly 50,000 years ago, including an ostrich-sized bird, 19 species of marsupials, a 25-foot-long lizard and a Volkswagen-sized tortoise, he said.</p>\n<p><b>H</b><br>Evidence for burning includes increased charcoal deposits preserved in lake sediments at the boundary between rainforest and interior desert beginning about 50,000 years ago, Miller said. In addition, a number of rainforest gymnosperms – plants whose seeds are not encased and protected and are therefore more vulnerable to fire –went extinct at about that time. Natural fires resulting from summer lightning strikes have played an integral part in the ecology of Australia’s interior, and many plant species are adapted to regimes of frequent fires, he said. “But the systematic burning of the interior by the earliest colonizers differed enough from the natural fire cycle that key ecosystems may have been pushed past a threshold from which they could not recover.”</p>", "<h2>Amateur Naturalists</h2>\n<p>From the results of an annual Alaskan betting contest to sightings of migratory birds, ecologists are using a wealth of unusual data to predict the impact of climate change.</p>\n<p><b>A</b><br>Tim Sparks slides a small leather-bound notebook out of an envelope. The book’s yellowing pages contain bee-keeping notes made between 1941 and 1969 by the late Walter Coates of Kilworth, Leicestershire. He adds it to his growing pile of local journals, birdwatchers’ lists and gardening diaries. “We’re uncovering about one major new record each month,” he says, “I still get surprised.” Around two centuries before Coates, Robert Marsham, a landowner from Norfolk in the east of England, began recording the life cycles of plants and animals on his estate – when the first wood anemones flowered, the dates on which the oaks burst into leaf and the rooks began nesting. Successive Marshams continued compiling these notes for 211 years.</p>\n<p><b>B</b><br>Today, such records are being put to uses that their authors could not possibly have expected. These data sets, and others like them, are proving invaluable to ecologists interested in the timing of biological events, or phenology. By combining the records with climate data, researchers can reveal how, for example, changes in temperature affect the arrival of spring, allowing ecologists to make improved predictions about the impact of climate change. A small band of researchers is combing through hundreds of years of records taken by thousands of amateur naturalists. And more systematic projects have also started up, producing an overwhelming response. “The amount of interest is almost frightening,” says Sparks, a climate researcher at the Centre for Ecology and Hydrology in Monks Wood, Cambridgeshire.</p>\n<p><b>C</b><br>Sparks first became aware of the army of “closet phenologists”, as he describes them, when a retiring colleague gave him the Marsham records. He now spends much of his time following leads from one historical data set to another. As news of his quest spreads, people tip him off to other historical records, and more amateur phenologists come out of their closets. The British devotion to recording and collecting makes his job easier – one man from Kent sent him 30 years’ worth of kitchen calendars, on which he had noted the date that his neighbour’s magnolia tree flowered.</p>\n<p><b>D</b><br>Other researchers have unearthed data from equally odd sources. Rafe Sagarin, an ecologist at Stanford University in California, recently studied records of a betting contest in which participants attempt to guess the exact time at which a specially erected wooden tripod will fall through the surface of a thawing river. The competition has taken place annually on the Tenana River in Alaska since 1917, and analysis of the results showed that the thaw now arrives five days earlier than it did when the contest began.</p>\n<p><b>E</b><br>Overall, such records have helped to show that, compared with 20 years ago, a raft of natural events now occur earlier across much of the northern hemisphere, from the opening of leaves to the return of birds from migration and the emergence of butterflies from hibernation. The data can also hint at how nature will change in the future. Together with models of climate change, amateurs’ records could help guide conservation. Terry Root, an ecologist at the University of Michigan in Ann Arbor, has collected birdwatchers’ counts of wildfowl taken between 1955 and 1996 on seasonal ponds in the Ameri​ can Midwest and combined them with climate data and models of future warming. Her analysis shows that the increased droughts that the models predict could halve the breeding populations at the ponds. “The number of waterfowl in North America will most probably drop significantly with global warming,” she says.</p>\n<p><b>F</b><br>But not all professionals are happy to use amateur data. “A lot of scientists won’t touch them, they say they’re too full of problems,” says Root. Because different observers can have different ideas of what constitutes, for example, an open snowdrop. “The biggest concern with ad hoc observations is how carefully and systematically they were taken,” says Mark Schwartz of the University of Wisconsin, Milwaukee, who studies the interactions between plants and climate. “We need to know pretty precisely what a person’s been observing – if they just say ‘I noted when the leaves came out’, it might not be that useful.” Measuring the onset of autumn can be particularly problematic because deciding when leaves change colour is a more subjective process than noting when they appear.</p>\n<p><b>G</b><br>Overall, most phenologists are positive about the contribution that amateurs can make. “They get at the raw power of science: careful observation of the natural world,” says Sagarin. But the professionals also acknowledge the need for careful quality control. Root, for example, tries to gauge the quality of an amateur archive by interviewing its collector. “You always have to worry – things as trivial as vacations can affect measurement. I disregard a lot of records because they’re not rigorous enough,” she says. Others suggest that the right statistics can iron out some of the problems with amateur data. Together with colleagues at Wageningen University in the Netherlands, environmental scientist Arnold van Vliet is developing statistical techniques to account for the uncertainty in amateur phenological data. With the enthusiasm of amateur phenologists evident from past records, professional researchers are now trying to create standardised recording schemes for future efforts. They hope that well-designed studies will generate a volume of observations large enough to drown out the idiosyncrasies of individual recorders. The data are cheap to collect, and can provide breadth in space, time and range of species. “It’s very difficult to collect data on a large geographical scale without enlisting an army of observers,” says Root.</p>\n<p><b>H</b><br>Phenology also helps to drive home messages about climate change. “Because the public understand these records, they accept them,” says Sparks. It can also illustrate potentially unpleasant consequences, he adds, such as the finding that more rat infestations are reported to local councils in warmer years. And getting people involved is great for public relations. “People are thrilled to think that the data they’ve been collecting as a hobby can be used for something scientific – it empowers them,” says Root.</p>"];
+function showReadingPassage(n,btn){
+  document.getElementById('passageText').innerHTML = READING_PASSAGES[n-1];
+  for(let i=1;i<=3;i++) document.getElementById('rq'+i).classList.toggle('hidden', i!==n);
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('readLeft').scrollTop=0; document.getElementById('readRight').scrollTop=0;
+}
+function showWritingTask(task){
+  const head=document.getElementById('writingHead');
+  const prompt=document.getElementById('writingPrompt');
+  const t1=document.getElementById('wText1'), t2=document.getElementById('wText2');
+  const wc1=document.getElementById('wc1'), wc2=document.getElementById('wc2');
+  document.getElementById('wtab1').classList.toggle('active', task===1);
+  document.getElementById('wtab2').classList.toggle('active', task===2);
+  t1.classList.toggle('hidden', task!==1); wc1.classList.toggle('hidden', task!==1);
+  t2.classList.toggle('hidden', task!==2); wc2.classList.toggle('hidden', task!==2);
+  if(task===1){
+    head.innerHTML='<b>Writing Task 1</b>You should spend about 20 minutes on this task. Write at least 150 words.';
+    prompt.innerHTML=`<div class="w-prompt">The table shows information about the numbers of Australian people who visited the seven most popular destinations in 1999 and 2009.</div><img class="w-task-img" src="https://engnovatewebsitestorage.blob.core.windows.net/ielts-writing-task-1-images/e60c81c392969881" alt="Writing Task 1 table">`;
+  } else {
+    head.innerHTML='<b>Writing Task 2</b>You should spend about 40 minutes on this task. Write at least 250 words.';
+    prompt.innerHTML=`<div class="w-prompt" style="font-style:normal;font-weight:400">Some people believe all criminals should be sent to prison. Others say there are other alternatives for those who commit minor crimes.<br><br>Discuss both views and give your own opinion.</div>`;
+  }
+}
+function wordCount(v){
+  return (v.trim().match(/\b\S+\b/g)||[]).length;
+}
+function updateWords(){
+  const w1=wordCount(document.getElementById('wText1').value);
+  const w2=wordCount(document.getElementById('wText2').value);
+  document.getElementById('wc1').textContent='Words: '+w1;
+  document.getElementById('wc2').textContent='Words: '+w2;
+  document.getElementById('wprog1').textContent=(w1>0?'1':'0')+' of 1';
+  document.getElementById('wprog2').textContent=(w2>0?'1':'0')+' of 1';
+}
+
+document.addEventListener('change', e=>{
+  if(e.target.matches('input[type="radio"], input[type="checkbox"], select[data-q]')){
+    if(e.target.matches('input[type="radio"]')){
+      document.querySelectorAll(`input[name="${e.target.name}"]`).forEach(inp=>inp.closest('.option')?.classList.toggle('selected', inp.checked));
+    }
+    if(e.target.matches('input[type="checkbox"]')){
+      e.target.closest('.option')?.classList.toggle('selected', e.target.checked);
+    }
+    refreshPalettes();
+  }
+});
+document.addEventListener('input', e=>{
+  if(e.target.matches('input.ans-input[data-q]')) refreshPalettes();
+});
+initAudioRestrictions();
+function getAnswer(q){
+  const checks = [...document.querySelectorAll(`input[type="checkbox"][data-q="${q}"]:checked`)].map(x=>x.value);
+  if(checks.length) return checks;
+  const radio = document.querySelector(`input[type="radio"][data-q="${q}"]:checked`);
+  if(radio) return [radio.value];
+  const el = document.querySelector(`[data-q="${q}"]`);
+  if(el && !el.matches('input[type="checkbox"],input[type="radio"]')) return [el.value.trim()].filter(Boolean);
+  return [];
+}
+function norm(x){
+  return String(x||'').trim().toLowerCase()
+    .replace(/[’‘]/g,"'")
+    .replace(/[“”]/g,'"')
+    .replace(/\s+/g,' ')
+    .replace(/\.$/,'');
+}
+function isCorrect(q){
+  const got=getAnswer(q).map(norm).filter(Boolean);
+  const key=(ANSWERS[q]||[]).map(norm);
+  if(!key.length) return false;
+  return got.some(v=>key.includes(v));
+}
+
+
+// Reading split drag
+(function(){
+  const handle=document.getElementById('dragbar'), left=document.getElementById('readLeft'), wrap=document.getElementById('readWrap');
+  let drag=false, startX=0, startW=0;
+  handle.addEventListener('mousedown', e=>{drag=true;startX=e.clientX;startW=left.offsetWidth;handle.classList.add('active');document.body.style.cursor='col-resize';document.body.style.userSelect='none';e.preventDefault();});
+  document.addEventListener('mousemove', e=>{ if(!drag)return; const total=wrap.offsetWidth-handle.offsetWidth; let w=Math.max(300,Math.min(total-330,startW+(e.clientX-startX))); left.style.width=w+'px'; });
+  document.addEventListener('mouseup',()=>{ if(!drag)return; drag=false; handle.classList.remove('active'); document.body.style.cursor=''; document.body.style.userSelect=''; });
+})();
+
+// Highlight and Note (unified popup, matches real IELTS: Highlight / Comment / Clear All)
+const markPopup=document.getElementById('markPopup');
+const noteModal=document.getElementById('noteModal');
+const noteTip=document.getElementById('noteTip');
+document.addEventListener('mouseup', e=>{
+  if(['INPUT','TEXTAREA','SELECT','BUTTON','A','AUDIO'].includes(e.target.tagName)) return;
+  setTimeout(()=>{
+    const mark=e.target.closest('.mark-yellow,.mark-note');
+    const sel=window.getSelection();
+    const txt=sel ? sel.toString().trim() : '';
+    if(txt){
+      savedRange=sel.getRangeAt(0).cloneRange(); clickedMark=null;
+      document.getElementById('mpHighlight').disabled=false;
+      showAt(markPopup, e.clientX, e.clientY);
+    } else if(mark){
+      clickedMark=mark; savedRange=null;
+      document.getElementById('mpHighlight').disabled=true;
+      showAt(markPopup, e.clientX, e.clientY);
+    }
+  },0);
+});
+document.addEventListener('mousedown', e=>{
+  if(!markPopup.contains(e.target) && !noteModal.contains(e.target)){
+    markPopup.style.display='none';
+  }
+});
+function showAt(el,x,y){
+  el.style.display='block';
+  const pad=10;
+  el.style.left=Math.min(x, window.innerWidth-el.offsetWidth-pad)+'px';
+  el.style.top=Math.min(y+8, window.innerHeight-el.offsetHeight-pad)+'px';
+}
+function wrapSelection(cls,note=''){
+  if(!savedRange) return;
+  const sp=document.createElement('span');
+  sp.className=cls;
+  if(note) sp.dataset.note=note;
+  try{ savedRange.surroundContents(sp); }
+  catch(e){ const frag=savedRange.extractContents(); sp.appendChild(frag); savedRange.insertNode(sp); }
+  window.getSelection().removeAllRanges();
+  savedRange=null;
+}
+function mpHighlight(){
+  markPopup.style.display='none';
+  wrapSelection('mark-yellow');
+}
+function mpComment(){
+  markPopup.style.display='none';
+  document.getElementById('noteText').value = clickedMark ? (clickedMark.dataset.note||'') : '';
+  noteModal.style.display='flex';
+  document.getElementById('noteText').focus();
+}
+function closeNote(){ noteModal.style.display='none'; savedRange=null; clickedMark=null; }
+function saveNote(){
+  const v=document.getElementById('noteText').value.trim();
+  if(clickedMark){
+    if(v){ clickedMark.dataset.note=v; clickedMark.classList.remove('mark-yellow'); clickedMark.classList.add('mark-note'); }
+    clickedMark=null;
+  } else if(v){
+    wrapSelection('mark-note', v);
+  }
+  noteModal.style.display='none';
+}
+function mpClearAll(){
+  markPopup.style.display='none';
+  if(clickedMark){
+    const p=clickedMark.parentNode;
+    while(clickedMark.firstChild) p.insertBefore(clickedMark.firstChild, clickedMark);
+    p.removeChild(clickedMark);
+    clickedMark=null;
+  } else {
+    if(!confirm('Clear all highlights and comments in this passage?')) return;
+    document.querySelectorAll('.mark-yellow,.mark-note').forEach(m=>{
+      const p=m.parentNode;
+      while(m.firstChild) p.insertBefore(m.firstChild, m);
+      p.removeChild(m);
+    });
+    savedRange=null;
+  }
+}
+document.addEventListener('mouseover', e=>{
+  const n=e.target.closest('.mark-note');
+  if(n && n.dataset.note){
+    noteTip.textContent=n.dataset.note;
+    noteTip.style.display='block';
+    const r=n.getBoundingClientRect();
+    noteTip.style.left=Math.min(r.left, window.innerWidth-300)+'px';
+    noteTip.style.top=Math.max(8, r.top-noteTip.offsetHeight-10)+'px';
+  }
+});
+document.addEventListener('mouseout', e=>{
+  if(e.target.closest('.mark-note')) noteTip.style.display='none';
+});
+
+// ---- Options menu (top-right hamburger): Submit / Contrast / Text size ----
+function openOptions(){
+  document.getElementById('optionsOverlay').classList.add('open');
+  showOptPage('main');
+}
+function closeOptions(){
+  document.getElementById('optionsOverlay').classList.remove('open');
+}
+function closeOptionsIfOutside(e){
+  if(e.target.id==='optionsOverlay') closeOptions();
+}
+function showOptPage(name){
+  const map={main:'optPageMain', submit:'optPageSubmit', contrast:'optPageContrast', textsize:'optPageTextSize'};
+  document.querySelectorAll('.opt-page').forEach(p=>p.classList.add('hidden'));
+  document.getElementById(map[name]).classList.remove('hidden');
+}
+function confirmSubmitFromMenu(){
+  closeOptions();
+  submitSection(currentSection, true);
+}
+function setContrastTheme(t){
+  document.body.classList.remove('theme-invert','theme-yellow');
+  if(t==='invert') document.body.classList.add('theme-invert');
+  if(t==='yellow') document.body.classList.add('theme-yellow');
+  document.querySelectorAll('#optPageContrast .opt-choice').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`#optPageContrast .opt-choice[data-theme="${t}"]`).classList.add('active');
+}
+function setTextSize(t){
+  document.body.classList.remove('text-large','text-xlarge');
+  if(t==='large') document.body.classList.add('text-large');
+  if(t==='xlarge') document.body.classList.add('text-xlarge');
+  document.querySelectorAll('#optPageTextSize .opt-choice').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`#optPageTextSize .opt-choice[data-size="${t}"]`).classList.add('active');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,798 @@
+import React, { useState, useEffect, useRef } from 'react';
+
+export default function StudentTestRunner({ testId, user, onFinished }) {
+  const [test, setTest] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Active module: 'listening' | 'reading' | 'writing'
+  const [activeModule, setActiveModule] = useState('listening');
+  const [fontSize, setFontSize] = useState('md'); // 'sm' | 'md' | 'lg' | 'xl'
+  const [showTimer, setShowTimer] = useState(true);
+  const [timeLeft, setTimeLeft] = useState(2400); // 40 minutes
+  const [timerWarning, setTimerWarning] = useState(false);
+
+  // Student Answers State
+  const [listeningAnswers, setListeningAnswers] = useState({});
+  const [readingAnswers, setReadingAnswers] = useState({});
+  const [writingAnswers, setWritingAnswers] = useState({ task1: '', task2: '' });
+
+  // Navigation and Flags
+  const [activeQuestionId, setActiveQuestionId] = useState(null);
+  const [flaggedQuestions, setFlaggedQuestions] = useState({});
+  const [activeWritingTask, setActiveWritingTask] = useState('task1'); // 'task1' | 'task2'
+
+  // Modal State
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+
+  const audioRef = useRef(null);
+  const timerIntervalRef = useRef(null);
+
+  // Fetch test details and listen to iframe submit events
+  useEffect(() => {
+    fetchTestDetails();
+    
+    const handleIframeMessage = (event) => {
+      if (event.data && event.data.type === 'IELTS_TEST_SUBMITTED') {
+        onFinished();
+      }
+    };
+    window.addEventListener('message', handleIframeMessage);
+    
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      window.removeEventListener('message', handleIframeMessage);
+    };
+  }, [testId, onFinished]);
+
+  // Start countdown timer
+  useEffect(() => {
+    timerIntervalRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerIntervalRef.current);
+          handleAutoSubmit();
+          return 0;
+        }
+        if (prev <= 300) {
+          setTimerWarning(true); // 5 minutes left warning
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerIntervalRef.current);
+  }, []);
+
+  const fetchTestDetails = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/student/test/${testId}`);
+      if (!res.ok) throw new Error('Failed to load mock test content');
+      const data = await res.json();
+      setTest(data);
+
+      // Initialize active question id
+      if (data.listening_data?.sections?.[0]?.questions?.[0]) {
+        setActiveQuestionId(data.listening_data.sections[0].questions[0].id);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAutoSubmit = () => {
+    alert("Time is up! Your answers are being submitted automatically.");
+    submitTestAnswers();
+  };
+
+  const submitTestAnswers = async () => {
+    try {
+      const res = await fetch(`/api/student/submit/${testId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: user.id,
+          listeningAnswers,
+          readingAnswers,
+          writingAnswers
+        })
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed to submit answers');
+
+      alert(result.message);
+      onFinished();
+    } catch (err) {
+      alert(`Submission Error: ${err.message}`);
+    }
+  };
+
+  // Helper to format remaining seconds into MM:SS
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // Get word count helper
+  const getWordCount = (text) => {
+    if (!text) return 0;
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
+
+  if (loading) {
+    return (
+      <div style={{ ...styles.ieltsSimulator, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f4f6' }}>
+        <h3>Loading IELTS Simulator Engine...</h3>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ ...styles.ieltsSimulator, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f4f6' }}>
+        <h3>System Loading Error: {error}</h3>
+        <button onClick={onFinished} className="btn btn-danger" style={{ marginTop: '1rem' }}>Go Back</button>
+      </div>
+    );
+  }
+
+  if (test && test.listening_data && test.listening_data.isIframe) {
+    const iframeUrl = `${window.location.origin}${test.listening_data.iframeUrl}?studentId=${user.id}&testId=${testId}`;
+    return (
+      <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
+        <iframe 
+          src={iframeUrl}
+          style={{ width: '100%', height: '100%', border: 'none' }}
+          title={test.title}
+        />
+      </div>
+    );
+  }
+
+  // Define questions list for active module to build bottom bubbles
+  let questionsForActiveModule = [];
+  if (activeModule === 'listening') {
+    test.listening_data.sections.forEach(sec => {
+      sec.questions.forEach(q => questionsForActiveModule.push(q));
+    });
+  } else if (activeModule === 'reading') {
+    test.reading_data.passages.forEach(pass => {
+      pass.questions.forEach(q => questionsForActiveModule.push(q));
+    });
+  } else {
+    // Writing tasks
+    questionsForActiveModule = [{ id: 'task1', label: 'T1' }, { id: 'task2', label: 'T2' }];
+  }
+
+  const activeQuestionIndex = questionsForActiveModule.findIndex(q => q.id === activeQuestionId);
+
+  const handleNextQuestion = () => {
+    if (activeQuestionIndex < questionsForActiveModule.length - 1) {
+      setActiveQuestionId(questionsForActiveModule[activeQuestionIndex + 1].id);
+    }
+  };
+
+  const handlePrevQuestion = () => {
+    if (activeQuestionIndex > 0) {
+      setActiveQuestionId(questionsForActiveModule[activeQuestionIndex - 1].id);
+    }
+  };
+
+  const toggleFlagged = (id) => {
+    setFlaggedQuestions(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
+  const isQuestionAnswered = (qId) => {
+    if (activeModule === 'listening') {
+      return !!listeningAnswers[qId];
+    } else if (activeModule === 'reading') {
+      return !!readingAnswers[qId];
+    } else {
+      // Writing
+      return qId === 'task1' ? getWordCount(writingAnswers.task1) > 0 : getWordCount(writingAnswers.task2) > 0;
+    }
+  };
+
+  return (
+    <div className="ielts-simulator">
+      {/* 1. Header Bar */}
+      <header className="ielts-header">
+        <div className="ielts-header-left">
+          <div className="ielts-logo">IELTS <span>Mock CD</span></div>
+          <span style={{ fontSize: '0.85rem', color: '#94a3b8', borderLeft: '1px solid #475569', paddingLeft: '1rem' }}>
+            {test.title}
+          </span>
+        </div>
+
+        {showTimer && (
+          <div className={`ielts-timer ${timerWarning ? 'warning' : ''}`}>
+            ⏳ {formatTime(timeLeft)}
+          </div>
+        )}
+
+        <div className="ielts-header-tools">
+          {/* Font sizer */}
+          <div className="font-sizer">
+            <span style={{ fontSize: '0.75rem', color: '#cbd5e1', padding: '0 0.5rem', fontWeight: 'bold' }}>A</span>
+            <button 
+              className={`font-sizer-btn ${fontSize === 'md' ? 'active' : ''}`}
+              onClick={() => setFontSize('md')}
+            >
+              Std
+            </button>
+            <button 
+              className={`font-sizer-btn ${fontSize === 'lg' ? 'active' : ''}`}
+              onClick={() => setFontSize('lg')}
+            >
+              Large
+            </button>
+            <button 
+              className={`font-sizer-btn ${fontSize === 'xl' ? 'active' : ''}`}
+              onClick={() => setFontSize('xl')}
+            >
+              X-Large
+            </button>
+          </div>
+
+          <button className="ielts-tool-btn" onClick={() => setShowTimer(!showTimer)}>
+            {showTimer ? 'Hide Timer ⏱️' : 'Show Timer ⏱️'}
+          </button>
+          <button className="ielts-tool-btn" onClick={() => setShowHelpModal(true)}>
+            Help ❓
+          </button>
+          <button className="btn btn-danger" style={{ padding: '0.4rem 1rem' }} onClick={() => setShowSubmitConfirm(true)}>
+            Submit Test 📥
+          </button>
+        </div>
+      </header>
+
+      {/* 2. Part Navigation (Tabs for Module Switching) */}
+      <nav className="ielts-part-tabs">
+        <button 
+          className={`ielts-part-tab ${activeModule === 'listening' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveModule('listening');
+            if (test.listening_data?.sections?.[0]?.questions?.[0]) {
+              setActiveQuestionId(test.listening_data.sections[0].questions[0].id);
+            }
+          }}
+        >
+          🎧 Listening
+        </button>
+        <button 
+          className={`ielts-part-tab ${activeModule === 'reading' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveModule('reading');
+            if (test.reading_data?.passages?.[0]?.questions?.[0]) {
+              setActiveQuestionId(test.reading_data.passages[0].questions[0].id);
+            }
+          }}
+        >
+          📖 Reading
+        </button>
+        <button 
+          className={`ielts-part-tab ${activeModule === 'writing' ? 'active' : ''}`}
+          onClick={() => {
+            setActiveModule('writing');
+            setActiveQuestionId('task1');
+            setActiveWritingTask('task1');
+          }}
+        >
+          ✍️ Writing
+        </button>
+      </nav>
+
+      {/* 3. Main Workspace */}
+      <div className="ielts-workspace">
+        {/* LISTENING MODULE WORKSPACE */}
+        {activeModule === 'listening' && (
+          <div style={styles.listeningContainer}>
+            {/* Embedded Audio Control */}
+            <div style={styles.audioBar}>
+              <p style={{ fontWeight: '600', color: '#1e293b', marginBottom: '0.5rem' }}>
+                🎧 Please click play to start Listening Section Audio. Real exam play-once applies.
+              </p>
+              <audio 
+                ref={audioRef}
+                src={test.listening_data.audioUrl} 
+                controls 
+                style={{ width: '100%' }}
+              />
+            </div>
+            
+            {/* Listening Sections list */}
+            <div className="ielts-highlightable" style={styles.listeningQuestionsScroll}>
+              {test.listening_data.sections.map((section, sIdx) => (
+                <div key={sIdx} style={styles.listeningSectionBlock}>
+                  <h4 style={styles.sectionHeading}>{section.title}</h4>
+                  <p style={styles.instructionText}>{section.instructions}</p>
+                  
+                  <div style={styles.questionsGrid}>
+                    {section.questions.map((q) => {
+                      const isActive = q.id === activeQuestionId;
+                      return (
+                        <div 
+                          key={q.id} 
+                          id={`q-${q.id}`}
+                          onClick={() => setActiveQuestionId(q.id)}
+                          style={{
+                            ...styles.testQuestionCard,
+                            borderColor: isActive ? '#2563eb' : '#d1d5db',
+                            boxShadow: isActive ? '0 0 0 2px rgba(37,99,235,0.15)' : 'none'
+                          }}
+                        >
+                          <span style={styles.qNumBadge}>{q.id}</span>
+                          
+                          {q.type === 'fill-in-the-blank' && (
+                            <div style={styles.blankFieldRow}>
+                              <label style={styles.blankLabel}>{q.label}</label>
+                              <input 
+                                type="text"
+                                className="ielts-input-blank"
+                                placeholder={q.placeholder}
+                                value={listeningAnswers[q.id] || ''}
+                                onChange={(e) => setListeningAnswers({
+                                  ...listeningAnswers,
+                                  [q.id]: e.target.value
+                                })}
+                              />
+                            </div>
+                          )}
+
+                          {q.type === 'multiple-choice' && (
+                            <div>
+                              <p style={styles.mcqText}>{q.text}</p>
+                              {q.options.map((opt, oIdx) => {
+                                const optionChar = opt.charAt(0); // A, B, C etc.
+                                return (
+                                  <label key={oIdx} className="ielts-option-label">
+                                    <input 
+                                      type="radio"
+                                      name={`listening-q-${q.id}`}
+                                      checked={listeningAnswers[q.id] === optionChar}
+                                      onChange={() => setListeningAnswers({
+                                        ...listeningAnswers,
+                                        [q.id]: optionChar
+                                      })}
+                                    />
+                                    <span>{opt}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* READING MODULE WORKSPACE (Independent Split Panel) */}
+        {activeModule === 'reading' && (
+          <div style={{ display: 'flex', width: '100%', overflow: 'hidden' }}>
+            {/* Left Passage Pane */}
+            <div className={`ielts-passage-pane ielts-highlightable font-${fontSize}`}>
+              {test.reading_data.passages.map((passage, pIdx) => (
+                <div key={pIdx}>
+                  <h3 className="ielts-passage-title">{passage.title}</h3>
+                  <div style={{ whiteSpace: 'pre-wrap' }}>{passage.text}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Right Question Pane */}
+            <div className={`ielts-questions-pane font-${fontSize}`}>
+              {test.reading_data.passages.map((passage, pIdx) => (
+                <div key={pIdx}>
+                  <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid #d1d5db', paddingBottom: '0.25rem', color: '#1f2937' }}>
+                    Questions for Reading Passage {pIdx + 1}
+                  </h4>
+                  
+                  {passage.questions.map((q) => {
+                    const isActive = q.id === activeQuestionId;
+                    return (
+                      <div 
+                        key={q.id}
+                        id={`q-${q.id}`}
+                        onClick={() => setActiveQuestionId(q.id)}
+                        className="ielts-question-card"
+                        style={{
+                          borderColor: isActive ? '#2563eb' : '#d1d5db',
+                          boxShadow: isActive ? '0 0 0 2px rgba(37,99,235,0.15)' : 'none'
+                        }}
+                      >
+                        <span style={styles.qNumBadge}>{q.id}</span>
+
+                        {q.type === 'multiple-choice' && (
+                          <div>
+                            <p style={styles.mcqText}>{q.text}</p>
+                            {q.options.map((opt, oIdx) => {
+                              const optionChar = opt.charAt(0);
+                              return (
+                                <label key={oIdx} className="ielts-option-label">
+                                  <input 
+                                    type="radio"
+                                    name={`reading-q-${q.id}`}
+                                    checked={readingAnswers[q.id] === optionChar}
+                                    onChange={() => setReadingAnswers({
+                                      ...readingAnswers,
+                                      [q.id]: optionChar
+                                    })}
+                                  />
+                                  <span>{opt}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {q.type === 'true-false-notgiven' && (
+                          <div>
+                            <p style={styles.mcqText}>{q.text}</p>
+                            {q.options.map((opt, oIdx) => (
+                              <label key={oIdx} className="ielts-option-label">
+                                <input 
+                                  type="radio"
+                                  name={`reading-q-${q.id}`}
+                                  checked={readingAnswers[q.id] === opt}
+                                  onChange={() => setReadingAnswers({
+                                    ...readingAnswers,
+                                    [q.id]: opt
+                                  })}
+                                />
+                                <span>{opt}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        {q.type === 'fill-in-the-blank' && (
+                          <div style={styles.blankFieldRow}>
+                            <label style={styles.blankLabel}>{q.label}</label>
+                            <input 
+                              type="text"
+                              className="ielts-input-blank"
+                              placeholder={q.placeholder}
+                              value={readingAnswers[q.id] || ''}
+                              onChange={(e) => setReadingAnswers({
+                                ...readingAnswers,
+                                [q.id]: e.target.value
+                              })}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* WRITING MODULE WORKSPACE (Independent Split Panel) */}
+        {activeModule === 'writing' && (
+          <div style={{ display: 'flex', width: '100%', overflow: 'hidden' }}>
+            {/* Left Prompt Panel */}
+            <div className={`ielts-passage-pane font-${fontSize}`} style={{ flex: '0.45' }}>
+              <div style={styles.writingSelectorBar}>
+                <button 
+                  onClick={() => {
+                    setActiveWritingTask('task1');
+                    setActiveQuestionId('task1');
+                  }}
+                  style={{
+                    ...styles.writingSelTab,
+                    borderBottomColor: activeWritingTask === 'task1' ? '#2563eb' : 'transparent',
+                    color: activeWritingTask === 'task1' ? '#2563eb' : '#374151'
+                  }}
+                >
+                  Writing Task 1 (Min 150 Words)
+                </button>
+                <button 
+                  onClick={() => {
+                    setActiveWritingTask('task2');
+                    setActiveQuestionId('task2');
+                  }}
+                  style={{
+                    ...styles.writingSelTab,
+                    borderBottomColor: activeWritingTask === 'task2' ? '#2563eb' : 'transparent',
+                    color: activeWritingTask === 'task2' ? '#2563eb' : '#374151'
+                  }}
+                >
+                  Writing Task 2 (Min 250 Words)
+                </button>
+              </div>
+
+              <div style={{ padding: '1rem 0' }}>
+                <h4 style={{ marginBottom: '1rem', color: '#111827' }}>
+                  {activeWritingTask === 'task1' ? 'Task 1 instructions:' : 'Task 2 instructions:'}
+                </h4>
+                <p style={{ lineHeight: '1.6', color: '#374151', fontSize: '1.05rem', whiteSpace: 'pre-wrap' }}>
+                  {activeWritingTask === 'task1' ? test.writing_data.task1.prompt : test.writing_data.task2.prompt}
+                </p>
+              </div>
+            </div>
+
+            {/* Right Writing Input Pane */}
+            <div className="ielts-questions-pane" style={{ flex: '0.55', display: 'flex', flexDirection: 'column' }}>
+              <h4 style={{ marginBottom: '0.5rem', color: '#1f2937' }}>Candidate Essay Response</h4>
+              
+              {activeWritingTask === 'task1' ? (
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <textarea 
+                    className="ielts-writing-textarea"
+                    placeholder="Type your Task 1 response here..."
+                    value={writingAnswers.task1}
+                    onChange={(e) => setWritingAnswers({ ...writingAnswers, task1: e.target.value })}
+                  />
+                  <div>
+                    <span className="word-count-badge">
+                      Word Count: {getWordCount(writingAnswers.task1)} / {test.writing_data.task1.minWords} min
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <textarea 
+                    className="ielts-writing-textarea"
+                    placeholder="Type your Task 2 response here..."
+                    value={writingAnswers.task2}
+                    onChange={(e) => setWritingAnswers({ ...writingAnswers, task2: e.target.value })}
+                  />
+                  <div>
+                    <span className="word-count-badge">
+                      Word Count: {getWordCount(writingAnswers.task2)} / {test.writing_data.task2.minWords} min
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Bottom Dock */}
+      <footer className="ielts-bottom-dock">
+        {/* Navigation buttons */}
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <button 
+            onClick={handlePrevQuestion}
+            disabled={activeQuestionIndex <= 0}
+            className="ielts-tool-btn"
+            style={{ padding: '0.5rem 1rem' }}
+          >
+            ← Previous
+          </button>
+          
+          {activeQuestionId && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#cbd5e1', cursor: 'pointer', fontSize: '0.85rem' }}>
+              <input 
+                type="checkbox"
+                checked={!!flaggedQuestions[activeQuestionId]}
+                onChange={() => toggleFlagged(activeQuestionId)}
+              />
+              <span>📌 Review Flag</span>
+            </label>
+          )}
+        </div>
+
+        {/* Dynamic Bubble Navigation */}
+        <div className="ielts-nav-bubbles">
+          {questionsForActiveModule.map((q, idx) => {
+            const isCurrent = q.id === activeQuestionId;
+            const isAnswered = isQuestionAnswered(q.id);
+            const isFlagged = flaggedQuestions[q.id];
+
+            return (
+              <button 
+                key={q.id}
+                onClick={() => {
+                  setActiveQuestionId(q.id);
+                  if (activeModule === 'writing') {
+                    setActiveWritingTask(q.id);
+                  } else {
+                    // Try to scroll into view
+                    const element = document.getElementById(`q-${q.id}`);
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                  }
+                }}
+                className={`ielts-bubble ${isCurrent ? 'active' : ''} ${isAnswered ? 'answered' : ''} ${isFlagged ? 'flagged' : ''}`}
+                title={activeModule === 'writing' ? `Task ${idx + 1}` : `Question ${q.id}`}
+              >
+                {activeModule === 'writing' ? (idx + 1) : q.id}
+              </button>
+            );
+          })}
+        </div>
+
+        <button 
+          onClick={handleNextQuestion}
+          disabled={activeQuestionIndex >= questionsForActiveModule.length - 1}
+          className="ielts-tool-btn"
+          style={{ padding: '0.5rem 1rem' }}
+        >
+          Next →
+        </button>
+      </footer>
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitConfirm && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.confirmPanel}>
+            <h4>Confirm Test Submission</h4>
+            <p style={{ margin: '1rem 0', color: '#4b5563', lineHeight: '1.5' }}>
+              Are you sure you want to end and submit your IELTS mock exam? 
+              Once submitted, your Reading and Listening sections will be graded automatically, 
+              and your Writing answers will be sent to the review desk.
+            </p>
+            <div style={styles.confirmActions}>
+              <button className="btn btn-primary" onClick={submitTestAnswers}>
+                Yes, Submit Test 📥
+              </button>
+              <button className="btn btn-secondary" onClick={() => setShowSubmitConfirm(false)}>
+                Cancel & Continue Testing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div style={styles.modalOverlay}>
+          <div style={styles.confirmPanel}>
+            <h4>Mock CD-IELTS Navigation Help</h4>
+            <div style={{ margin: '1rem 0', fontSize: '0.9rem', color: '#4b5563', lineHeight: '1.6' }}>
+              <p>🎯 <strong>Highlighting Text</strong>: Highlight passages or questions by simply clicking and dragging your cursor over the text.</p>
+              <p style={{ marginTop: '0.5rem' }}>⏱️ <strong>Timer</strong>: The countdown timer is pinned in the header. Use the "Hide" button to hide the timer. It turns red in the final 5 minutes.</p>
+              <p style={{ marginTop: '0.5rem' }}>📌 <strong>Review Dock</strong>: Mark any question for review by checking the "Review Flag" box. A dot indicator will appear on that question bubble in the dock below.</p>
+            </div>
+            <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowHelpModal(false)}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const styles = {
+  listeningContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+    backgroundColor: '#ffffff',
+  },
+  audioBar: {
+    backgroundColor: '#e2e8f0',
+    padding: '1.25rem 2rem',
+    borderBottom: '1px solid #cbd5e1',
+  },
+  listeningQuestionsScroll: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '2rem',
+  },
+  listeningSectionBlock: {
+    marginBottom: '3rem',
+    borderBottom: '1px dotted #d1d5db',
+    paddingBottom: '2rem',
+  },
+  sectionHeading: {
+    fontSize: '1.25rem',
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: '0.5rem',
+  },
+  instructionText: {
+    fontSize: '0.95rem',
+    fontStyle: 'italic',
+    color: '#475569',
+    marginBottom: '1.5rem',
+  },
+  questionsGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr',
+    gap: '1.5rem',
+  },
+  testQuestionCard: {
+    backgroundColor: '#f8fafc',
+    border: '1px solid #cbd5e1',
+    borderRadius: '6px',
+    padding: '1.25rem',
+    position: 'relative',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  qNumBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '24px',
+    height: '24px',
+    borderRadius: '4px',
+    backgroundColor: '#1e293b',
+    color: '#ffffff',
+    fontSize: '0.8rem',
+    fontWeight: '700',
+    marginBottom: '0.75rem',
+  },
+  blankFieldRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    marginTop: '0.25rem',
+  },
+  blankLabel: {
+    fontWeight: '600',
+    color: '#334155',
+  },
+  mcqText: {
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: '0.75rem',
+  },
+  writingSelectorBar: {
+    display: 'flex',
+    borderBottom: '1px solid #e5e7eb',
+    marginBottom: '1rem',
+    userSelect: 'none',
+  },
+  writingSelTab: {
+    flex: 1,
+    padding: '0.75rem 0.5rem',
+    background: 'none',
+    border: 'none',
+    borderBottom: '2px solid transparent',
+    fontWeight: '600',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  modalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+  },
+  confirmPanel: {
+    width: '100%',
+    maxWidth: '480px',
+    backgroundColor: '#ffffff',
+    borderRadius: '4px',
+    padding: '2rem',
+    border: '1px solid #d1d5db',
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+  },
+  confirmActions: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    gap: '1rem',
+    marginTop: '1.5rem',
+  }
+};

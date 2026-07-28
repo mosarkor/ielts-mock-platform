@@ -1,0 +1,567 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+
+/* Global Variables & Reset */
+:root {
+  /* Premium Dark Theme */
+  --bg-primary: #0b0f19;
+  --bg-secondary: #161f30;
+  --bg-tertiary: #222d43;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --color-indigo: #6366f1;
+  --color-indigo-hover: #4f46e5;
+  --color-emerald: #10b981;
+  --color-emerald-hover: #059669;
+  --color-rose: #f43f5e;
+  --color-rose-hover: #e11d48;
+  --color-amber: #f59e0b;
+  --color-amber-hover: #d97706;
+  --glass-bg: rgba(22, 31, 48, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-ielts: 'Inter', sans-serif;
+
+  /* Official IELTS Simulator Theme Variables */
+  --ielts-bg: #f3f4f6;
+  --ielts-header-bg: #1e293b;
+  --ielts-card-bg: #ffffff;
+  --ielts-text: #1f2937;
+  --ielts-text-muted: #4b5563;
+  --ielts-blue: #2563eb;
+  --ielts-blue-hover: #1d4ed8;
+  --ielts-highlight: #fef08a; /* Yellow highlighter */
+  --ielts-border: #d1d5db;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-indigo);
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Layout Utilities */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+/* Buttons */
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--color-indigo);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--color-indigo-hover);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: var(--color-emerald);
+  color: #fff;
+}
+.btn-success:hover {
+  background: var(--color-emerald-hover);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: var(--color-rose);
+  color: #fff;
+}
+.btn-danger:hover {
+  background: var(--color-rose-hover);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Form Controls */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: var(--color-indigo);
+}
+
+/* Dashboard Cards */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* ----------------------------------------
+   REAL COMPUTER-DELIVERED IELTS SIMULATOR STYLING
+---------------------------------------- */
+.ielts-simulator {
+  background-color: var(--ielts-bg);
+  color: var(--ielts-text);
+  font-family: var(--font-ielts);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* IELTS Header */
+.ielts-header {
+  background-color: var(--ielts-header-bg);
+  color: #ffffff;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid var(--ielts-blue);
+  user-select: none;
+}
+
+.ielts-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.ielts-logo {
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 1px;
+}
+
+.ielts-logo span {
+  color: #ff3b30;
+}
+
+.ielts-timer {
+  background-color: #334155;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.ielts-timer.warning {
+  background-color: #ef4444;
+  animation: pulse 1s infinite;
+}
+
+.ielts-header-tools {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ielts-tool-btn {
+  background: transparent;
+  color: #cbd5e1;
+  border: 1px solid #475569;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.ielts-tool-btn:hover {
+  background: #334155;
+  color: #ffffff;
+}
+
+/* Font Size Adjuster */
+.font-sizer {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #334155;
+  padding: 0.25rem;
+  border-radius: 4px;
+}
+
+.font-sizer-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  border-radius: 2px;
+  font-weight: bold;
+}
+
+.font-sizer-btn.active {
+  background: var(--ielts-blue);
+  color: white;
+}
+
+/* IELTS Part Navigation (Tabs) */
+.ielts-part-tabs {
+  background-color: #e5e7eb;
+  display: flex;
+  border-bottom: 1px solid var(--ielts-border);
+  user-select: none;
+}
+
+.ielts-part-tab {
+  padding: 0.75rem 2rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #374151;
+  border-right: 1px solid var(--ielts-border);
+  transition: all 0.2s ease;
+}
+
+.ielts-part-tab.active {
+  background-color: #ffffff;
+  color: var(--ielts-blue);
+  border-bottom: 2px solid var(--ielts-blue);
+}
+
+/* IELTS Main Content Split Layout */
+.ielts-workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.ielts-passage-pane {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-right: 2px solid var(--ielts-border);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+.ielts-passage-pane.font-lg { font-size: 1.2rem; }
+.ielts-passage-pane.font-xl { font-size: 1.4rem; }
+
+.ielts-passage-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #111827;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.5rem;
+}
+
+/* Custom Text Highlighter Selection */
+.ielts-highlightable ::selection {
+  background-color: var(--ielts-highlight);
+  color: #000000;
+}
+
+.ielts-questions-pane {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  background-color: #f9fafb;
+}
+
+.ielts-questions-pane.font-lg { font-size: 1.2rem; }
+.ielts-questions-pane.font-xl { font-size: 1.4rem; }
+
+.ielts-question-card {
+  background: white;
+  border: 1px solid var(--ielts-border);
+  border-radius: 6px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.ielts-question-label {
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.ielts-input-blank {
+  border: 1px solid var(--ielts-border);
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.95rem;
+  width: 250px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ielts-input-blank:focus {
+  border-color: var(--ielts-blue);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.ielts-option-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.ielts-option-label:hover {
+  background-color: #f3f4f6;
+}
+
+/* Writing Area Split Screen */
+.ielts-writing-textarea {
+  width: 100%;
+  height: 350px;
+  border: 1px solid var(--ielts-border);
+  border-radius: 6px;
+  padding: 1rem;
+  font-family: inherit;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+
+.ielts-writing-textarea:focus {
+  border-color: var(--ielts-blue);
+}
+
+.word-count-badge {
+  display: inline-block;
+  background-color: #e2e8f0;
+  color: #475569;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+/* IELTS Bottom Navigation Dock */
+.ielts-bottom-dock {
+  background-color: #1e293b;
+  border-top: 2px solid var(--ielts-border);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+}
+
+.ielts-nav-bubbles {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding: 0.25rem 0;
+  max-width: 70%;
+}
+
+.ielts-bubble {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid #64748b;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.ielts-bubble:hover {
+  border-color: #ffffff;
+  background: rgba(255,255,255,0.1);
+}
+
+.ielts-bubble.active {
+  border-color: #38bdf8;
+  background-color: rgba(56, 189, 248, 0.2);
+  color: #ffffff;
+}
+
+.ielts-bubble.answered {
+  background-color: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+
+.ielts-bubble.flagged::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background-color: #f59e0b;
+  border-radius: 50%;
+  border: 1.5px solid #1e293b;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Light Theme Variables & Overrides */
+body.light {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(15, 23, 42, 0.08);
+}
+
+/* Transitions & Style Enhancements for Theme Toggle */
+.theme-toggle-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  user-select: none;
+}
+.theme-toggle-btn:hover {
+  background: var(--color-indigo);
+  color: white;
+  transform: scale(1.08);
+}
+
+.login-page-container {
+  transition: background 0.3s ease;
+}
+body.light .login-page-container {
+  background: radial-gradient(circle at 50% 50%, #ffffff 0%, #cbd5e1 100%) !important;
+}
+
+/* Make sure student feedback details inside review models looks outstanding in Light Mode */
+body.light .detailsGrid, 
+body.light .soundTestBox {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+}
+body.light .detailVal {
+  color: #0f172a !important;
+}
+body.light .detailLabel {
+  color: #475569 !important;
+}
+body.light .instruction, 
+body.light .soundSubtext {
+  color: #334155 !important;
+}
+body.light .tabBtnActive {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+body.light select,
+body.light textarea,
+body.light input {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+body.light select:focus,
+body.light textarea:focus,
+body.light input:focus {
+  border-color: var(--color-indigo) !important;
+}
+

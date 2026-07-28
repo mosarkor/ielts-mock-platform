@@ -1,0 +1,1530 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Full Mock Test</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --ielts-red:#d2122e;--border:#c9c9c9;--text:#1a1a1a;--muted:#6b6b6b;
+    --bg-panel:#f0f0f0;--focus-blue:#2b6fd6;--highlight:#ffe066;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;font-family:Arial, Helvetica, sans-serif;color:var(--text);background:#fff;}
+  #app{height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  .brand-badge{position:relative;width:60px;height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;}
+  .brand-badge .ring{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(from 0deg,#d2122e,#ff8a3d,#ffd23f,#2b6fd6,#d2122e);animation:spin 4s linear infinite;}
+  .brand-badge .photo{position:relative;width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;z-index:2;animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(210,18,46,0.35);}50%{box-shadow:0 0 0 6px rgba(210,18,46,0);}}
+
+  .gate-screen{height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;}
+  .gate-card{background:#fff;border:1px solid var(--border);border-radius:4px;padding:40px 44px;width:380px;box-shadow:0 2px 10px rgba(0,0,0,0.08);text-align:center;}
+  .gate-brand-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;}
+  .gate-logo{font-size:28px;font-weight:800;color:var(--ielts-red);letter-spacing:1px;}
+  .gate-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;font-weight:bold;margin-bottom:6px;}
+  .gate-card input[type=text],.gate-card input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:3px;font-size:15px;margin-bottom:18px;}
+  .gate-card input:focus{outline:2px solid var(--focus-blue);border-color:var(--focus-blue);}
+  .gate-btn{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:3px;font-size:15px;cursor:pointer;}
+  .gate-btn:hover{background:#000;}
+  .gate-error{color:var(--ielts-red);font-size:13px;margin:-10px 0 14px;min-height:16px;text-align:left;}
+  .gate-footer{margin-top:18px;font-size:11px;color:#999;}
+  .gate-footer a{color:var(--focus-blue);text-decoration:none;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff;min-height:76px;}
+  .topbar-left{display:flex;align-items:center;gap:14px;}
+  .ielts-logo{font-size:20px;font-weight:800;color:var(--ielts-red);letter-spacing:0.5px;}
+  .taker-id-block{font-size:12px;line-height:1.3;}
+  .taker-id-block .label{font-weight:bold;font-size:12px;}
+  .stage-label{font-size:11px;color:var(--ielts-red);font-weight:bold;text-transform:uppercase;letter-spacing:0.5px;}
+  .status-line{color:#333;font-size:12px;display:flex;align-items:center;gap:4px;font-weight:bold;}
+  .status-line.low{color:var(--ielts-red);}
+  .topbar-right{display:flex;align-items:center;gap:18px;font-size:18px;color:#222;}
+  .topbar-right .icon-btn{cursor:pointer;background:none;border:none;font-size:18px;color:#222;padding:4px;display:flex;align-items:center;}
+
+  .main-wrap{flex:1;display:flex;overflow:hidden;position:relative;}
+  .content-wrap{display:flex;flex:1;overflow:hidden;}
+
+  /* listening single-pane */
+  .content{flex:1;overflow-y:auto;padding:20px 24px 90px;}
+  /* reading/writing two-pane */
+  .left-pane{flex:1 1 45%;overflow-y:auto;padding:22px 26px;border-right:1px solid var(--border);font-size:14px;line-height:1.75;}
+  .right-pane{flex:1 1 55%;overflow-y:auto;padding:22px 26px 90px;}
+
+  .passage-title{font-size:17px;font-weight:800;margin-bottom:4px;}
+  .passage-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+  .passage-para{margin-bottom:14px;display:flex;gap:10px;}
+  .para-letter{font-weight:bold;color:var(--ielts-red);flex-shrink:0;width:18px;}
+  .para-text{flex:1;}
+
+  .part-banner{background:var(--bg-panel);border:1px solid #ddd;border-radius:2px;padding:12px 16px;margin-bottom:18px;}
+  .part-banner b{font-size:14px;}
+  .part-banner div.instr{font-size:13px;margin-top:2px;}
+  .q-instructions{font-size:13px;margin-bottom:10px;}
+  .q-title{font-weight:bold;font-size:13px;}
+  .section-title{font-weight:bold;margin:18px 0 10px;font-size:14px;}
+
+  .notes-block{font-size:14px;line-height:2.1;}
+  .notes-row{margin:2px 0;}
+
+  input.blank{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 8px;font-size:14px;width:140px;text-align:center;font-family:inherit;}
+  input.blank:focus{outline:none;border-color:var(--focus-blue);box-shadow:0 0 0 1px var(--focus-blue);}
+  select.blank-select,.tfng-row select{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 6px;font-size:13px;font-family:inherit;background:#fafcff;width:150px;}
+
+  .mc-question{margin-bottom:20px;}
+  .mc-question .qnum{display:inline-block;border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;margin-right:6px;}
+  .mc-opts label{display:block;font-size:13px;margin:6px 0 0 22px;cursor:pointer;}
+  .mc-opts input{margin-right:8px;}
+
+  .tfng-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:13px;}
+  .tfng-row .qtext{flex:1;}
+  .help-select-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;}
+  .help-select-row .qnum{border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;}
+
+  .drag-pool{display:flex;flex-direction:column;gap:8px;width:230px;}
+  .drag-pool.wide{width:280px;}
+  .drag-item{border:1px solid #333;padding:8px 12px;font-size:13px;background:#fff;border-radius:2px;cursor:grab;user-select:none;}
+  .drag-item.big{padding:14px 16px;font-size:14px;font-weight:500;line-height:1.4;}
+  .drag-item.used{opacity:0.35;cursor:not-allowed;}
+  .drop-slot{border:1px dashed var(--focus-blue);min-width:60px;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;font-size:13px;min-height:16px;background:#fafcff;}
+  .drop-slot.big{min-width:260px;min-height:44px;padding:10px 14px;font-size:14px;}
+  .drop-slot.filled{border-style:solid;background:#eef4ff;}
+  .people-list{display:flex;flex-direction:column;gap:16px;}
+  .people-row{display:flex;align-items:center;gap:10px;}
+  .people-row .pname{width:220px;font-size:13px;}
+  .people-row.big-row{align-items:flex-start;}
+  .people-row.big-row .pname{padding-top:10px;}
+  .map-ref-wrap{margin-top:14px;text-align:left;}
+  .map-ref-wrap img{max-width:380px;width:100%;border:1px solid #999;border-radius:2px;}
+  .map-caption{font-size:11px;color:#777;margin-top:4px;}
+
+
+  /* draggable middle divider */
+  .pane-resizer{width:8px;flex:0 0 8px;cursor:col-resize;background:linear-gradient(90deg,#f7f7f7,#d9d9d9,#f7f7f7);border-left:1px solid #cfcfcf;border-right:1px solid #cfcfcf;position:relative;z-index:3;}
+  .pane-resizer:hover,.pane-resizer.dragging{background:#c8d8ff;}
+  .pane-resizer::after{content:"";position:absolute;top:50%;left:50%;width:2px;height:34px;transform:translate(-50%,-50%);border-left:2px dotted #777;}
+  .content-wrap.resizable{user-select:none;}
+
+  /* audio gate */
+  .audio-gate-overlay{position:absolute;inset:0;background:rgba(120,120,120,0.55);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:30;color:#fff;text-align:center;}
+  .audio-gate-overlay.show{display:flex;}
+  .headphone-icon{font-size:70px;margin-bottom:10px;}
+  .audio-gate-overlay p{max-width:600px;font-size:14px;margin:6px 0 4px;}
+  .play-btn{margin-top:16px;background:#111;color:#fff;border:none;padding:10px 24px;font-size:15px;border-radius:3px;cursor:pointer;display:flex;align-items:center;gap:8px;}
+  .play-btn:hover{background:#000;}
+  .play-btn:disabled{background:#555;cursor:wait;}
+
+  /* nav arrows (listening only) */
+  .nav-arrows{position:absolute;right:20px;bottom:70px;display:none;gap:4px;}
+  .nav-arrows.show{display:flex;}
+  .nav-arrows button{width:44px;height:36px;background:#111;color:#fff;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+  .nav-arrows button:disabled{background:#ccc;cursor:not-allowed;color:#888;}
+  .nav-arrows button:hover:not(:disabled){background:#000;}
+
+  /* writing task */
+  .task-title{font-size:16px;font-weight:800;margin-bottom:10px;}
+  .task-text{font-size:14px;margin-bottom:16px;}
+  .task-img-wrap{margin-top:14px;text-align:left;}
+  .task-img-wrap img{max-width:100%;border:1px solid #999;border-radius:2px;}
+  .task-img-caption{font-size:11px;color:#777;margin-top:6px;}
+  .answer-label{font-weight:bold;font-size:13px;margin-bottom:8px;}
+  textarea.answer-box{flex:1;min-height:340px;width:100%;border:1px solid var(--border);border-radius:3px;padding:14px 16px;font-size:14px;line-height:1.6;font-family:inherit;resize:vertical;}
+  textarea.answer-box:focus{outline:none;border-color:var(--focus-blue);box-shadow:0 0 0 1px var(--focus-blue);}
+  .word-count-row{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px;color:var(--muted);}
+  .word-count-row .wc-num{font-weight:bold;color:#333;}
+  .word-count-row .wc-num.ok{color:#1a8a3d;}
+  .word-count-row .wc-num.low{color:var(--ielts-red);}
+
+  .selection-menu{position:absolute;background:#fff;border:1px solid #999;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:flex;z-index:50;border-radius:2px;}
+  .selection-menu button{border:none;background:none;padding:8px 12px;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .selection-menu button:hover{background:#f0f0f0;}
+  .selection-menu button + button{border-left:1px solid #ddd;}
+  mark.hl{background:var(--highlight);}
+
+  .notes-panel{width:260px;border-left:1px solid var(--border);background:#f0f0f0;padding:16px;flex-shrink:0;display:none;overflow-y:auto;}
+  .notes-panel.open{display:block;}
+  .notes-panel-title{font-weight:bold;font-size:13px;margin-bottom:14px;color:var(--ielts-red);}
+  .notes-panel-empty{color:#555;font-size:13px;text-align:center;margin-top:40px;line-height:1.6;}
+  .note-entry{background:#fff;border:1px solid #ccc;border-radius:3px;padding:8px 10px;margin-bottom:10px;font-size:12px;}
+  .note-entry .quoted{font-style:italic;color:#333;margin-bottom:4px;}
+
+  .bottombar{border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;height:52px;flex-shrink:0;background:#fff;font-size:13px;justify-content:space-between;overflow-x:auto;}
+  .part-nav-group{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .part-nav-group .part-label{font-weight:bold;color:#333;white-space:nowrap;cursor:pointer;padding:4px 10px;border-radius:3px;}
+  .part-nav-group .part-label.active-part{color:#fff;background:var(--ielts-red);}
+  .qnum-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;border:1px solid transparent;color:#333;cursor:pointer;background:none;border-radius:2px;}
+  .qnum-btn.answered{color:var(--focus-blue);}
+  .part-count{color:#999;font-size:12px;white-space:nowrap;}
+  .submit-check{width:36px;height:36px;background:#f0f0f0;border:none;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:#333;flex-shrink:0;}
+  .submit-check:hover{background:#e2e2e2;}
+
+  .menu-overlay{position:absolute;inset:0;background:#fff;z-index:40;display:none;flex-direction:column;}
+  .menu-overlay.open{display:flex;}
+  .menu-header{display:grid;grid-template-columns:96px 1fr 40px;align-items:center;padding:14px 16px;border-bottom:1px solid #eee;font-size:15px;font-weight:600;}
+  .menu-header .back-btn{grid-column:1;justify-self:start;background:none;border:none;cursor:pointer;font-size:14px;color:#111;display:none;align-items:center;gap:2px;padding:4px 0;white-space:nowrap;}
+  .menu-header .back-btn.show{display:flex;}
+  .menu-header .title-text{grid-column:2;text-align:center;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .menu-header .close-btn{grid-column:3;justify-self:end;background:none;border:none;cursor:pointer;font-size:18px;}
+  .menu-body{padding:20px;max-width:440px;margin:0 auto;width:100%;}
+  .menu-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid #ddd;cursor:pointer;font-size:14px;}
+  .menu-item + .menu-item{border-top:none;}
+  .menu-item.danger{background:var(--ielts-red);color:#fff;border-color:var(--ielts-red);font-weight:600;}
+  .menu-item .chev{font-size:15px;}
+  .option-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid #ddd;font-size:13px;cursor:pointer;}
+  .option-row + .option-row{border-top:none;}
+  .option-row .check{width:16px;color:#111;display:inline-block;}
+  .swatch{width:60px;height:22px;border:1px solid #999;display:flex;align-items:center;justify-content:center;gap:2px;}
+  .swatch .bar{width:3px;height:12px;}
+  .sw-bw .bar{background:#333;}
+  .sw-bw{background:#eee;}
+  .sw-wb{background:#111;}
+  .sw-wb .bar{background:#eee;}
+  .sw-yb{background:#111;}
+  .sw-yb .bar{background:#e8c400;}
+
+  /* Text size — applies to passage/question/task/answer content, including textareas */
+  .textsize-regular .content,.textsize-regular .left-pane,.textsize-regular .right-pane,.textsize-regular textarea.answer-box{font-size:13px;}
+  .textsize-large .content,.textsize-large .left-pane,.textsize-large .right-pane,.textsize-large textarea.answer-box{font-size:17px;}
+  .textsize-extralarge .content,.textsize-extralarge .left-pane,.textsize-extralarge .right-pane,.textsize-extralarge textarea.answer-box{font-size:21px;}
+
+  .final-action-btn{background:#fff;color:#111;border:1px solid #111;padding:7px 16px;border-radius:3px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .final-action-btn:hover{background:#f2f2f2;}
+  .final-action-btn.primary{background:#111;color:#fff;}
+  .final-action-btn.primary:hover{background:#000;}
+  .transition-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:10px;gap:10px;}
+  .transition-body h2{font-size:18px;color:var(--ielts-red);margin:0;}
+  .transition-body p{font-size:13px;color:#333;margin:0;}
+
+  .results-wrap{padding:30px 40px;overflow-y:auto;height:100%;}
+  .results-wrap h1{color:var(--ielts-red);font-size:24px;margin-bottom:4px;}
+  .results-sub{color:#666;font-size:13px;margin-bottom:24px;}
+  .report-section{border:1px solid #ddd;border-radius:4px;padding:20px 24px;margin-bottom:22px;}
+  .report-section h2{font-size:16px;margin:0 0 14px;color:var(--ielts-red);}
+  .score-summary{display:flex;gap:24px;margin-bottom:18px;flex-wrap:wrap;}
+  .score-box{border:1px solid #ddd;border-radius:4px;padding:14px 22px;text-align:center;min-width:110px;}
+  .score-box .num{font-size:26px;font-weight:800;color:var(--ielts-red);}
+  .score-box .lbl{font-size:11px;color:#666;margin-top:4px;}
+  table.review-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.review-table th, table.review-table td{border:1px solid #ddd;padding:6px 8px;text-align:left;}
+  table.review-table th{background:var(--bg-panel);}
+  .ok{color:#1a8a3d;font-weight:bold;}
+  .no{color:var(--ielts-red);font-weight:bold;}
+  .report-answer{white-space:pre-wrap;font-size:13.5px;line-height:1.7;background:#fafafa;border:1px solid #eee;border-radius:3px;padding:14px 16px;margin-top:6px;}
+  .report-wc{font-size:11px;color:#888;margin-top:6px;}
+  .restart-btn,.download-btn{margin-top:10px;background:#111;color:#fff;border:none;padding:10px 22px;border-radius:3px;cursor:pointer;font-size:14px;margin-right:12px;}
+  .download-btn{background:var(--ielts-red);}
+  .brand-footer{margin-top:10px;padding-top:18px;border-top:1px solid #eee;display:flex;align-items:center;gap:12px;font-size:12px;color:#666;}
+  .brand-footer a{color:var(--focus-blue);text-decoration:none;font-weight:bold;}
+
+  body.contrast-wb .content-wrap,body.contrast-wb .main-wrap,body.contrast-wb .topbar,body.contrast-wb .bottombar,body.contrast-wb .content,body.contrast-wb .left-pane,body.contrast-wb .right-pane{background:#000 !important;color:#fff !important;}
+  body.contrast-wb .part-banner{background:#1a1a1a;border-color:#444;}
+  body.contrast-wb input.blank,body.contrast-wb select,body.contrast-wb .drop-slot,body.contrast-wb .drag-item,body.contrast-wb textarea.answer-box{background:#111;color:#fff;border-color:#666;}
+  body.contrast-wb .left-pane{border-color:#444;}
+
+  body.contrast-yb .content-wrap,body.contrast-yb .main-wrap,body.contrast-yb .topbar,body.contrast-yb .bottombar,body.contrast-yb .content,body.contrast-yb .left-pane,body.contrast-yb .right-pane{background:#000 !important;color:#f2d70a !important;}
+  body.contrast-yb .part-banner{background:#1a1a1a;border-color:#555;}
+  body.contrast-yb input.blank,body.contrast-yb select,body.contrast-yb .drop-slot,body.contrast-yb .drag-item,body.contrast-yb textarea.answer-box{background:#111;color:#f2d70a;border-color:#f2d70a;}
+  body.contrast-yb .left-pane{border-color:#555;}
+
+  .hidden{display:none !important;}
+
+  @media (max-width:900px){
+    .content-wrap{flex-direction:column;}
+    .left-pane{border-right:none;border-bottom:1px solid var(--border);max-height:42vh;}
+    .notes-panel{position:absolute;right:0;top:0;bottom:0;z-index:45;}
+  }
+</style>
+
+      <style>
+        .brand-badge, 
+        .brand, 
+        .gate-footer, 
+        .tg-circle, 
+        [title*="Telegram"], 
+        [title*="blog"], 
+        [alt*="IELTS Mock Team"], 
+        a[href*="t.me"] {
+          display: none !important;
+          opacity: 0 !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+        }
+      </style>
+      </head>
+      
+<body>
+<div id="app">
+
+  <!-- PASSWORD -->
+  <div class="gate-screen" id="screen-password">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="#" target="_blank" rel="noopener" title="IELTS Mock Test Center — Telegram">
+          <span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="IELTS Mock Team">
+        </a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Full Mock Test</div>
+      <label for="pwd-input">Enter Password</label>
+      <input type="password" id="pwd-input" placeholder="Password" autocomplete="off">
+      <div class="gate-error" id="pwd-error"></div>
+      <button class="gate-btn" id="pwd-submit">Continue</button>
+      <div class="gate-footer">Full Mock Test — <a href="#" target="_blank" rel="noopener">IELTS Mock Test Center</a></div>
+    </div>
+  </div>
+
+  <!-- ID -->
+  <div class="gate-screen hidden" id="screen-id">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="#" target="_blank" rel="noopener" title="IELTS Mock Test Center — Telegram">
+          <span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="IELTS Mock Team">
+        </a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Enter your Test Taker ID</div>
+      <label for="id-input">Test Taker ID</label>
+      <input type="text" id="id-input" placeholder="e.g. 123456789" autocomplete="off">
+      <div class="gate-error" id="id-error"></div>
+      <button class="gate-btn" id="id-submit">Start Test</button>
+      <div class="gate-footer">Full Mock Test — <a href="#" target="_blank" rel="noopener">IELTS Mock Test Center</a></div>
+    </div>
+  </div>
+
+  <!-- TEST SHELL (shared by Listening / Reading / Writing) -->
+  <div class="hidden" id="screen-test" style="height:100%;display:flex;flex-direction:column;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a class="brand-badge" href="#" target="_blank" rel="noopener" title="IELTS Mock Test Center — Telegram">
+          <span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="IELTS Mock Team">
+        </a>
+        <div class="ielts-logo">IELTS</div>
+        <div class="taker-id-block">
+          <div class="stage-label" id="stage-label">Listening</div>
+          <div><span class="label">Test taker ID:</span> <span id="taker-id-display" style="color:#333;"></span></div>
+          <div class="status-line" id="status-line">—</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span title="Connection">📶</span>
+        <span title="Notifications">🔔</span>
+        <button class="icon-btn" id="hamburger-btn" title="Menu">☰</button>
+        <button class="icon-btn" id="notes-toggle-btn" title="Notes">✏️</button>
+      </div>
+    </div>
+
+    <div class="main-wrap">
+      <div class="content-wrap" id="content-wrap"><!-- populated by JS per stage --></div>
+
+      <div class="notes-panel" id="notes-panel">
+        <div class="notes-panel-title">Notes</div>
+        <div id="notes-list"></div>
+      </div>
+
+      <div class="audio-gate-overlay" id="audio-gate-overlay">
+        <div class="headphone-icon">🎧</div>
+        <p>You will be listening to an audio clip during this test. You will not be permitted to pause or rewind the audio while answering the questions.</p>
+        <p><b>To continue, click Play.</b></p>
+        <button class="play-btn" id="play-audio-btn">▶ Play</button>
+      </div>
+
+      <div class="menu-overlay" id="menu-overlay">
+        <div class="menu-header">
+          <button class="back-btn" id="menu-back-btn">‹ Options</button>
+          <span id="menu-header-title" class="title-text">Options</span>
+          <button class="close-btn" id="menu-close-btn">✕</button>
+        </div>
+        <div class="menu-body">
+          <div id="menu-root-view">
+            <div class="menu-item danger" id="menu-submit-btn" style="margin-bottom:16px;"><span>🚀 Go to submission page</span><span class="chev">›</span></div>
+            <div class="menu-item" id="menu-contrast-btn"><span>◐ Contrast</span><span class="chev">›</span></div>
+            <div class="menu-item" id="menu-textsize-btn"><span>🔍 Text size</span><span class="chev">›</span></div>
+          </div>
+          <div id="menu-contrast-view" class="hidden">
+            <div class="option-row" data-contrast="bw"><span><span class="check">✔</span> Black on white</span><span class="swatch sw-bw"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+            <div class="option-row" data-contrast="wb"><span><span class="check"></span> White on black</span><span class="swatch sw-wb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+            <div class="option-row" data-contrast="yb"><span><span class="check"></span> Yellow on black</span><span class="swatch sw-yb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+          </div>
+          <div id="menu-textsize-view" class="hidden">
+            <div class="option-row" data-textsize="regular"><span><span class="check">✔</span> Regular</span></div>
+            <div class="option-row" data-textsize="large"><span><span class="check"></span> Large</span></div>
+            <div class="option-row" data-textsize="extralarge"><span><span class="check"></span> Extra large</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-arrows" id="nav-arrows">
+        <button id="prev-btn">←</button>
+        <button id="next-btn">→</button>
+      </div>
+    </div>
+
+    <div class="bottombar" id="bottombar"></div>
+  </div>
+
+  <!-- TRANSITION (reused between Listening→Reading and Reading→Writing) -->
+  <div class="hidden" id="screen-transition" style="height:100%;display:flex;flex-direction:column;position:relative;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a class="brand-badge" href="#" target="_blank" rel="noopener">
+          <span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="IELTS Mock Team">
+        </a>
+        <div class="ielts-logo">IELTS</div>
+        <div class="taker-id-block">
+          <div><span class="label">Test taker ID:</span> <span id="taker-id-display-t" style="color:#333;"></span></div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="final-action-btn" id="transition-back-btn">← Back</button>
+        <button class="final-action-btn primary" id="transition-next-btn">Next ✈</button>
+      </div>
+    </div>
+    <div class="transition-body">
+      <h2 id="transition-title">Section complete</h2>
+      <p id="transition-msg">Click Next to continue.</p>
+    </div>
+    <div class="bottombar"></div>
+  </div>
+
+  <!-- RESULTS / FINAL REPORT -->
+  <div class="hidden results-wrap" id="screen-results">
+    <h1>IELTS Full Mock Test — Report</h1>
+    <div class="results-sub">Test taker ID: <span id="results-taker-id"></span></div>
+
+    <div class="report-section">
+      <h2>Listening — Checked</h2>
+      <div class="score-summary">
+        <div class="score-box"><div class="num" id="l-score-correct">0</div><div class="lbl">Correct</div></div>
+        <div class="score-box"><div class="num">40</div><div class="lbl">Total</div></div>
+        <div class="score-box"><div class="num" id="l-score-band">0.0</div><div class="lbl">Est. Band</div></div>
+      </div>
+      <table class="review-table"><thead><tr><th style="width:50px;">Q#</th><th>Your Answer</th><th>Correct Answer</th><th style="width:60px;">Result</th></tr></thead><tbody id="l-review-body"></tbody></table>
+    </div>
+
+    <div class="report-section">
+      <h2>Reading — Checked</h2>
+      <div class="score-summary">
+        <div class="score-box"><div class="num" id="r-score-correct">0</div><div class="lbl">Correct</div></div>
+        <div class="score-box"><div class="num">40</div><div class="lbl">Total</div></div>
+        <div class="score-box"><div class="num" id="r-score-band">0.0</div><div class="lbl">Est. Band</div></div>
+      </div>
+      <table class="review-table"><thead><tr><th style="width:50px;">Q#</th><th>Your Answer</th><th>Correct Answer</th><th style="width:60px;">Result</th></tr></thead><tbody id="r-review-body"></tbody></table>
+    </div>
+
+    <div class="report-section">
+      <h2>Writing — Saved (not scored)</h2>
+      <b style="font-size:13px;">Task 1</b>
+      <div class="report-answer" id="w1-answer"></div>
+      <div class="report-wc" id="w1-wc"></div>
+      <b style="font-size:13px;display:block;margin-top:16px;">Task 2</b>
+      <div class="report-answer" id="w2-answer"></div>
+      <div class="report-wc" id="w2-wc"></div>
+    </div>
+
+    <button class="download-btn" id="download-pdf-btn">⬇ Download Full Report as PDF</button>
+    <button class="restart-btn" id="restart-btn">Restart Test</button>
+
+    <div class="brand-footer">
+      <span>📢</span><span>Full Mock Test — <a href="#" target="_blank" rel="noopener">IELTS Mock Test Center (Telegram)</a></span>
+    </div>
+  </div>
+
+</div>
+
+<audio id="test-audio" preload="auto" src="https://files.catbox.moe/7nihlb.mp3"></audio>
+
+<script>
+(() => {
+  const REQUIRED_PASSWORD = "IELTS Mock Teamisaev";
+  const MAP_IMAGE_SRC = "https://i.ibb.co/6Jnp89RB/preview.webp";
+  const TASK1_IMG = "https://engnovatewebsitestorage.blob.core.windows.net/ielts-writing-task-1-images/8fe0d090f060e060";
+  const TELEGRAM_LINK = "";
+  const TELEGRAM_NAME = "IELTS Mock Test Center";
+
+  // ---------------- ANSWER KEYS ----------------
+  const listeningAnswerKey = {
+    1:"0491570156",2:"Post",3:"Bed",4:"39",5:"Kitchen",6:"Heater",7:"Microwave",8:"Airport",9:"49",10:"Australia",
+    11:"A",12:"B",13:"B",14:"C",15:"A",16:"A",17:"C",18:"B",19:"F",20:"A",
+    21:"B",22:"C",23:"D",24:"A",25:"G",26:"E",27:"C",28:"F",29:"B",30:"D",
+    31:"Foundation",32:"Sand",33:"clay",34:"Convenient",35:"Training",36:"Labour",37:"Roof",38:"Insects",39:"Strength",40:"fire"
+  };
+  const readingAnswerKey = {
+    1:"x",2:"ix",3:"vi",4:"v",5:"iii",6:"i",
+    7:"A",8:"B",9:"E",10:"D",11:"C",12:"Energetic",13:"Force sensors",
+    14:"D",15:"G",16:"E",17:"A",18:"E",19:"C",20:"F",
+    21:"NOT GIVEN",22:"NOT GIVEN",23:"TRUE",24:"FALSE",25:"FALSE",26:"TRUE",
+    27:"B",28:"C",29:"H",30:"G",31:"E",32:"D",33:"A",
+    34:"bee-keeping",35:"life cycles",36:"droughts",37:"C",38:"A",39:"D",40:"D"
+  };
+
+  // ---------------- GLOBAL STATE ----------------
+  const state = {
+    stage:"listening", // listening | reading | writing
+    takerId:"",
+    notes:[],
+    contrast:"bw",
+    textsize:"regular",
+    blurAutoSubmitEnabled:false,
+    autoHandled:false,
+
+    lCurrentPart:1, lAnswers:{}, audioStarted:false,
+    rCurrentPart:1, rAnswers:{}, rTimeLeft:60*60, rTimerInterval:null,
+    wCurrentTask:1, wAnswers:{1:"",2:""}, wTimeLeft:60*60, wTimerInterval:null
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const show = (el) => el.classList.remove("hidden");
+  const hide = (el) => el.classList.add("hidden");
+
+  // ================= PASSAGES (Reading) =================
+  const passage1 = {
+    "title": "READING PASSAGE 1",
+    "sub": "Insects and Inspired Artificial Robots",
+    "paras": [
+        [
+            "A",
+            "The creation of artificial devices with life-like characteristics has been pursued for over 2,000 years, beginning, as did so many things in our modern world, in Ancient Greece. For example, among the inventions of Hero of Alexandria were a windmill-operated pipe organ and a mechanical theatrical play."
+        ],
+        [
+            "B",
+            "With the raise of cybernetic approaches in the late 1940s and early 1950s. A wide variety of electromechanical machines designed to mimic biological processes and systems were constructed. Perhaps the best-known and most directly relevant to biorobotics is W. Gray Walters’ robotic “tortoises” Elsie and Elmer. Walters was a physiologist who made important early contributions to electroencephalography and clinical neurophysiology. His tortoises were small mobile robots covered by a hard shell. The robots were driven by steerable motorized wheels and possessed a headlight, a light sensor, and a touch sensor that responded when the shell was hit. Their behavior was controlled by electronic circuit analogues of neural circuits. The behavioral repertoire of the tortoises included exploration, both positive and negative phototropism, and obstacle avoidance. The activation of these different behaviors in interaction with the robots’ environment could produce a variety of behavioral sequences. Although originally designed to explore Walters’ theories of brain function, the tortoises became objects of popular fascination in much the same way that ancient automata did."
+        ],
+        [
+            "C",
+            "The seeds of the modern renaissance of biorobotics were sown from the mid 1980s to mid 1990s. A key event in this resurgence was Rodney Brooks’ work on behavior-based robots. Although not as directly based on biology as later work would be, Brooks argues that nontrivial and flexible behavior in a robot could be generated by the interaction between simple control machinery and its environment, demonstrating his point with robots accomplishing such tasks as insect-like walking. Another important milestone was Raibert’s work on hopping and legged robots, which emphasized the central role of energetics in the dynamic balance and locomotion of animals. Based on studies of serpentine motion, Hirose developed a number of snake-like locomotors and manipulators. In the early 1990s, Beer, Quinn, Chiel & Ritzmann developed a series of hexapod robots based directly on cockroach and stick insect body morphology and neural control. Early biorobotic work on the sensory side includes Franceshini’s robotic compound eye based on studies of insect eyes and motion-sensitive neurons in the fly, Webb’s robotic model of cricket phonotaxis and Grasso et al’s robotic model of lobster chemical orientation strategies. An early example of robots whose control was based on theories of human brain function is given by the work of Edelman et al."
+        ],
+        [
+            "D",
+            "There has been an explosion of work in biorobotics in recent years, with robotic vocal tracts, jaws, retinas, expressive faces, hands, arms, legs, etc. deployed on robotic worms, snakes, ants, flies, crickets, cockroaches, walking stick insects, dinosaurs, bats, lobsters, tuna, pickerel, turkeys, apes and humanoids. Thus, no brief survey could possibly do justice to the range of work being undertaken."
+        ],
+        [
+            "E",
+            "A recent example of biologically-inspired robotics is Spenko et al’s work on a hexapedal robotic climber called RiSE. In order to grip a vertical surface, this robot combines both bonding mechanisms inspired by the structure of gecko feet and interlocking mechanisms inspired by the structure of insect spines and claws. In addition, its design is based on a set of principles that have been found to be common to many climbing animals: a sprawled posture keeps the body close to the surface so as to reduce the pitch-back moment; front limbs pull inward and rear limbs push outward so as to counteract the pitch-back moment; a long body reduces the pull-in force required of the front limbs; lateral forces act inward toward the central axis of the body; complaint legs, ankles and toes so as to distribute contact forces. Each of the six legs of RiSE have two degrees of freedom and the robot also possesses s static tail that presses against the surface to reduce the pull-in forces required of the front legs. The robot uses a wave gait in which only one leg at a time is lifted from the surface. In addition to an open-loop gait generator, RiSE utilizes a variety of feedback controllers, including traction force control, normal force control and gait regulation. In addition, the robot has a pawing behavior that allows a foot that fails to grasp on initial contact to reestablish a grip on the climbing surface. Spenko et al have demonstrated that RiSE is able to traverse a variety of horizontal and vertical surfaces, including climbing trees and brick or cinder block walls."
+        ],
+        [
+            "F",
+            "A powerful example of biorobotic modeling is provided by the aerodynamics of insect flight. Although quasi-steady-state aerodynamical analyses of the sort used to understand aircraft have been successfully applied to larger animals, they have not been very successful for explaining the generation of lift in small flying insects due to the tiny wingspans, relatively slow flight speeds and extremely fast wing movements involved. However, a recent biorobotic model by Dickinson and colleagues has begun to shed considerable light on the unsteady aerodynamics insect flight. Because of the delicate size and high speed of insect wings, direct measurement of the forces involved is extremely difficult. For this reason, a robotic model with a 60 cm wingspan was used to explore the non-steady-state airflow during hovering by the fruit fly Drosophila melanogaster. In order to reproduce the Reynolds number relevant to small insects flying in air, their model was submerged in mineral oil and scaled both in space and time. Force sensors at the base of one wing allowed direct measurement of the forces produced and illumination of air bubbles in the tank allowed direct observation of the fluid flow around the robotic wings. Dickinson and colleagues found that three major mechanisms contributed to lift generation in the model. First, vortices formed at the leading edge of the wing produce lift during much of the power stroke. Second, additional lift is produced by circulation of air around the wings due to rapid rotation at the beginning and end of each stroke. Third, further forces are produces at the start of each upstroke and downstroke due to collisions of the wings with the swirling wake produced by the previous stroke, a mechanism termed wake capture. Due to the sensitivity of these latter two mechanisms to the timing of wing rotation, the model suggests that the control of small details of wing motion can be used in steering flight."
+        ]
+    ]
+};
+  const passage2 = {
+    "title": "READING PASSAGE 2",
+    "sub": "Extinction of Aussie Animals",
+    "paras": [
+        [
+            "A",
+            "World Wildlife Fund Australia has revealed its list of extinct wildlife to coincide with Australia Day. The list covers a wide range of species, from birds to reptiles, marsupials, insects and even flowers. Top of the list is the green and gold frog which has had its home decimated by drought.” Many Aussie spices need our help in order to survive,” WWF threatened species program manager Kat Miller said. “Without knowing the reason many had disappeared for, we will risk losing another 346 animal and 1249 plant species listed as threatened under federal legislation. Australia has the one of the worst record of mammal extinction in the world”. WWF Australia said 9 percent of birds, 7 percent of reptiles and 16 percent of amphibians are extinct since early human settlement."
+        ],
+        [
+            "B",
+            "The conservation group said half the mammals that have become extinct globally in the last 200 years have been Australian species. Ancient hunters and gatherers may have triggered the failure of the annual Australian Monsoon some 12,000 years ago by burning massive tracts of the country’s interior, resulting in the desertification that is evident today, says a new study. Researcher Gifford Miller of the University of Colorado at Boulder said the new study builds on his research group’s previous findings that dozens of giant animal species became extinct in Australia 50,000 years ago due to ecosystem changes caused by human burning. This study, appearing in Geology, indicates such burning may have altered the flora enough to decrease the exchange of water vapor between the biosphere and atmosphere, causing the failure of the Australian Monsoon over the interior."
+        ],
+        [
+            "C",
+            "“The question is whether localized burning 50,000 years ago could have had a continental- scale effect,” said Miller. “The implications are that the burning practices of early humans may have changed the climate of the Australian continent by weakening the penetration of monsoon moisture into the interior”. A paper on the subject by Miller appears in the January issue of Geology. Co-authors include CU Boulder’s Jennifer Mangan, David Pollard, Starley Thompson and Benjamin Felzer of the National Center for Atmospheric Research in Boulder and John Magee of Australian National University in Canberra."
+        ],
+        [
+            "D",
+            "Geologic evidence indicates the interior of Australia was much wetter about 125,000 years ago during the last interglacial period. Although planetary and meteorological conditions during the most recent ice age caused Earth’s major monsoons to waver, all except the Australian Monsoon were “reinvigorated” to full force during the Holocene Period beginning about 12,000 years ago, he said. Although the Australian Monsoon delivers about 39 inches of rain annually to the north coast as it moves south from Asia, only about 13 inches of rain now falls on the continent’s interior each year, said Miller. Lake Eyre, a deep-water lake in the continent’s interior that was filled by regular monsoon rains about 60,000 years ago, is now a huge salt flat that is occasionally covered by a thin layer of salty water."
+        ],
+        [
+            "E",
+            "The earliest human colonizers are believed to have arrived in Australia by sea from Indonesia about 50,000 years ago, using fire as a tool to hunt, clear paths, signal each other and promote the growth of certain plants, he said. Fossil remains of browse- dependent birds and marsupials indicate the interior was made up of trees, shrubs and grasses rather than the desert scrub environment present today."
+        ],
+        [
+            "F",
+            "The researchers used global climate model simulations to evaluate the atmospheric and meteorological conditions in Australia over time, as well as the sensitivity of the monsoon to different vegetation and soil types. A climate model simulating a forested Australia produced twice as much annual monsoon precipitation over the continental interior as the model simulating arid scrub conditions, he said."
+        ],
+        [
+            "G",
+            "“Systematic burning across the semiarid zone, where nutrients are the lowest of any continental region, may have been responsible for the rapid transformation of a drought-tolerant ecosystem high in broad-leaf species to the modern desert scrub,” he said. “In the process, vegetation feedbacks promoting the penetration of monsoon moisture into the continental interior would have been disrupted”. More than 85 percent of Australia’s mega fauna weighing more than 100 pounds went extinct roughly 50,000 years ago, including an ostrich-sized bird, 19 species of marsupials, a 25-foot-long lizard and a Volkswagen-sized tortoise, he said."
+        ],
+        [
+            "H",
+            "Evidence for burning includes increased charcoal deposits preserved in lake sediments at the boundary between rainforest and interior desert beginning about 50,000 years ago, Miller said. In addition, a number of rainforest gymnosperms – plants whose seeds are not encased and protected and are therefore more vulnerable to fire –went extinct at about that time. Natural fires resulting from summer lightning strikes have played an integral part in the ecology of Australia’s interior, and many plant species are adapted to regimes of frequent fires, he said. “But the systematic burning of the interior by the earliest colonizers differed enough from the natural fire cycle that key ecosystems may have been pushed past a threshold from which they could not recover.”"
+        ]
+    ]
+};
+  const passage3 = {
+    "title": "READING PASSAGE 3",
+    "sub": "Amateur Naturalists",
+    "paras": [
+        [
+            "Intro",
+            "From the results of an annual Alaskan betting contest to sightings of migratory birds, ecologists are using a wealth of unusual data to predict the impact of climate change."
+        ],
+        [
+            "A",
+            "Tim Sparks slides a small leather-bound notebook out of an envelope. The book’s yellowing pages contain bee-keeping notes made between 1941 and 1969 by the late Walter Coates of Kilworth, Leicestershire. He adds it to his growing pile of local journals, birdwatchers’ lists and gardening diaries. “We’re uncovering about one major new record each month,” he says, “I still get surprised.” Around two centuries before Coates, Robert Marsham, a landowner from Norfolk in the east of England, began recording the life cycles of plants and animals on his estate – when the first wood anemones flowered, the dates on which the oaks burst into leaf and the rooks began nesting. Successive Marshams continued compiling these notes for 211 years."
+        ],
+        [
+            "B",
+            "Today, such records are being put to uses that their authors could not possibly have expected. These data sets, and others like them, are proving invaluable to ecologists interested in the timing of biological events, or phenology. By combining the records with climate data, researchers can reveal how, for example, changes in temperature affect the arrival of spring, allowing ecologists to make improved predictions about the impact of climate change. A small band of researchers is combing through hundreds of years of records taken by thousands of amateur naturalists. And more systematic projects have also started up, producing an overwhelming response. “The amount of interest is almost frightening,” says Sparks, a climate researcher at the Centre for Ecology and Hydrology in Monks Wood, Cambridgeshire."
+        ],
+        [
+            "C",
+            "Sparks first became aware of the army of “closet phenologists”, as he describes them, when a retiring colleague gave him the Marsham records. He now spends much of his time following leads from one historical data set to another. As news of his quest spreads, people tip him off to other historical records, and more amateur phenologists come out of their closets. The British devotion to recording and collecting makes his job easier – one man from Kent sent him 30 years’ worth of kitchen calendars, on which he had noted the date that his neighbour’s magnolia tree flowered."
+        ],
+        [
+            "D",
+            "Other researchers have unearthed data from equally odd sources. Rafe Sagarin, an ecologist at Stanford University in California, recently studied records of a betting contest in which participants attempt to guess the exact time at which a specially erected wooden tripod will fall through the surface of a thawing river. The competition has taken place annually on the Tenana River in Alaska since 1917, and analysis of the results showed that the thaw now arrives five days earlier than it did when the contest began."
+        ],
+        [
+            "E",
+            "Overall, such records have helped to show that, compared with 20 years ago, a raft of natural events now occur earlier across much of the northern hemisphere, from the opening of leaves to the return of birds from migration and the emergence of butterflies from hibernation. The data can also hint at how nature will change in the future. Together with models of climate change, amateurs’ records could help guide conservation. Terry Root, an ecologist at the University of Michigan in Ann Arbor, has collected birdwatchers’ counts of wildfowl taken between 1955 and 1996 on seasonal ponds in the American Midwest and combined them with climate data and models of future warming. Her analysis shows that the increased droughts that the models predict could halve the breeding populations at the ponds. “The number of waterfowl in North America will most probably drop significantly with global warming,” she says."
+        ],
+        [
+            "F",
+            "But not all professionals are happy to use amateur data. “A lot of scientists won’t touch them, they say they’re too full of problems,” says Root. Because different observers can have different ideas of what constitutes, for example, an open snowdrop. “The biggest concern with ad hoc observations is how carefully and systematically they were taken,” says Mark Schwartz of the University of Wisconsin, Milwaukee, who studies the interactions between plants and climate. “We need to know pretty precisely what a person’s been observing – if they just say ‘I noted when the leaves came out’, it might not be that useful.” Measuring the onset of autumn can be particularly problematic because deciding when leaves change colour is a more subjective process than noting when they appear."
+        ],
+        [
+            "G",
+            "Overall, most phenologists are positive about the contribution that amateurs can make. “They get at the raw power of science: careful observation of the natural world,” says Sagarin. But the professionals also acknowledge the need for careful quality control. Root, for example, tries to gauge the quality of an amateur archive by interviewing its collector. “You always have to worry – things as trivial as vacations can affect measurement. I disregard a lot of records because they’re not rigorous enough,” she says. Others suggest that the right statistics can iron out some of the problems with amateur data. Together with colleagues at Wageningen University in the Netherlands, environmental scientist Arnold van Vliet is developing statistical techniques to account for the uncertainty in amateur phenological data. With the enthusiasm of amateur phenologists evident from past records, professional researchers are now trying to create standardised recording schemes for future efforts. They hope that well-designed studies will generate a volume of observations large enough to drown out the idiosyncrasies of individual recorders. The data are cheap to collect, and can provide breadth in space, time and range of species. “It’s very difficult to collect data on a large geographical scale without enlisting an army of observers,” says Root."
+        ],
+        [
+            "H",
+            "Phenology also helps to drive home messages about climate change. “Because the public understand these records, they accept them,” says Sparks. It can also illustrate potentially unpleasant consequences, he adds, such as the finding that more rat infestations are reported to local councils in warmer years. And getting people involved is great for public relations. “People are thrilled to think that the data they’ve been collecting as a hobby can be used for something scientific – it empowers them,” says Root."
+        ]
+    ]
+};
+
+  // ================= SHARED HELPERS =================
+  function inputBlank(qnum, answersObj, width){
+    const val = answersObj[qnum] || "";
+    return `<input class="blank" data-q="${qnum}" value="${val}" placeholder="${qnum}" style="${width?('width:'+width+'px;'):''}">`;
+  }
+  function mcQuestion(qnum, text, options, answersObj){
+    const selected = answersObj[qnum];
+    return `<div class="mc-question"><span class="qnum">${qnum}</span> ${text}
+      <div class="mc-opts">${options.map((opt,i)=>{
+        const val = String.fromCharCode(97+i);
+        return `<label><input type="radio" name="q${qnum}" value="${val}" ${selected===val?'checked':''}> ${val.toUpperCase()}) ${opt}</label>`;
+      }).join("")}</div></div>`;
+  }
+
+  // ================= LISTENING RENDER =================
+  function lInputBlank(qnum){ return inputBlank(qnum, state.lAnswers); }
+  function lMcQuestion(qnum, text, options){
+    const selected = state.lAnswers[qnum];
+    return `<div class="mc-question"><span class="qnum">${qnum}</span> ${text}
+      <div class="mc-opts">${options.map((opt,i)=>{
+        const val = String.fromCharCode(65+i);
+        return `<label><input type="radio" name="q${qnum}" value="${val}" ${selected===val?'checked':''}> ${val}) ${opt}</label>`;
+      }).join("")}</div></div>`;
+  }
+  function lChoiceSelect(qnum, letters){
+    const val = state.lAnswers[qnum] || "";
+    return `<select class="blank-select" data-q="${qnum}"><option value="">--</option>${letters.map(l => `<option value="${l}" ${val===l?'selected':''}>${l}</option>`).join("")}</select>`;
+  }
+  function lChoiceRow(qnum, text, letters){
+    return `<div class="help-select-row"><span class="qnum">${qnum}</span><span style="flex:1;">${text}</span>${lChoiceSelect(qnum, letters)}</div>`;
+  }
+  function lDragPoolHTML(poolId, items, groupName, big){
+    return `<div class="drag-pool ${big?'wide':''}" id="${poolId}">` + items.map((it,idx)=>
+      `<div class="drag-item ${big?'big':''}" draggable="true" data-group="${groupName}" data-value="${it}" data-poolid="${poolId}-${idx}">${it}</div>`
+    ).join("") + `</div>`;
+  }
+  function lDropSlotHTML(qnum, big){
+    const val = state.lAnswers[qnum] || "";
+    return `<span class="drop-slot ${big?'big':''} ${val?'filled':''}" data-slot="${qnum}">${val}</span>`;
+  }
+  function partBanner(title, range){
+    return `<div class="part-banner"><b>${title}</b><div class="instr">Answer questions ${range}.</div></div>`;
+  }
+
+  function renderListeningPart1(){
+    return `
+      ${partBanner("Part 1","1–10")}
+      <div class="q-instructions"><span class="q-title">Questions 1–10</span><br>
+      Complete the form below. Write <b>ONE WORD AND/OR A NUMBER</b> for each answer.</div>
+      <div class="q-title" style="margin-top:10px;">Oz Campervans – Customer Quote Form</div>
+      <div class="notes-block">
+        <div class="section-title">Contact Details</div>
+        <div class="notes-row"><span>Example — Name: <b>Caroline Smith</b></span></div>
+        <div class="notes-row"><span>Address: 14 Grey St, Forest Hill</span></div>
+        <div class="notes-row"><span>Tel: ${lInputBlank(1)}</span></div>
+        <div class="notes-row"><span>Email: caroline@easymail.com</span></div>
+        <div class="notes-row"><span>NB: Send written quote by ${lInputBlank(2)}</span></div>
+        <div class="section-title">Booking Information</div>
+        <div class="notes-row"><span>Number of people in group: three</span></div>
+        <div class="notes-row"><span>Type of campervan selected: ‘The Explorer’ (need to supply an extra ${lInputBlank(3)})</span></div>
+        <div class="notes-row"><span>Price: $ ${lInputBlank(4)} per day</span></div>
+        <div class="notes-row"><span>NB: Price includes all bedding and ${lInputBlank(5)} equipment</span></div>
+        <div class="notes-row"><span>Optional extras selected: a ${lInputBlank(6)} and a ${lInputBlank(7)}</span></div>
+        <div class="notes-row"><span>Driving to: Huonville in Tasmania</span></div>
+        <div class="notes-row"><span>Pickup from: the ${lInputBlank(8)} branch in Hobart</span></div>
+        <div class="notes-row"><span>Length of hire: 2 weeks</span></div>
+        <div class="section-title">Insurance requirements</div>
+        <div class="notes-row"><span>• Youngest driver (Caroline): ${lInputBlank(9)} years old</span></div>
+        <div class="notes-row"><span>• Drivers’ licences issued in: ${lInputBlank(10)}</span></div>
+      </div>
+    `;
+  }
+
+  function renderListeningPart2(){
+    const benefitLetters = ["A","B","C","D","E","F"];
+    const activities = [[17,"general training"],[18,"weight training"],[19,"aerobics class"],[20,"squash"]];
+    return `
+      ${partBanner("Part 2","11–20")}
+      <div class="q-instructions"><span class="q-title">Questions 11–16</span><br>Choose the correct letter, A, B or C.</div>
+      ${lMcQuestion(11,"The sports centre has just opened a new",["dance studio","swimming pool","cafe"])}
+      ${lMcQuestion(12,"The sports facilities are used most",["at weekends","on weekday evenings","during the day from Monday to Friday"])}
+      ${lMcQuestion(13,"Classes are cheaper if you pay",["in cash","for several in advance","by credit card"])}
+      ${lMcQuestion(14,"The sports centre recently won an award for",["the range of training in different sports","the amount of information on its website","the quality of the advice offered by its instructors"])}
+      ${lMcQuestion(15,"Today the sports department is offering",["a free hour with a personal trainer","a free ticket to the cup final","free membership for 20 people"])}
+      ${lMcQuestion(16,"According to the speaker, why do many people stop exercising?",["Their friends do not share the experience with them","Their job or studies take up too much of their time","They cannot see any results"])}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 17–20</span><br>Which benefit does each sport activity bring? Choose the correct letter, A–F.</div>
+      <div style="font-size:12px;background:var(--bg-panel);border:1px solid #ddd;padding:10px 14px;margin-bottom:14px;line-height:1.7;">
+        <b>Benefits</b><br>
+        A better reaction times &nbsp;|&nbsp; B improved concentration &nbsp;|&nbsp; C increased arm power<br>
+        D increased leg power &nbsp;|&nbsp; E increased speed &nbsp;|&nbsp; F reduced stress
+      </div>
+      ${activities.map(([q,label]) => lChoiceRow(q,label,benefitLetters)).join("")}
+    `;
+  }
+
+  function renderListeningPart3(){
+    const letters = ["A","B","C","D","E","F","G"];
+    const beeTypes = [[26,"European Bumblebee"],[27,"Blue Banded Bee"],[28,"Africanised Bee"],[29,"Australian Stingless Bee"],[30,"Canadian Leafcutter Bee"]];
+    return `
+      ${partBanner("Part 3","21–30")}
+      <div class="q-instructions"><span class="q-title">Questions 21–25</span><br>Complete the flow-chart. Choose FIVE answers from the box and write the correct letter, A–G.</div>
+      <div style="font-size:12px;background:var(--bg-panel);border:1px solid #ddd;padding:10px 14px;margin-bottom:14px;line-height:1.7;">
+        <b>European bee Varroa mite</b><br>
+        A the blood &nbsp;|&nbsp; B a flower &nbsp;|&nbsp; C the hive &nbsp;|&nbsp; D the honey<br>
+        E a honeycomb cell &nbsp;|&nbsp; F the queen bee &nbsp;|&nbsp; G a virus
+      </div>
+      <div class="notes-block">
+        <div class="notes-row">The mite moves from the bee to ${lChoiceSelect(21,letters)}</div>
+        <div class="notes-row">The mite travels to ${lChoiceSelect(22,letters)} on a new host</div>
+        <div class="notes-row">Inside, the mite enters the honeycomb cell</div>
+        <div class="notes-row">The mite uses ${lChoiceSelect(23,letters)} to hide its smell</div>
+        <div class="notes-row">The mite feeds on ${lChoiceSelect(24,letters)} of the bee larva</div>
+        <div class="notes-row">The mite reproduces and moves on</div>
+        <div class="notes-row">The bee is left weakened and with ${lChoiceSelect(25,letters)}</div>
+      </div>
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 26–30</span><br>What problem do the speakers identify with each type of bee? Choose the correct letter, A–G.</div>
+      <div style="font-size:12px;background:var(--bg-panel);border:1px solid #ddd;padding:10px 14px;margin-bottom:14px;line-height:1.7;">
+        <b>Problems</b><br>
+        A could introduce pests &nbsp;|&nbsp; B needs a warm climate &nbsp;|&nbsp; C not much is known about it<br>
+        D numbers are too few to help farmers &nbsp;|&nbsp; E spreads weeds &nbsp;|&nbsp; F too aggressive &nbsp;|&nbsp; G unable to produce honey
+      </div>
+      ${beeTypes.map(([q,label]) => lChoiceRow(q,label,letters)).join("")}
+    `;
+  }
+
+  function renderListeningPart4(){
+    return `
+      ${partBanner("Part 4","31–40")}
+      <div class="q-instructions"><span class="q-title">Questions 31–40</span><br>Complete the notes below. Write <b>ONE WORD ONLY</b> for each answer.</div>
+      <div class="q-title" style="margin-top:10px;">Using natural building materials</div>
+      <div class="notes-block">
+        <div class="notes-row"><span>With all methods of building using natural materials, a good ${lInputBlank(31)} is needed</span></div>
+        <div class="section-title">Rammed earth</div>
+        <div class="notes-row"><span>A framework made from wood filled with soil</span></div>
+        <div class="notes-row"><span>The best soil has large quantities of ${lInputBlank(32)}</span></div>
+        <div class="section-title">Adobe (mud brick)</div>
+        <div class="notes-row"><span>The most suitable soil for adobe bricks contains lots of ${lInputBlank(33)}</span></div>
+        <div class="notes-row"><span><b>Advantages:</b> cheap and ${lInputBlank(34)}</span></div>
+        <div class="notes-row"><span>little ${lInputBlank(35)} is needed for brick-making</span></div>
+        <div class="notes-row"><span><b>Disadvantage:</b> a lot of water, time and ${lInputBlank(36)} are required</span></div>
+        <div class="section-title">Straw bales</div>
+        <div class="notes-row"><span>Bales = large rectangular blocks of straw</span></div>
+        <div class="notes-row"><span>A ${lInputBlank(37)} needs to be constructed first</span></div>
+        <div class="notes-row"><span>The bales are covered with plaster for protection against ${lInputBlank(38)}</span></div>
+        <div class="notes-row"><span><b>Advantage:</b> the bales act as efficient insulation</span></div>
+        <div class="section-title">Bamboo</div>
+        <div class="notes-row"><span>This is a versatile material</span></div>
+        <div class="notes-row"><span><b>Advantage:</b> the shape of the bamboo stalks gives them ${lInputBlank(39)}</span></div>
+        <div class="notes-row"><span><b>Disadvantages:</b> not widely available; risk of ${lInputBlank(40)}</span></div>
+      </div>
+    `;
+  }
+  const listeningRenderers = {1:renderListeningPart1,2:renderListeningPart2,3:renderListeningPart3,4:renderListeningPart4};
+  const listeningRanges = {1:[1,10],2:[11,20],3:[21,30],4:[31,40]};
+
+  function renderListeningStage(part){
+    state.lCurrentPart = part;
+    $("content-wrap").innerHTML = `<div class="content" id="content"></div>`;
+    $("content").innerHTML = listeningRenderers[part]();
+    attachListeningListeners();
+    $("content").scrollTop = 0;
+    $("nav-arrows").classList.add("show");
+    $("prev-btn").disabled = (part===1);
+    $("next-btn").disabled = (part===4);
+    $("prev-btn").onclick = () => { if (state.lCurrentPart>1) renderListeningStage(state.lCurrentPart-1); };
+    $("next-btn").onclick = () => { if (state.lCurrentPart<4) renderListeningStage(state.lCurrentPart+1); else handleSubmitClick(); };
+    renderBottomBarListening();
+  }
+  function attachListeningListeners(){
+    document.querySelectorAll("#content input.blank").forEach(inp => {
+      inp.addEventListener("input", (e) => { state.lAnswers[e.target.dataset.q] = e.target.value; renderBottomBarListening(); });
+    });
+    document.querySelectorAll("#content select").forEach(sel => {
+      sel.addEventListener("change", (e) => { state.lAnswers[e.target.dataset.q] = e.target.value; renderBottomBarListening(); });
+    });
+    document.querySelectorAll("#content input[type=radio]").forEach(r => {
+      r.addEventListener("change", (e) => { state.lAnswers[e.target.name.replace("q","")] = e.target.value; renderBottomBarListening(); });
+    });
+    document.querySelectorAll("#content .drag-item").forEach(item => {
+      item.addEventListener("dragstart", (e) => { e.dataTransfer.setData("text/plain", JSON.stringify({value:item.dataset.value, poolid:item.dataset.poolid})); });
+    });
+    document.querySelectorAll("#content .drop-slot").forEach(slot => {
+      slot.addEventListener("dragover", (e) => e.preventDefault());
+      slot.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const data = JSON.parse(e.dataTransfer.getData("text/plain"));
+        const qnum = slot.dataset.slot;
+        state.lAnswers[qnum] = data.value;
+        slot.textContent = data.value; slot.classList.add("filled");
+        const usedEl = document.querySelector(`[data-poolid="${data.poolid}"]`);
+        if (usedEl) usedEl.classList.add("used");
+        renderBottomBarListening();
+      });
+      slot.addEventListener("click", () => {
+        const qnum = slot.dataset.slot;
+        if (state.lAnswers[qnum]) {
+          delete state.lAnswers[qnum]; slot.textContent = ""; slot.classList.remove("filled");
+          document.querySelectorAll("#content .drag-item.used").forEach(d => d.classList.remove("used"));
+          renderBottomBarListening();
+        }
+      });
+    });
+    $("content").addEventListener("mouseup", handleTextSelection);
+  }
+
+  // ================= READING RENDER =================
+  function renderPassage(p){
+    return `<div class="passage-title">${p.title}</div><div class="passage-sub">${p.sub}</div>
+      ${p.paras.map(([letter,text]) => `<div class="passage-para"><span class="para-letter">${letter}</span><span class="para-text">${text}</span></div>`).join("")}`;
+  }
+  function rInputBlank(qnum, width){ return inputBlank(qnum, state.rAnswers, width); }
+  function paraSelect(qnum, letters){
+    const val = state.rAnswers[qnum] || "";
+    return `<select class="blank-select" data-q="${qnum}"><option value="">--</option>${letters.map(l => `<option value="${l}" ${val===l?'selected':''}>${l}</option>`).join("")}</select>`;
+  }
+  function tfngSelect(qnum, text){
+    const val = state.rAnswers[qnum] || "";
+    const opts = ["TRUE","FALSE","NOT GIVEN"];
+    return `<div class="tfng-row"><span class="qnum" style="margin-right:0;">${qnum}</span><span class="qtext">${text}</span>
+      <select data-q="${qnum}"><option value="">--</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join("")}</select></div>`;
+  }
+  function headingSelect(qnum, label){
+    const val = state.rAnswers[qnum] || "";
+    const romans = ["i","ii","iii","iv","v","vi","vii","viii"];
+    return `<div class="tfng-row"><span class="qnum" style="margin-right:0;">${qnum}</span><span class="qtext">${label}</span>
+      <select data-q="${qnum}"><option value="">--</option>${romans.map(r=>`<option value="${r}" ${val===r?'selected':''}>${r}</option>`).join("")}</select></div>`;
+  }
+  function headingRow(qnum, text, letters){
+    return `<div class="help-select-row"><span class="qnum">${qnum}</span><span style="flex:1;">${text}</span>${paraSelect(qnum, letters)}</div>`;
+  }
+  function rMcQuestion(qnum, text, options){ return mcQuestion(qnum, text, options, state.rAnswers); }
+
+  function choiceSelect(qnum, options){
+    const val = state.rAnswers[qnum] || "";
+    return `<select class="blank-select" data-q="${qnum}"><option value="">--</option>${options.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join("")}</select>`;
+  }
+  function choiceRow(qnum, text, options){
+    return `<div class="help-select-row"><span class="qnum">${qnum}</span><span style="flex:1;">${text}</span>${choiceSelect(qnum, options)}</div>`;
+  }
+
+  function renderReadingQ1(){
+    const romans = ["i","ii","iii","iv","v","vi","vii","viii","ix","x"];
+    const people = ["A","B","C","D","E"];
+    return `
+      ${partBanner("Reading Passage 1","1–13")}
+      <div class="q-instructions"><span class="q-title">Questions 1–6</span><br>Choose the most suitable headings for paragraphs A–F from the list below. Write the appropriate number (i–x).</div>
+      <div style="font-size:12px;background:var(--bg-panel);border:1px solid #ddd;padding:10px 14px;margin-bottom:14px;line-height:1.7;">
+        <b>List of Headings</b><br>
+        i A biorobotic model exploring insect flight<br>
+        ii Modern practices of artificial device usage<br>
+        iii Robotic climber better than gecko<br>
+        iv Insect fight inspires the applications of steering operation<br>
+        v Prosperity of biorobot family<br>
+        vi The revival of modern biorobotics<br>
+        vii Combine machines and environment<br>
+        viii The advent of robots and their effects on modern society<br>
+        ix The most famous biorobot in early days<br>
+        x Bionics device is not a modern conception
+      </div>
+      ${["Paragraph A","Paragraph B","Paragraph C","Paragraph D","Paragraph E","Paragraph F"].map((label,idx)=>choiceRow(idx+1,label,romans)).join("")}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 7–11</span><br>Match the people (A–E) with opinions or deeds. <i>Some people may match more than one discovery.</i></div>
+      <div style="font-size:12px;background:var(--bg-panel);border:1px solid #ddd;padding:10px 14px;margin-bottom:14px;line-height:1.7;">
+        A W. Gray Walters &nbsp;|&nbsp; B Rodney Brooks &nbsp;|&nbsp; C Michael Dickinson &nbsp;|&nbsp; D Spenko et al &nbsp;|&nbsp; E Edelman et al
+      </div>
+      ${choiceRow(7,"Made contributions to neurophysiology.",people)}
+      ${choiceRow(8,"Endowed robots with agility from the innovation of machinery environmental fit.",people)}
+      ${choiceRow(9,"Generated mechanical intelligence inspired by the way human brain works.",people)}
+      ${choiceRow(10,"Modified mechanical models based on the structure of insects.",people)}
+      ${choiceRow(11,"Found the mechanism of insect flight.",people)}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 12–13</span><br>Answer the questions using <b>NO MORE THAN THREE WORDS</b> from the passage.</div>
+      <div class="notes-block">
+        <div class="notes-row">12 What plays the most critical role in Raibert’s hopping and legged robots? ${rInputBlank(12,170)}</div>
+        <div class="notes-row">13 What allowed direct measurement of the lifting forces of the biorobotic model? ${rInputBlank(13,170)}</div>
+      </div>
+    `;
+  }
+
+  function renderReadingQ2(){
+    const L = ["A","B","C","D","E","F","G","H"];
+    const phraseLetters = ["A","B","C","D","E","F","G"];
+    return `
+      ${partBanner("Reading Passage 2","14–26")}
+      <div class="q-instructions"><span class="q-title">Questions 14–16</span><br>Which paragraphs state the following information? Write the appropriate letters A–H.</div>
+      ${headingRow(14,"Why did an interior Australian lake change to a dry flat?",L)}
+      ${headingRow(15,"When did an ostrich-sized bird go extinct?",L)}
+      ${headingRow(16,"Why did the ancient settlers in Australia burn the forests?",L)}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 17–20</span><br>Choose ONE phrase from the list A–G to complete each sentence.</div>
+      <div style="font-size:12px;background:var(--bg-panel);border:1px solid #ddd;padding:10px 14px;margin-bottom:14px;line-height:1.7;">
+        A Caused the failure of the annual Australian Monsoon by burning tracts.<br>
+        B Were responsible for the distinction of an Australian giant animal species because of their massive hunting.<br>
+        C Showed that in the past the interior of Australia was not a desert.<br>
+        D Altered the flora to decrease the exchange of water vapor between the biosphere and atmosphere.<br>
+        E Suggested that the changed climate of the Australian continent was led by the weakened penetration of monsoon moisture into the interior.<br>
+        F Indicated that the forests facilitated more rainfall.<br>
+        G Indicated that the extinction of an Australian species resulted from changes in the local ecosystem.
+      </div>
+      ${choiceRow(17,"Ancient hunters and gatherers",phraseLetters)}
+      ${choiceRow(18,"January issue of Geology",phraseLetters)}
+      ${choiceRow(19,"Fossil remains",phraseLetters)}
+      ${choiceRow(20,"A climate model",phraseLetters)}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 21–26</span><br>TRUE / FALSE / NOT GIVEN.</div>
+      ${tfngSelect(21,"According to the WWF, Australia has the worst record of animal extinction in the world.")}
+      ${tfngSelect(22,"In Australia, hundreds of endangered animals and plants species will keep disappearing.")}
+      ${tfngSelect(23,"The distinction of Australian giant animals was a knock-on effect after human burning ceased the monsoon.")}
+      ${tfngSelect(24,"Lake Eyre has always been filled with salty water.")}
+      ${tfngSelect(25,"It is a theoretic assumption that early humans burned massive tracts in Australia.")}
+      ${tfngSelect(26,"Varieties of plants from Australia’s interior have now adapted to recurrent fires.")}
+    `;
+  }
+
+  function renderReadingQ3(){
+    const L = ["A","B","C","D","E","F","G","H"];
+    return `
+      ${partBanner("Reading Passage 3","27–40")}
+      <div class="q-instructions"><span class="q-title">Questions 27–33</span><br>Which paragraph contains the following information? Write the correct letter A–H.</div>
+      ${headingRow(27,"The definition of phenology",L)}
+      ${headingRow(28,"How Sparks first became aware of amateur records",L)}
+      ${headingRow(29,"How people reacted to their involvement in data collection",L)}
+      ${headingRow(30,"The necessity to encourage amateur data collection",L)}
+      ${headingRow(31,"A description of using amateur records to make predictions",L)}
+      ${headingRow(32,"Records of a competition providing clues to climate change",L)}
+      ${headingRow(33,"A description of a very old record compiled by generations of amateur naturalists",L)}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 34–36</span><br>Complete the sentences with <b>NO MORE THAN TWO WORDS</b> from the passage.</div>
+      <div class="notes-block">
+        <div class="notes-row">34 Walter Coates’s records largely contain the information of ${rInputBlank(34,170)}.</div>
+        <div class="notes-row">35 Robert Marsham is famous for recording the ${rInputBlank(35,170)} of animals and plants on his land.</div>
+        <div class="notes-row">36 According to some phenologists, global warming may cause the number of waterfowl in North America to drop significantly due to increased ${rInputBlank(36,170)}.</div>
+      </div>
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 37–40</span><br>Choose the correct letter, A, B, C or D.</div>
+      ${rMcQuestion(37,"Why do a lot of scientists discredit the data collected by amateurs?",["Scientific methods were not used in data collection.","Amateur observers are not careful in recording their data.","Amateur data is not reliable.","Amateur data is produced by wrong candidates."])}
+      ${rMcQuestion(38,"Mark Schwartz used the example of leaves to illustrate that",["amateur records can’t be used.","amateur records are always unsystematic.","the colour change of leaves is hard to observe.","valuable information is often precise."])}
+      ${rMcQuestion(39,"How do the scientists suggest amateur data should be used?",["Using improved methods","Being more careful in observation","Using raw materials","Applying statistical techniques in data collection"])}
+      ${rMcQuestion(40,"What’s the implication of phenology for ordinary people?",["It empowers the public.","It promotes public relations.","It warns people of animal infestation.","It raises awareness about climate change in the public."])}
+    `;
+  }
+  const readingData = {
+    1:{passage:passage1, renderQ:renderReadingQ1, range:[1,13]},
+    2:{passage:passage2, renderQ:renderReadingQ2, range:[14,26]},
+    3:{passage:passage3, renderQ:renderReadingQ3, range:[27,40]}
+  };
+
+  function renderReadingStage(part){
+    state.rCurrentPart = part;
+    $("content-wrap").innerHTML = `<div class="left-pane" id="left-pane"></div><div class="pane-resizer" id="pane-resizer" title="Drag to resize"></div><div class="right-pane" id="right-pane"></div>`;
+    $("left-pane").innerHTML = renderPassage(readingData[part].passage);
+    $("right-pane").innerHTML = readingData[part].renderQ();
+    enablePaneResizer();
+    attachReadingListeners();
+    $("left-pane").scrollTop = 0; $("right-pane").scrollTop = 0;
+    $("nav-arrows").classList.remove("show");
+    renderBottomBarReading();
+  }
+  function attachReadingListeners(){
+    document.querySelectorAll("#right-pane input.blank").forEach(inp => {
+      inp.addEventListener("input", (e) => { state.rAnswers[e.target.dataset.q] = e.target.value; renderBottomBarReading(); });
+    });
+    document.querySelectorAll("#right-pane select").forEach(sel => {
+      sel.addEventListener("change", (e) => { state.rAnswers[e.target.dataset.q] = e.target.value; renderBottomBarReading(); });
+    });
+    document.querySelectorAll("#right-pane input[type=radio]").forEach(r => {
+      r.addEventListener("change", (e) => { state.rAnswers[e.target.name.replace("q","")] = e.target.value; renderBottomBarReading(); });
+    });
+    $("right-pane").addEventListener("mouseup", handleTextSelection);
+    $("left-pane").addEventListener("mouseup", handleTextSelection);
+  }
+
+
+  // ================= PANE RESIZER =================
+  function enablePaneResizer(){
+    const wrap = $("content-wrap"), left = $("left-pane"), right = $("right-pane"), resizer = $("pane-resizer");
+    if (!wrap || !left || !right || !resizer) return;
+    let dragging = false;
+    const setPct = (clientX) => {
+      const rect = wrap.getBoundingClientRect();
+      let pct = ((clientX - rect.left) / rect.width) * 100;
+      pct = Math.max(25, Math.min(75, pct));
+      left.style.flex = `0 0 ${pct}%`;
+      right.style.flex = `1 1 ${100-pct}%`;
+    };
+    resizer.addEventListener("mousedown", (e) => { dragging = true; wrap.classList.add("resizable"); resizer.classList.add("dragging"); e.preventDefault(); });
+    window.addEventListener("mousemove", (e) => { if (dragging) setPct(e.clientX); });
+    window.addEventListener("mouseup", () => { if (dragging){ dragging = false; wrap.classList.remove("resizable"); resizer.classList.remove("dragging"); } });
+    resizer.addEventListener("touchstart", (e) => { dragging = true; wrap.classList.add("resizable"); resizer.classList.add("dragging"); e.preventDefault(); }, {passive:false});
+    window.addEventListener("touchmove", (e) => { if (dragging && e.touches[0]) setPct(e.touches[0].clientX); }, {passive:false});
+    window.addEventListener("touchend", () => { if (dragging){ dragging = false; wrap.classList.remove("resizable"); resizer.classList.remove("dragging"); } });
+  }
+
+  // ================= WRITING RENDER =================
+  function wordCount(text){ const t=(text||"").trim(); return t? t.split(/\s+/).length : 0; }
+  function renderWritingTask1(){
+    return `
+      ${partBanner("Writing Task 1","")}
+      <div class="task-title">TASK 1</div>
+      <div class="task-text">The charts give information about the percentage of men and women who had driving licenses in one European country in various years.</div>
+      <div class="task-text">Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</div>
+      <div class="task-text"><b>Write at least 150 words.</b></div>
+      <div class="task-img-wrap"><img src="${TASK1_IMG}" alt="Task 1 chart"><div class="task-img-caption">Driving licences by gender and year</div></div>
+    `;
+  }
+  function renderWritingTask2(){
+    return `
+      ${partBanner("Writing Task 2","")}
+      <div class="task-title">TASK 2</div>
+      <div class="task-text">There are many benefits of working from home to workers, but employers cannot benefit from that.</div>
+      <div class="task-text">To what extent do you agree or disagree?</div>
+      <div class="task-text">Give reasons for your answer and include any relevant examples from your own knowledge or experience.</div>
+      <div class="task-text"><b>Write at least 250 words.</b></div>
+    `;
+  }
+  function renderWritingAnswerPane(taskNum){
+    const minWords = taskNum===1?150:250;
+    const val = state.wAnswers[taskNum] || "";
+    return `
+      <div class="answer-label">Your answer — Task ${taskNum}</div>
+      <textarea class="answer-box" id="answer-box-${taskNum}" placeholder="Type your response here...">${val}</textarea>
+      <div class="word-count-row"><span>Recommended minimum: <b>${minWords} words</b></span><span>Word count: <span class="wc-num" id="wc-${taskNum}">0</span></span></div>
+    `;
+  }
+  function renderWritingStage(task){
+    state.wCurrentTask = task;
+    $("content-wrap").innerHTML = `<div class="left-pane" id="left-pane"></div><div class="pane-resizer" id="pane-resizer" title="Drag to resize"></div><div class="right-pane" id="right-pane"></div>`;
+    $("left-pane").innerHTML = task===1 ? renderWritingTask1() : renderWritingTask2();
+    $("right-pane").innerHTML = renderWritingAnswerPane(task);
+    enablePaneResizer();
+    attachWritingListeners(task);
+    $("left-pane").scrollTop = 0; $("right-pane").scrollTop = 0;
+    $("nav-arrows").classList.remove("show");
+    renderBottomBarWriting();
+  }
+  function attachWritingListeners(task){
+    const box = $("answer-box-" + task);
+    updateWordCount(task);
+    box.addEventListener("input", (e) => { state.wAnswers[task] = e.target.value; updateWordCount(task); renderBottomBarWriting(); });
+    $("left-pane").addEventListener("mouseup", handleTextSelection);
+  }
+  function updateWordCount(task){
+    const box = $("answer-box-" + task);
+    const wc = wordCount(box.value);
+    const el = $("wc-" + task);
+    el.textContent = wc;
+    const minWords = task===1?150:250;
+    el.classList.remove("ok","low"); el.classList.add(wc>=minWords?"ok":"low");
+  }
+
+  // ================= NOTE / HIGHLIGHT (shared) =================
+  let activeSelectionMenu = null;
+  function removeSelectionMenu(){ if (activeSelectionMenu){ activeSelectionMenu.remove(); activeSelectionMenu = null; } }
+  function handleTextSelection(e){
+    removeSelectionMenu();
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.toString().trim().length === 0) return;
+    if (!$("content-wrap").contains(sel.anchorNode)) return;
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const menu = document.createElement("div");
+    menu.className = "selection-menu";
+    menu.style.left = (rect.left + window.scrollX) + "px";
+    menu.style.top = (rect.bottom + window.scrollY + 4) + "px";
+    menu.innerHTML = `<button data-action="note">📝<span>Note</span></button><button data-action="highlight">🖊<span>Highlight</span></button>`;
+    document.body.appendChild(menu);
+    activeSelectionMenu = menu;
+    const selectedText = sel.toString();
+    menu.querySelector('[data-action="highlight"]').addEventListener("click", () => {
+      try { const mark = document.createElement("mark"); mark.className = "hl"; range.surroundContents(mark); } catch(err){}
+      removeSelectionMenu();
+    });
+    menu.querySelector('[data-action="note"]').addEventListener("click", () => {
+      state.notes.push(selectedText); renderNotesPanel(); show($("notes-panel")); removeSelectionMenu();
+    });
+  }
+  document.addEventListener("mousedown", (e) => { if (activeSelectionMenu && !activeSelectionMenu.contains(e.target)) removeSelectionMenu(); });
+  function renderNotesPanel(){
+    const list = $("notes-list");
+    if (state.notes.length === 0){ list.innerHTML = `<div class="notes-panel-empty">Your private notes will show here<br><br>Select text to highlight or create a note.</div>`; return; }
+    list.innerHTML = state.notes.map(n => `<div class="note-entry"><div class="quoted">"${n}"</div></div>`).join("");
+  }
+  renderNotesPanel();
+  $("notes-toggle-btn").addEventListener("click", () => { $("notes-panel").classList.toggle("open"); });
+
+  // ================= BOTTOM BARS =================
+  function renderBottomBarListening(){
+    let html = "";
+    for (let p=1;p<=4;p++){
+      const [start,end] = listeningRanges[p];
+      if (p === state.lCurrentPart){
+        html += `<div class="part-nav-group"><span class="part-label active-part">Part ${p}</span>`;
+        for (let q=start;q<=end;q++){
+          const answered = state.lAnswers[q] && String(state.lAnswers[q]).trim()!=="";
+          html += `<button class="qnum-btn ${answered?'answered':''}" data-jump="${q}" data-jumppart="${p}">${q}</button>`;
+        }
+        html += `</div>`;
+      } else {
+        let c=0; for (let i=start;i<=end;i++){ if (state.lAnswers[i] && String(state.lAnswers[i]).trim()!=="") c++; }
+        html += `<div class="part-nav-group"><span class="part-label" data-partjump="${p}">Part ${p}</span><span class="part-count">${c} of ${end-start+1}</span></div>`;
+      }
+    }
+    html += `<button class="submit-check" id="submit-check-btn">✔</button>`;
+    $("bottombar").innerHTML = html;
+    document.querySelectorAll("#bottombar [data-partjump]").forEach(el => el.addEventListener("click", () => renderListeningStage(parseInt(el.dataset.partjump))));
+    $("submit-check-btn").addEventListener("click", handleSubmitClick);
+  }
+  function renderBottomBarReading(){
+    let html = "";
+    for (let p=1;p<=3;p++){
+      const [start,end] = readingData[p].range;
+      if (p === state.rCurrentPart){
+        html += `<div class="part-nav-group"><span class="part-label active-part">Passage ${p}</span>`;
+        for (let q=start;q<=end;q++){
+          const answered = state.rAnswers[q] && String(state.rAnswers[q]).trim()!=="";
+          html += `<button class="qnum-btn ${answered?'answered':''}">${q}</button>`;
+        }
+        html += `</div>`;
+      } else {
+        let c=0; for (let i=start;i<=end;i++){ if (state.rAnswers[i] && String(state.rAnswers[i]).trim()!=="") c++; }
+        html += `<div class="part-nav-group"><span class="part-label" data-partjump="${p}">Passage ${p}</span><span class="part-count">${c} of ${end-start+1}</span></div>`;
+      }
+    }
+    html += `<button class="submit-check" id="submit-check-btn">✔</button>`;
+    $("bottombar").innerHTML = html;
+    document.querySelectorAll("#bottombar [data-partjump]").forEach(el => el.addEventListener("click", () => renderReadingStage(parseInt(el.dataset.partjump))));
+    $("submit-check-btn").addEventListener("click", handleSubmitClick);
+  }
+  function renderBottomBarWriting(){
+    let html = "";
+    for (let t=1;t<=2;t++){
+      const wc = wordCount(state.wAnswers[t]);
+      html += `<div class="part-nav-group"><span class="part-label ${t===state.wCurrentTask?'active-part':''}" data-jump="${t}">Task ${t}</span><span class="part-count">${wc} words</span></div>`;
+    }
+    html += `<button class="submit-check" id="submit-check-btn">✔</button>`;
+    $("bottombar").innerHTML = html;
+    document.querySelectorAll("#bottombar [data-jump]").forEach(el => el.addEventListener("click", () => renderWritingStage(parseInt(el.dataset.jump))));
+    $("submit-check-btn").addEventListener("click", handleSubmitClick);
+  }
+
+  // ================= TOP BAR STATUS =================
+  function refreshTopbarForStage(){
+    if (state.stage === "listening"){
+      $("stage-label").textContent = "Listening";
+      $("status-line").textContent = state.audioStarted ? "🔊 Audio is Playing" : "";
+      $("status-line").classList.remove("low");
+    } else if (state.stage === "reading"){
+      $("stage-label").textContent = "Reading";
+      updateReadingTimerDisplay();
+    } else if (state.stage === "writing"){
+      $("stage-label").textContent = "Writing";
+      updateWritingTimerDisplay();
+    }
+  }
+
+  // ================= PASSWORD / ID =================
+  $("pwd-submit").addEventListener("click", () => {
+    const val = $("pwd-input").value.trim();
+    if (val === REQUIRED_PASSWORD){ hide($("screen-password")); show($("screen-id")); $("id-input").focus(); }
+    else { $("pwd-error").textContent = "Incorrect password. Please try again."; }
+  });
+  $("pwd-input").addEventListener("keydown", (e) => { if (e.key==="Enter") $("pwd-submit").click(); });
+
+  $("id-submit").addEventListener("click", () => {
+    const val = $("id-input").value.trim();
+    if (!val){ $("id-error").textContent = "Please enter your Test Taker ID."; return; }
+    state.takerId = val;
+    $("taker-id-display").textContent = val;
+    $("taker-id-display-t").textContent = val;
+    $("results-taker-id").textContent = val;
+    hide($("screen-id")); show($("screen-test"));
+    startListeningStage();
+    enterFullscreen();
+  });
+  $("id-input").addEventListener("keydown", (e) => { if (e.key==="Enter") $("id-submit").click(); });
+
+  function enterFullscreen(){
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (req) { try { req.call(el); } catch(e){} }
+  }
+
+  // ================= STAGE STARTERS =================
+  function startListeningStage(){
+    state.stage = "listening";
+    state.blurAutoSubmitEnabled = true;
+    state.autoHandled = false;
+    refreshTopbarForStage();
+    renderListeningStage(1);
+    startListeningAudio(true);
+  }
+  function startReadingStage(){
+    state.stage = "reading";
+    state.blurAutoSubmitEnabled = false; // reading: no auto-submit on leaving window
+    state.autoHandled = false;
+    refreshTopbarForStage();
+    renderReadingStage(1);
+    startReadingTimer();
+  }
+  function startWritingStage(){
+    state.stage = "writing";
+    state.blurAutoSubmitEnabled = true;
+    state.autoHandled = false;
+    refreshTopbarForStage();
+    renderWritingStage(1);
+    startWritingTimer();
+  }
+
+  // ================= AUDIO GATE (Listening) =================
+  const audioEl = $("test-audio");
+  function startListeningAudio(autoAttempt=false){
+    const btn = $("play-audio-btn");
+    if (btn){ btn.disabled = false; btn.textContent = "▶ Play"; }
+    try { audioEl.currentTime = 0; } catch(e){}
+    const proceed = () => { hide($("audio-gate-overlay")); state.audioStarted = true; refreshTopbarForStage(); };
+    const fallback = () => { if (autoAttempt){ show($("audio-gate-overlay")); } else { proceed(); } };
+    const p = audioEl.play();
+    if (p && p.then) { p.then(proceed).catch(fallback); } else { proceed(); }
+  }
+  $("play-audio-btn").addEventListener("click", (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true; btn.textContent = "Loading…";
+    startListeningAudio(false);
+  });
+  audioEl.addEventListener("play", () => { if (state.stage==="listening"){ $("status-line").textContent = "🔊 Audio is Playing"; } });
+  audioEl.addEventListener("pause", () => { if (state.stage==="listening" && state.audioStarted && !audioEl.ended){ $("status-line").textContent = "⏸ Audio paused"; } });
+  audioEl.addEventListener("ended", () => { if (state.stage==="listening"){ $("status-line").textContent = "Audio finished"; } });
+
+  // ================= TIMERS (Reading & Writing) =================
+  function startReadingTimer(){
+    clearInterval(state.rTimerInterval);
+    updateReadingTimerDisplay();
+    state.rTimerInterval = setInterval(() => {
+      state.rTimeLeft--; updateReadingTimerDisplay();
+      if (state.rTimeLeft <= 0){ clearInterval(state.rTimerInterval); finishReading(); }
+    }, 1000);
+  }
+  function updateReadingTimerDisplay(){
+    const m = Math.floor(state.rTimeLeft/60), s = state.rTimeLeft%60;
+    $("status-line").textContent = String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+    $("status-line").classList.toggle("low", state.rTimeLeft<=300);
+  }
+  function startWritingTimer(){
+    clearInterval(state.wTimerInterval);
+    updateWritingTimerDisplay();
+    state.wTimerInterval = setInterval(() => {
+      state.wTimeLeft--; updateWritingTimerDisplay();
+      if (state.wTimeLeft <= 0){ clearInterval(state.wTimerInterval); finishWriting(); }
+    }, 1000);
+  }
+  function updateWritingTimerDisplay(){
+    const m = Math.floor(state.wTimeLeft/60), s = state.wTimeLeft%60;
+    $("status-line").textContent = String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+    $("status-line").classList.toggle("low", state.wTimeLeft<=300);
+  }
+
+  // ================= SUBMIT DISPATCH =================
+  function handleSubmitClick(){
+    if (state.stage === "listening") finishListening();
+    else if (state.stage === "reading") finishReading();
+    else if (state.stage === "writing") finishWriting();
+  }
+
+  function finishListening(){
+    hide($("screen-test")); show($("screen-transition"));
+    $("transition-title").textContent = "Listening section complete";
+    $("transition-msg").textContent = "Your Listening answers have been saved. Click Next to begin the Reading test.";
+    $("transition-next-btn").onclick = () => { hide($("screen-transition")); show($("screen-test")); startReadingStage(); };
+    $("transition-back-btn").onclick = () => { hide($("screen-transition")); show($("screen-test")); refreshTopbarForStage(); };
+  }
+  function finishReading(){
+    clearInterval(state.rTimerInterval);
+    hide($("screen-test")); show($("screen-transition"));
+    $("transition-title").textContent = "Reading section complete";
+    $("transition-msg").textContent = "Your Reading answers have been saved. Click Next to begin the Writing test.";
+    $("transition-next-btn").onclick = () => { hide($("screen-transition")); show($("screen-test")); startWritingStage(); };
+    $("transition-back-btn").onclick = () => { hide($("screen-transition")); show($("screen-test")); refreshTopbarForStage(); startReadingTimer(); };
+  }
+  function finishWriting(){
+          clearInterval(state.wTimerInterval);
+          hide($("screen-test")); hide($("screen-transition"));
+          buildFinalReport();
+          show($("screen-results"));
+
+          const params = new URLSearchParams(window.location.search);
+          const sId = params.get('studentId') || state.takerId || 'STUDENT';
+          const tId = params.get('testId') || '4';
+
+          const listeningAnswers = {};
+          for (let i = 1; i <= 40; i++) {
+            listeningAnswers[i] = state.lAnswers[i] || "";
+          }
+          const readingAnswers = {};
+          for (let i = 1; i <= 40; i++) {
+            readingAnswers[i] = state.rAnswers[i] || "";
+          }
+          const writingAnswers = {
+            task1: state.wAnswers[1] || "",
+            task2: state.wAnswers[2] || ""
+          };
+
+          const lRes = buildReviewRows(state.lAnswers, listeningAnswerKey);
+          const rRes = buildReviewRows(state.rAnswers, readingAnswerKey);
+
+          // Estimate IELTS bands
+          const getIeltsBand = (correct) => {
+            if (correct >= 39) return 9.0;
+            if (correct >= 37) return 8.5;
+            if (correct >= 35) return 8.0;
+            if (correct >= 32) return 7.5;
+            if (correct >= 30) return 7.0;
+            if (correct >= 27) return 6.5;
+            if (correct >= 23) return 6.0;
+            if (correct >= 20) return 5.5;
+            if (correct >= 16) return 5.0;
+            if (correct >= 13) return 4.5;
+            return 4.0;
+          };
+
+          fetch('http://localhost:5000/api/student/submit/' + tId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              studentId: sId,
+              listeningAnswers,
+              readingAnswers,
+              writingAnswers,
+              listeningScore: getIeltsBand(lRes.correctCount),
+              readingScore: getIeltsBand(rRes.correctCount)
+            })
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log('Submission synced to backend successfully:', data);
+            if (window.parent) {
+              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+            }
+          })
+          .catch(err => console.error('Failed to submit to database backend:', err));
+          return;
+        
+    clearInterval(state.wTimerInterval);
+    hide($("screen-test")); hide($("screen-transition"));
+    buildFinalReport();
+    show($("screen-results"));
+  }
+
+  // ================= AUTO-SUBMIT ON LEAVING WINDOW (Listening & Writing only) =================
+  function autoSubmitIfActive(){
+    if (state.blurAutoSubmitEnabled && !state.autoHandled && !$("screen-test").classList.contains("hidden")){
+      state.autoHandled = true;
+      handleSubmitClick();
+    }
+  }
+  window.addEventListener("blur", autoSubmitIfActive);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) autoSubmitIfActive(); });
+
+  // ================= HAMBURGER MENU =================
+  $("hamburger-btn").addEventListener("click", () => { $("menu-overlay").classList.add("open"); showMenuRoot(); });
+  $("menu-close-btn").addEventListener("click", () => $("menu-overlay").classList.remove("open"));
+  $("menu-back-btn").addEventListener("click", () => showMenuRoot());
+  function showMenuRoot(){
+    $("menu-header-title").textContent = "Options";
+    $("menu-back-btn").classList.remove("show");
+    $("menu-root-view").classList.remove("hidden");
+    $("menu-contrast-view").classList.add("hidden");
+    $("menu-textsize-view").classList.add("hidden");
+  }
+  $("menu-submit-btn").addEventListener("click", () => { $("menu-overlay").classList.remove("open"); handleSubmitClick(); });
+  $("menu-contrast-btn").addEventListener("click", () => {
+    $("menu-header-title").textContent = "Contrast"; $("menu-back-btn").classList.add("show");
+    $("menu-root-view").classList.add("hidden"); $("menu-contrast-view").classList.remove("hidden");
+  });
+  $("menu-textsize-btn").addEventListener("click", () => {
+    $("menu-header-title").textContent = "Text size"; $("menu-back-btn").classList.add("show");
+    $("menu-root-view").classList.add("hidden"); $("menu-textsize-view").classList.remove("hidden");
+  });
+  document.querySelectorAll('[data-contrast]').forEach(row => {
+    row.addEventListener("click", () => {
+      state.contrast = row.dataset.contrast;
+      document.body.classList.remove("contrast-wb","contrast-yb");
+      if (state.contrast==="wb") document.body.classList.add("contrast-wb");
+      if (state.contrast==="yb") document.body.classList.add("contrast-yb");
+      document.querySelectorAll('[data-contrast] .check').forEach(c=>c.textContent="");
+      row.querySelector(".check").textContent="✔";
+    });
+  });
+  document.querySelectorAll('[data-textsize]').forEach(row => {
+    row.addEventListener("click", () => {
+      state.textsize = row.dataset.textsize;
+      $("app").classList.remove("textsize-regular","textsize-large","textsize-extralarge");
+      $("app").classList.add("textsize-"+state.textsize);
+      document.querySelectorAll('[data-textsize] .check').forEach(c=>c.textContent="");
+      row.querySelector(".check").textContent="✔";
+    });
+  });
+  $("app").classList.add("textsize-regular");
+
+  // ================= FINAL REPORT =================
+  function normalize(str){ return String(str||"").trim().toLowerCase().replace(/\s+/g," ").replace(/^the /,""); }
+  function estimateBand(correct){
+    const table = [[39,9.0],[37,8.5],[35,8.0],[32,7.5],[30,7.0],[26,6.5],[23,6.0],[18,5.5],[16,5.0],[13,4.5],[10,4.0],[7,3.5],[5,3.0]];
+    for (const [minC,band] of table){ if (correct>=minC) return band.toFixed(1); }
+    return "2.5";
+  }
+  function buildReviewRows(answersObj, key){
+    let correctCount = 0, rows = "";
+    for (let q=1;q<=40;q++){
+      const userAns = answersObj[q] !== undefined ? answersObj[q] : "";
+      const correctAns = key[q];
+      const isCorrect = normalize(userAns) === normalize(correctAns);
+      if (isCorrect) correctCount++;
+      rows += `<tr><td>${q}</td><td>${userAns || '<i style="color:#999;">(no answer)</i>'}</td><td>${correctAns}</td><td>${isCorrect?'<span class="ok">✔</span>':'<span class="no">✘</span>'}</td></tr>`;
+    }
+    return { correctCount, rows };
+  }
+  function buildFinalReport(){
+    const lRes = buildReviewRows(state.lAnswers, listeningAnswerKey);
+    $("l-score-correct").textContent = lRes.correctCount;
+    $("l-score-band").textContent = estimateBand(lRes.correctCount);
+    $("l-review-body").innerHTML = lRes.rows;
+
+    const rRes = buildReviewRows(state.rAnswers, readingAnswerKey);
+    $("r-score-correct").textContent = rRes.correctCount;
+    $("r-score-band").textContent = estimateBand(rRes.correctCount);
+    $("r-review-body").innerHTML = rRes.rows;
+
+    const w1 = state.wAnswers[1] || "", w2 = state.wAnswers[2] || "";
+    $("w1-answer").textContent = w1.trim() ? w1 : "(no answer written)";
+    $("w2-answer").textContent = w2.trim() ? w2 : "(no answer written)";
+    $("w1-wc").textContent = "Word count: " + wordCount(w1);
+    $("w2-wc").textContent = "Word count: " + wordCount(w2);
+  }
+
+  // ================= PDF DOWNLOAD (no images, text only) =================
+  $("download-pdf-btn").addEventListener("click", () => {
+    const btn = $("download-pdf-btn");
+    btn.disabled = true; const original = btn.textContent; btn.textContent = "Preparing PDF…";
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit:"pt", format:"a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 40; const maxWidth = pageWidth - margin*2;
+      let y = 50;
+      function addWrapped(text, size, bold, gap){
+        doc.setFontSize(size); doc.setFont(undefined, bold?"bold":"normal");
+        const lines = doc.splitTextToSize(String(text), maxWidth);
+        lines.forEach(line => { if (y>780){ doc.addPage(); y=50; } doc.text(line, margin, y); y += size*1.32; });
+        y += (gap||6);
+      }
+      function addTable(title, key, answersObj, correctCount){
+        addWrapped(title + " — " + correctCount + "/40 correct", 13, true, 8);
+        doc.setFontSize(9); doc.setFont(undefined,"normal");
+        for (let q=1;q<=40;q++){
+          const ua = answersObj[q] || "(no answer)";
+          const ca = key[q];
+          const ok = normalize(ua) === normalize(ca) ? "OK" : "X";
+          const line = `Q${q}: ${ua}  |  correct: ${ca}  [${ok}]`;
+          const wrapped = doc.splitTextToSize(line, maxWidth);
+          wrapped.forEach(l => { if (y>790){ doc.addPage(); y=50; } doc.text(l, margin, y); y += 11; });
+        }
+        y += 14;
+      }
+
+      addWrapped("IELTS Full Mock Test — Report", 18, true, 4);
+      addWrapped("Test taker ID: " + (state.takerId || "-"), 11, false, 16);
+
+      const lRes = buildReviewRows(state.lAnswers, listeningAnswerKey);
+      addTable("LISTENING", listeningAnswerKey, state.lAnswers, lRes.correctCount);
+
+      const rRes = buildReviewRows(state.rAnswers, readingAnswerKey);
+      addTable("READING", readingAnswerKey, state.rAnswers, rRes.correctCount);
+
+      doc.addPage(); y = 50;
+      addWrapped("WRITING (not scored — saved as written)", 14, true, 8);
+      addWrapped("Task 1: The charts give information about the percentage of men and women who had driving licenses in one European country in various years.", 10, false, 4);
+      addWrapped("Candidate's answer:", 10, true, 2);
+      addWrapped(state.wAnswers[1] && state.wAnswers[1].trim() ? state.wAnswers[1] : "(no answer written)", 10, false, 4);
+      addWrapped("Word count: " + wordCount(state.wAnswers[1]), 9, false, 16);
+
+      addWrapped("Task 2: There are many benefits of working from home to workers, but employers cannot benefit from that. To what extent do you agree or disagree?", 10, false, 4);
+      addWrapped("Candidate's answer:", 10, true, 2);
+      addWrapped(state.wAnswers[2] && state.wAnswers[2].trim() ? state.wAnswers[2] : "(no answer written)", 10, false, 4);
+      addWrapped("Word count: " + wordCount(state.wAnswers[2]), 9, false, 16);
+
+      addWrapped("IELTS Academic Mock Test Report", 10, true, 4);
+
+      doc.save("IELTS_Full_Mock_" + (state.takerId || "candidate") + ".pdf");
+    } catch (err) {
+      alert("PDF could not be generated in this environment. You can read your results from the report above instead.");
+    } finally {
+      btn.disabled = false; btn.textContent = original;
+    }
+  });
+
+  $("restart-btn").addEventListener("click", () => {
+    state.stage = "listening"; state.takerId = ""; state.notes = [];
+    state.lCurrentPart=1; state.lAnswers={}; state.audioStarted=false;
+    state.rCurrentPart=1; state.rAnswers={}; state.rTimeLeft=60*60; clearInterval(state.rTimerInterval);
+    state.wCurrentTask=1; state.wAnswers={1:"",2:""}; state.wTimeLeft=60*60; clearInterval(state.wTimerInterval);
+    state.blurAutoSubmitEnabled = false; state.autoHandled = false;
+    document.body.className = ""; $("app").className = ""; $("app").classList.add("textsize-regular");
+    hide($("screen-results")); hide($("screen-transition")); hide($("screen-test"));
+    show($("screen-password"));
+    $("pwd-input").value=""; $("id-input").value="";
+    $("pwd-error").textContent=""; $("id-error").textContent="";
+  });
+
+
+        // Auto-login extension injected by IELTS Mock Platform
+        window.addEventListener('DOMContentLoaded', () => {
+          const params = new URLSearchParams(window.location.search);
+          const sId = params.get('studentId');
+          const tId = params.get('testId') || '4';
+          
+          if (sId) {
+            state.takerId = sId;
+            
+            const pwdScreen = document.getElementById("screen-password");
+            const idScreen = document.getElementById("screen-id");
+            if (pwdScreen) pwdScreen.classList.add("hidden");
+            if (idScreen) idScreen.classList.add("hidden");
+            
+            const takerDisplay = document.getElementById("taker-id-display");
+            const takerDisplayT = document.getElementById("taker-id-display-t");
+            const resultsTaker = document.getElementById("results-taker-id");
+            
+            if (takerDisplay) takerDisplay.textContent = sId;
+            if (takerDisplayT) takerDisplayT.textContent = sId;
+            if (resultsTaker) resultsTaker.textContent = sId;
+            
+            const testScreen = document.getElementById("screen-test");
+            if (testScreen) testScreen.classList.remove("hidden");
+            
+            startListeningStage();
+          }
+        });
+        
+})();
+</script>
+</body>
+</html>
