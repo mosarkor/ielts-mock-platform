@@ -1205,7 +1205,8 @@
               readingAnswers,
               writingAnswers,
               listeningScore: getIeltsBand(lRes.correctCount),
-              readingScore: getIeltsBand(rRes.correctCount)
+              readingScore: getIeltsBand(rRes.correctCount),
+              violationsCount: parseInt(sessionStorage.getItem('violations_' + tId) || '0')
             })
           })
           .then(res => res.json())

@@ -138,9 +138,13 @@ export async function initDb() {
         writing_score REAL,
         teacher_feedback TEXT,
         graded_by TEXT REFERENCES users(id),
-        is_revealed INTEGER DEFAULT 0
+        is_revealed INTEGER DEFAULT 0,
+        violations_count INTEGER DEFAULT 0
       )
     `);
+
+    // Dynamically alter table for existing installations
+    await db.exec('ALTER TABLE submissions ADD COLUMN violations_count INTEGER DEFAULT 0').catch(() => {});
 
     // Seed if empty
     const userCount = await db.get('SELECT COUNT(*) as count FROM users');
@@ -285,7 +289,6 @@ export async function initDb() {
       FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE
     )
   `);
-
   await db.exec(`
     CREATE TABLE IF NOT EXISTS submissions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -303,11 +306,15 @@ export async function initDb() {
       teacher_feedback TEXT,
       graded_by TEXT,
       is_revealed INTEGER DEFAULT 0,
+      violations_count INTEGER DEFAULT 0,
       FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (test_id) REFERENCES tests(id) ON DELETE CASCADE,
       FOREIGN KEY (graded_by) REFERENCES users(id)
     )
   `);
+
+  // Dynamically alter table for existing installations
+  await db.exec('ALTER TABLE submissions ADD COLUMN violations_count INTEGER DEFAULT 0').catch(() => {});
 
   const userCount = await db.get('SELECT COUNT(*) as count FROM users');
   if (userCount.count === 0) {

@@ -127,91 +127,92 @@ app.get('/api/student/test/:testId', async (req, res) => {
 // Submit Test Answers
 app.post('/api/student/submit/:testId', async (req, res) => {
   const { testId } = req.params;
-  const { studentId, listeningAnswers, readingAnswers, writingAnswers } = req.body;
+    const { studentId, listeningAnswers, readingAnswers, writingAnswers, violationsCount = 0 } = req.body;
 
-  try {
-    const test = await db.get('SELECT * FROM tests WHERE id = ?', [testId]);
-    if (!test) {
-      return res.status(404).json({ error: 'Test not found' });
-    }
-
-    const listeningData = JSON.parse(test.listening_data);
-    let listeningScore = req.body.listeningScore;
-    let readingScore = req.body.readingScore;
-
-    if (listeningScore === undefined || readingScore === undefined) {
-      const listeningData = JSON.parse(test.listening_data || '{"sections":[]}');
-      const readingData = JSON.parse(test.reading_data || '{"passages":[]}');
-
-      // Simple IELTS band scale out of 9
-      const getIeltsBand = (correct, total) => {
-        if (total === 0) return 0;
-        const ratio = correct / total;
-        if (ratio >= 0.95) return 9.0;
-        if (ratio >= 0.85) return 8.0;
-        if (ratio >= 0.75) return 7.5;
-        if (ratio >= 0.65) return 7.0;
-        if (ratio >= 0.55) return 6.0;
-        if (ratio >= 0.45) return 5.5;
-        if (ratio >= 0.35) return 5.0;
-        if (ratio >= 0.25) return 4.5;
-        if (ratio >= 0.15) return 4.0;
-        return 3.0;
-      };
-
-      if (listeningScore === undefined) {
-        let listeningCorrect = 0;
-        let totalListening = 0;
-        if (listeningData && listeningData.sections) {
-          listeningData.sections.forEach(sec => {
-            sec.questions.forEach(q => {
-              totalListening++;
-              const studentAns = (listeningAnswers[q.id] || '').trim().toLowerCase();
-              const correctAns = q.answer.trim().toLowerCase();
-              if (studentAns === correctAns) {
-                listeningCorrect++;
-              }
-            });
-          });
-        }
-        listeningScore = getIeltsBand(listeningCorrect, totalListening);
+    try {
+      const test = await db.get('SELECT * FROM tests WHERE id = ?', [testId]);
+      if (!test) {
+        return res.status(404).json({ error: 'Test not found' });
       }
 
-      if (readingScore === undefined) {
-        let readingCorrect = 0;
-        let totalReading = 0;
-        if (readingData && readingData.passages) {
-          readingData.passages.forEach(pass => {
-            pass.questions.forEach(q => {
-              totalReading++;
-              const studentAns = (readingAnswers[q.id] || '').trim().toLowerCase();
-              const correctAns = q.answer.trim().toLowerCase();
-              if (studentAns === correctAns) {
-                readingCorrect++;
-              }
-            });
-          });
-        }
-        readingScore = getIeltsBand(readingCorrect, totalReading);
-      }
-    }
+      const listeningData = JSON.parse(test.listening_data);
+      let listeningScore = req.body.listeningScore;
+      let readingScore = req.body.readingScore;
 
-    // Write to Submissions
-    await db.run(`
-      INSERT INTO submissions (
-        student_id, test_id, started_at, submitted_at, 
-        listening_answers, reading_answers, writing_answers, 
-        listening_score, reading_score, is_revealed
-      ) VALUES (?, ?, datetime('now', '-2 hours'), datetime('now'), ?, ?, ?, ?, ?, 0)
-    `, 
-      studentId, 
-      testId, 
-      JSON.stringify(listeningAnswers), 
-      JSON.stringify(readingAnswers), 
-      JSON.stringify(writingAnswers), 
-      listeningScore, 
-      readingScore
-    );
+      if (listeningScore === undefined || readingScore === undefined) {
+        const listeningData = JSON.parse(test.listening_data || '{"sections":[]}');
+        const readingData = JSON.parse(test.reading_data || '{"passages":[]}');
+
+        // Simple IELTS band scale out of 9
+        const getIeltsBand = (correct, total) => {
+          if (total === 0) return 0;
+          const ratio = correct / total;
+          if (ratio >= 0.95) return 9.0;
+          if (ratio >= 0.85) return 8.0;
+          if (ratio >= 0.75) return 7.5;
+          if (ratio >= 0.65) return 7.0;
+          if (ratio >= 0.55) return 6.0;
+          if (ratio >= 0.45) return 5.5;
+          if (ratio >= 0.35) return 5.0;
+          if (ratio >= 0.25) return 4.5;
+          if (ratio >= 0.15) return 4.0;
+          return 3.0;
+        };
+
+        if (listeningScore === undefined) {
+          let listeningCorrect = 0;
+          let totalListening = 0;
+          if (listeningData && listeningData.sections) {
+            listeningData.sections.forEach(sec => {
+              sec.questions.forEach(q => {
+                totalListening++;
+                const studentAns = (listeningAnswers[q.id] || '').trim().toLowerCase();
+                const correctAns = q.answer.trim().toLowerCase();
+                if (studentAns === correctAns) {
+                  listeningCorrect++;
+                }
+              });
+            });
+          }
+          listeningScore = getIeltsBand(listeningCorrect, totalListening);
+        }
+
+        if (readingScore === undefined) {
+          let readingCorrect = 0;
+          let totalReading = 0;
+          if (readingData && readingData.passages) {
+            readingData.passages.forEach(pass => {
+              pass.questions.forEach(q => {
+                totalReading++;
+                const studentAns = (readingAnswers[q.id] || '').trim().toLowerCase();
+                const correctAns = q.answer.trim().toLowerCase();
+                if (studentAns === correctAns) {
+                  readingCorrect++;
+                }
+              });
+            });
+          }
+          readingScore = getIeltsBand(readingCorrect, totalReading);
+        }
+      }
+
+      // Write to Submissions
+      await db.run(`
+        INSERT INTO submissions (
+          student_id, test_id, started_at, submitted_at, 
+          listening_answers, reading_answers, writing_answers, 
+          listening_score, reading_score, is_revealed, violations_count
+        ) VALUES (?, ?, datetime('now', '-2 hours'), datetime('now'), ?, ?, ?, ?, ?, 0, ?)
+      `, 
+        studentId, 
+        testId, 
+        JSON.stringify(listeningAnswers), 
+        JSON.stringify(readingAnswers), 
+        JSON.stringify(writingAnswers), 
+        listeningScore, 
+        readingScore,
+        violationsCount
+      );
 
     // Update assignment status
     await db.run(`

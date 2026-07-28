@@ -160,6 +160,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
     if (selectedSub.writing_score !== null) {
       report += `- Writing Score: Band ${selectedSub.writing_score.toFixed(1)}\n`;
     }
+    report += `- Exam Integrity: ${selectedSub.violations_count || 0} Tab switches / Fullscreen exits detected\n`;
     report += `\nINCORRECT & MISSED ANSWERS FEEDBACK:\n\n`;
     
     report += `[🎧 LISTENING SECTION ERRORS]\n`;
@@ -264,8 +265,19 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                 <button onClick={() => setSelectedSub(null)} className="btn btn-secondary" style={{ marginBottom: '0.5rem' }}>
                   ← Back to Submissions
                 </button>
-                <h3 style={{ color: '#ffffff' }}>Grading: {selectedSub.student_name} ({selectedSub.student_id})</h3>
-                <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Test paper: {selectedSub.test_title}</p>
+                <h3 style={{ color: 'var(--text-primary)' }}>Grading: {selectedSub.student_name} ({selectedSub.student_id})</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
+                  <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Test paper: {selectedSub.test_title}</span>
+                  {selectedSub.violations_count > 0 ? (
+                    <span style={{ backgroundColor: 'var(--color-rose)', color: '#ffffff', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.2rem 0.5rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      ⚠️ {selectedSub.violations_count} Tab Switches
+                    </span>
+                  ) : (
+                    <span style={{ backgroundColor: 'var(--color-emerald)', color: '#ffffff', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.2rem 0.5rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                      🔒 Integrity Verified
+                    </span>
+                  )}
+                </div>
               </div>
               <div style={styles.liveScoreBadge}>
                 <span style={styles.liveScoreNum}>{calculateLiveOverall().toFixed(1)}</span>

@@ -26,8 +26,93 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
+  // Anti-Cheat Proctoring States
+  const [isExamStarted, setIsExamStarted] = useState(false);
+  const [violations, setViolations] = useState(0);
+  const [isLockoutActive, setIsLockoutActive] = useState(false);
+  const [lockoutReason, setLockoutReason] = useState('');
+  const [examTerminated, setExamTerminated] = useState(false);
+
   const audioRef = useRef(null);
   const timerIntervalRef = useRef(null);
+
+  // Anti-Cheat System (Fullscreen & Tab Swaps)
+  useEffect(() => {
+    if (!isExamStarted || examTerminated) return;
+
+    // Sync violations to sessionStorage so the iframe can read it
+    sessionStorage.setItem('violations_' + testId, violations.toString());
+
+    if (violations >= 3) {
+      setExamTerminated(true);
+      setIsLockoutActive(false);
+      alert('Exam terminated due to multiple cheating violations. Your test is being auto-submitted.');
+      setTimeout(() => {
+        onFinished();
+      }, 3000);
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setViolations(prev => {
+          const next = prev + 1;
+          sessionStorage.setItem('violations_' + testId, next.toString());
+          return next;
+        });
+        setLockoutReason('Tab switch or browser window minimization detected.');
+        setIsLockoutActive(true);
+      }
+    };
+
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && !examTerminated) {
+        setViolations(prev => {
+          const next = prev + 1;
+          sessionStorage.setItem('violations_' + testId, next.toString());
+          return next;
+        });
+        setLockoutReason('Fullscreen mode was exited.');
+        setIsLockoutActive(true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, [isExamStarted, violations, examTerminated, testId, onFinished]);
+
+  const startExamAndEnterFullscreen = () => {
+    setIsExamStarted(true);
+    setViolations(0);
+    setIsLockoutActive(false);
+    
+    const docEl = document.documentElement;
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen().catch(() => {});
+    } else if (docEl.mozRequestFullScreen) {
+      docEl.mozRequestFullScreen().catch(() => {});
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen().catch(() => {});
+    } else if (docEl.msRequestFullscreen) {
+      docEl.msRequestFullscreen().catch(() => {});
+    }
+  };
+
+  const resumeFullscreen = () => {
+    const docEl = document.documentElement;
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen().then(() => {
+        setIsLockoutActive(false);
+      }).catch(() => {});
+    } else {
+      setIsLockoutActive(false);
+    }
+  };
 
   // Fetch test details and listen to iframe submit events
   useEffect(() => {
@@ -138,6 +223,63 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
       <div style={{ ...styles.ieltsSimulator, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f3f4f6' }}>
         <h3>System Loading Error: {error}</h3>
         <button onClick={onFinished} className="btn btn-danger" style={{ marginTop: '1rem' }}>Go Back</button>
+      </div>
+    );
+  }
+
+  if (!isExamStarted) {
+    return (
+      <div style={styles.startExamContainer}>
+        <div className="card" style={styles.startExamCard}>
+          <h2 style={{ color: '#f43f5e', marginBottom: '1rem', textAlign: 'center', fontWeight: 'bold' }}>🔒 Secure Exam Environment</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
+            This exam is monitored by the IELTS Mock Platform tab-lock and anti-cheat engine. To start the exam, you must agree to the following rules:
+          </p>
+          <ul style={{ color: 'var(--text-primary)', paddingLeft: '1.25rem', marginBottom: '2rem', fontSize: '0.9rem', lineHeight: '1.8' }}>
+            <li>You must remain in <strong>Fullscreen Mode</strong> at all times.</li>
+            <li>Switching tabs, minimizing the browser, or opening other windows is strictly prohibited.</li>
+            <li>Any attempt to leave this page will log a <strong>violation</strong>.</li>
+            <li>Accumulating <strong>3 violations</strong> will terminate your test and submit your progress automatically.</li>
+          </ul>
+          <button onClick={startExamAndEnterFullscreen} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '1.05rem', padding: '1rem' }}>
+            🔐 Agree & Begin Test
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (examTerminated) {
+    return (
+      <div style={{ ...styles.startExamContainer, backgroundColor: '#0f172a' }}>
+        <div className="card" style={{ ...styles.startExamCard, border: '2px solid #f43f5e', textAlign: 'center' }}>
+          <h2 style={{ color: '#f43f5e', marginBottom: '1.5rem', fontWeight: 'bold' }}>🚨 Test Terminated</h2>
+          <p style={{ color: '#cbd5e1', marginBottom: '2rem', lineHeight: '1.6' }}>
+            Your test session has been terminated because you exceeded the limit of 3 tab-switching or focus-loss violations.
+          </p>
+          <p style={{ color: '#f43f5e', fontWeight: 'bold', fontSize: '1.1rem' }}>
+            Your answers have been submitted automatically.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLockoutActive) {
+    return (
+      <div style={{ ...styles.startExamContainer, backgroundColor: 'rgba(15, 23, 42, 0.95)', zIndex: 99999 }}>
+        <div className="card" style={{ ...styles.startExamCard, border: '2px solid #f59e0b', textAlign: 'center' }}>
+          <h2 style={{ color: '#f59e0b', marginBottom: '1.5rem', fontWeight: 'bold' }}>⚠️ Anti-Cheat Warning</h2>
+          <p style={{ color: '#cbd5e1', marginBottom: '1rem' }}>
+            Violation Detected: <strong>{lockoutReason}</strong>
+          </p>
+          <p style={{ color: '#f43f5e', fontWeight: 'bold', marginBottom: '2rem', fontSize: '1.1rem' }}>
+            Total Violations: {violations} / 3
+          </p>
+          <button onClick={resumeFullscreen} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+            🔐 Resume Fullscreen & Continue
+          </button>
+        </div>
       </div>
     );
   }
@@ -794,5 +936,27 @@ const styles = {
     justifyContent: 'flex-end',
     gap: '1rem',
     marginTop: '1.5rem',
+  },
+  startExamContainer: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'var(--bg-primary)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+    padding: '1.5rem',
+  },
+  startExamCard: {
+    width: '100%',
+    maxWidth: '540px',
+    backgroundColor: 'var(--bg-secondary)',
+    borderRadius: '12px',
+    padding: '2.5rem',
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+    border: '1px solid var(--glass-border)',
   }
 };

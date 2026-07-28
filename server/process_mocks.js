@@ -171,7 +171,8 @@ async function processMockFiles() {
               readingAnswers,
               writingAnswers,
               listeningScore: getIeltsBand(lScore),
-              readingScore: getIeltsBand(rScore)
+              readingScore: getIeltsBand(rScore),
+              violationsCount: parseInt(sessionStorage.getItem('violations_' + tId) || '0')
             })
           })
           .then(res => res.json())
@@ -296,7 +297,8 @@ async function processMockFiles() {
               readingAnswers,
               writingAnswers,
               listeningScore: getIeltsBand(lRes.correctCount),
-              readingScore: getIeltsBand(rRes.correctCount)
+              readingScore: getIeltsBand(rRes.correctCount),
+              violationsCount: parseInt(sessionStorage.getItem('violations_' + tId) || '0')
             })
           })
           .then(res => res.json())

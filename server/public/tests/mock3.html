@@ -837,7 +837,8 @@ function finishTest(){
               readingAnswers,
               writingAnswers,
               listeningScore: getIeltsBand(lScore),
-              readingScore: getIeltsBand(rScore)
+              readingScore: getIeltsBand(rScore),
+              violationsCount: parseInt(sessionStorage.getItem('violations_' + tId) || '0')
             })
           })
           .then(res => res.json())
