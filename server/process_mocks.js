@@ -162,7 +162,7 @@ async function processMockFiles() {
           const sId = params.get('studentId') || candidate;
           const tId = params.get('testId') || '${mockNumber}';
 
-          fetch('http://localhost:5000/api/student/submit/' + tId, {
+          fetch(window.location.origin + '/api/student/submit/' + tId, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -287,7 +287,7 @@ async function processMockFiles() {
             return 4.0;
           };
 
-          fetch('http://localhost:5000/api/student/submit/' + tId, {
+          fetch(window.location.origin + '/api/student/submit/' + tId, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

@@ -823,7 +823,7 @@ function finishTest(){
           const sId = params.get('studentId') || candidate;
           const tId = params.get('testId') || '1';
 
-          fetch('http://localhost:5000/api/student/submit/' + tId, {
+          fetch('window.location.origin + '/api/student/submit/'' + tId, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
