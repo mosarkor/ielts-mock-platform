@@ -1326,6 +1326,11 @@ function setTextSize(t){
 </script>
 <script>
         // Auto-login extension injected by IELTS Mock Platform
+        window.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'FORCE_SUBMIT') {
+            if (typeof finishTest === 'function') finishTest();
+          }
+        });
         function runAutoLogin() {
           const params = new URLSearchParams(window.location.search);
           const sId = params.get('studentId') || 'STUDENT';

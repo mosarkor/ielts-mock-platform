@@ -35,6 +35,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
   const audioRef = useRef(null);
   const timerIntervalRef = useRef(null);
+  const iframeRef = useRef(null);
 
   // Anti-Cheat System (Fullscreen & Tab Swaps)
   useEffect(() => {
@@ -46,10 +47,20 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     if (violations >= 3) {
       setExamTerminated(true);
       setIsLockoutActive(false);
+      
+      // Force submit answers
+      if (test && test.listening_data && test.listening_data.isIframe) {
+        if (iframeRef.current && iframeRef.current.contentWindow) {
+          iframeRef.current.contentWindow.postMessage({ type: 'FORCE_SUBMIT' }, '*');
+        }
+      } else {
+        submitTestAnswers();
+      }
+
       alert('Exam terminated due to multiple cheating violations. Your test is being auto-submitted.');
       setTimeout(() => {
         onFinished();
-      }, 3000);
+      }, 5000);
       return;
     }
 
@@ -289,6 +300,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     return (
       <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
         <iframe 
+          ref={iframeRef}
           src={iframeUrl}
           style={{ width: '100%', height: '100%', border: 'none' }}
           title={test.title}

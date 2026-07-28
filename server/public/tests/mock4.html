@@ -1512,6 +1512,11 @@
 
 
         // Auto-login extension injected by IELTS Mock Platform
+        window.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'FORCE_SUBMIT') {
+            if (typeof finishWriting === 'function') finishWriting();
+          }
+        });
         window.addEventListener('DOMContentLoaded', () => {
           const params = new URLSearchParams(window.location.search);
           const sId = params.get('studentId');

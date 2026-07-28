@@ -89,6 +89,13 @@ async function processMockFiles() {
           const welcomeName = document.getElementById('welcomeName');
           if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
         }
+        window.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'FORCE_SUBMIT') {
+            if (typeof finishTest === 'function') {
+              finishTest();
+            }
+          }
+        });
         if (document.readyState !== 'loading') {
           runAutoLogin();
         } else {
@@ -221,6 +228,13 @@ async function processMockFiles() {
             if (testScreen) testScreen.classList.remove("hidden");
             
             startListeningStage();
+          }
+        });
+        window.addEventListener('message', (event) => {
+          if (event.data && event.data.type === 'FORCE_SUBMIT') {
+            if (typeof finishWriting === 'function') {
+              finishWriting();
+            }
           }
         });
         `;
