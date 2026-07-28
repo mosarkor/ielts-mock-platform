@@ -471,13 +471,27 @@ app.post('/api/admin/upload-test', async (req, res) => {
       const finishTestReplacement = `function finishTest(){
         clearInterval(timerInt);
         document.getElementById('exam').classList.add('hidden');
+        
+        const resultCard = document.querySelector('#result .result-card');
+        if (resultCard) {
+          resultCard.innerHTML = \`
+            <div style="text-align: center; padding: 2rem 0;">
+              <h2 style="color: var(--ielts-red); margin-bottom: 1rem;">Test Submitted Successfully</h2>
+              <p style="color: #555; font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;">
+                Your answers have been securely submitted to your teacher.<br>
+                Please wait while we redirect you back to your dashboard...
+              </p>
+              <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--ielts-red); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+              <style>
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              </style>
+            </div>
+          \`;
+        }
         document.getElementById('result').classList.remove('hidden');
-        const lAnswered = countAnswered('l',40);
-        const rAnswered = countAnswered('r',40);
-        const w1 = wordCount(document.getElementById('wText1').value);
-        const w2 = wordCount(document.getElementById('wText2').value);
-        document.getElementById('resultMeta').textContent = \`Candidate ID: \${candidate} | Listening answered: \${lAnswered}/40 | Reading answered: \${rAnswered}/40 | Writing words: Task 1 — \${w1}, Task 2 — \${w2}\`;
-        buildReview();
 
         // Extract answers
         const listeningAnswers = {};
@@ -535,7 +549,6 @@ app.post('/api/admin/upload-test', async (req, res) => {
           }
         })
         .catch(err => console.error('Failed to submit to database backend:', err));
-        setTimeout(()=>downloadPDF(true), 500);
         return;
       }
       `;
@@ -570,13 +583,31 @@ app.post('/api/admin/upload-test', async (req, res) => {
       });
       `;
       content = content.replace(/\}\)\(\);\s*<\/script>/, `${autoLoginSnippetB}\n})();\n</script>`);
-      
-      const finishWritingTarget = `  function finishWriting(){`;
-      const finishWritingReplacement = `  function finishWriting(){
+           const finishWritingTarget = /function finishWriting\(\)\{\s*clearInterval\(state\.wTimerInterval\);\s*hide\(\$\("screen-test"\)\);\s*hide\(\$\("screen-transition"\)\);\s*buildFinalReport\(\);\s*show\(\$\("screen-results"\)\);\s*\}/;
+      const finishWritingReplacement = `function finishWriting(){
         clearInterval(state.wTimerInterval);
         hide($("screen-test")); hide($("screen-transition"));
-        buildFinalReport();
-        show($("screen-results"));
+        
+        const resultsScreen = $("screen-results");
+        if (resultsScreen) {
+          resultsScreen.innerHTML = \`
+            <div style="max-width: 600px; margin: 4rem auto; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 3rem; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-family: Arial, sans-serif;">
+              <h2 style="color: #c8102e; margin-bottom: 1.5rem; font-size: 24px; font-weight: bold;">Test Submitted Successfully</h2>
+              <p style="color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 2rem;">
+                Your answers have been securely submitted to your teacher.<br>
+                Please wait while we redirect you back to your dashboard...
+              </p>
+              <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #c8102e; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+              <style>
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              </style>
+            </div>
+          \`;
+          show(resultsScreen);
+        }
 
         const params = new URLSearchParams(window.location.search);
         const sId = params.get('studentId') || state.takerId || 'STUDENT';
@@ -634,6 +665,7 @@ app.post('/api/admin/upload-test', async (req, res) => {
         })
         .catch(err => console.error('Failed to submit to database backend:', err));
         return;
+      }
       `;
       content = content.replace(finishWritingTarget, finishWritingReplacement);
     }
