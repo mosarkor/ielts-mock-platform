@@ -273,8 +273,6 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
               </div>
             </div>
 
-            </div>
-
             {/* View Mode Tabs */}
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', userSelect: 'none' }}>
               <button 
