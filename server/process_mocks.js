@@ -100,7 +100,7 @@ async function processMockFiles() {
         content = content.replace('</body>', `<script>${autoLoginSnippet}</script>\n</body>`);
 
         // Modify finishTest function to post data back to our Express API
-        const finishTestTarget = `function finishTest(){`;
+        const finishTestTarget = /function finishTest\(\)\{\s*clearInterval\(timerInt\);[\s\S]*?setTimeout\(\(\)=>downloadPDF\(true\),\s*500\);\s*\}/;
         const finishTestReplacement = `function finishTest(){
           clearInterval(timerInt);
           document.getElementById('exam').classList.add('hidden');
@@ -168,9 +168,9 @@ async function processMockFiles() {
             }
           })
           .catch(err => console.error('Failed to submit to database backend:', err));
-
           setTimeout(()=>downloadPDF(true), 500);
           return;
+        }
         `;
 
         content = content.replace(finishTestTarget, finishTestReplacement);

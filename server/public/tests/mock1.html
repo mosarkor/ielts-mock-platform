@@ -829,21 +829,10 @@ function finishTest(){
             }
           })
           .catch(err => console.error('Failed to submit to database backend:', err));
-
           setTimeout(()=>downloadPDF(true), 500);
           return;
+        }
         
-  clearInterval(timerInt);
-  document.getElementById('exam').classList.add('hidden');
-  document.getElementById('result').classList.remove('hidden');
-  const lAnswered = countAnswered('l',40);
-  const rAnswered = countAnswered('r',40);
-  const w1 = wordCount(document.getElementById('wText1').value);
-  const w2 = wordCount(document.getElementById('wText2').value);
-  document.getElementById('resultMeta').textContent = `Candidate ID: ${candidate} | Listening answered: ${lAnswered}/40 | Reading answered: ${rAnswered}/40 | Writing words: Task 1 — ${w1}, Task 2 — ${w2}`;
-  buildReview();
-  setTimeout(()=>downloadPDF(true), 500);
-}
 function countAnswered(prefix,total){
   let n=0;
   for(let i=1;i<=total;i++){ if(getAnswer(prefix+i).length) n++; }
