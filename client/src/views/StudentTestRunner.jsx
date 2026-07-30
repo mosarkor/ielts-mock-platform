@@ -789,6 +789,9 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
             <button onClick={startExamAndEnterFullscreen} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '1.05rem', padding: '1rem' }}>
               🔐 Agree & Begin Test
             </button>
+            <button onClick={onFinished} className="btn btn-secondary" style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem', fontSize: '0.95rem', padding: '0.75rem' }}>
+              🚪 Cancel & Go Back
+            </button>
           </div>
         </div>
       )}
