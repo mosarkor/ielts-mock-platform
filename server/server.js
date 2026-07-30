@@ -754,6 +754,55 @@ app.post('/api/admin/assign', async (req, res) => {
   }
 });
 
+// Bulk Import Students
+app.post('/api/admin/users/bulk-import', async (req, res) => {
+  const { students } = req.body; // Array of { id, name, password, groupName }
+  if (!Array.isArray(students) || students.length === 0) {
+    return res.status(400).json({ error: 'No students provided' });
+  }
+  const results = [];
+  for (const s of students) {
+    try {
+      await db.run(
+        'INSERT INTO users (id, name, password_hash, role, group_name) VALUES (?, ?, ?, ?, ?)',
+        [s.id, s.name, s.password, 'student', s.groupName || null]
+      );
+      results.push({ id: s.id, name: s.name, password: s.password, groupName: s.groupName || '', status: 'created' });
+    } catch (err) {
+      results.push({ id: s.id, name: s.name, password: s.password, groupName: s.groupName || '', status: 'skipped (ID exists)' });
+    }
+  }
+  res.json({ success: true, results });
+});
+
+// Delete Assignment
+app.delete('/api/admin/assignments/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.run('DELETE FROM assignments WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Reset Assignment (set back to assigned so student can retake)
+app.post('/api/admin/assignments/:id/reset', async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Also clear the related submission if present
+    const asg = await db.get('SELECT * FROM assignments WHERE id = ?', [id]);
+    if (asg && asg.submission_id) {
+      await db.run('DELETE FROM submissions WHERE id = ?', [asg.submission_id]);
+    }
+    await db.run("UPDATE assignments SET status = 'assigned', submission_id = NULL WHERE id = ?", [id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 // Serve built static React client files in production
 const distPath = path.join(__dirname, '../client/dist');
 app.use(express.static(distPath));

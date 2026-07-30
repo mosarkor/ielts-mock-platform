@@ -28,6 +28,16 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
   const [uploadedHtmlContent, setUploadedHtmlContent] = useState('');
   const [uploadingTest, setUploadingTest] = useState(false);
 
+  // Bulk Import State
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [bulkImportText, setBulkImportText] = useState('');
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [bulkResults, setBulkResults] = useState(null);
+
+  // Assignment Filters
+  const [filterGroup, setFilterGroup] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+
   useEffect(() => {
     fetchAdminData();
   }, []);
@@ -189,6 +199,64 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
     );
   };
 
+  // Bulk Import Handler
+  const handleBulkImport = async () => {
+    if (!bulkImportText.trim()) {
+      alert('Please paste student data first.');
+      return;
+    }
+    const lines = bulkImportText.trim().split('\n').filter(l => l.trim());
+    const students = lines.map((line, idx) => {
+      const parts = line.split(',').map(p => p.trim());
+      const name = parts[0] || `Student ${idx + 1}`;
+      const groupName = parts[1] || '';
+      // Auto-generate ID from name initials + timestamp fragment
+      const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 3);
+      const id = `${initials}${Date.now().toString().slice(-4)}${String(idx).padStart(2,'0')}`;
+      const password = Math.random().toString(36).slice(2, 8).toUpperCase();
+      return { id, name, password, groupName };
+    });
+
+    setBulkImporting(true);
+    try {
+      const res = await fetch('/api/admin/users/bulk-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ students })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Bulk import failed');
+      setBulkResults(data.results);
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setBulkImporting(false);
+    }
+  };
+
+  // Assignment Management
+  const handleDeleteAssignment = async (asgId) => {
+    if (!confirm('Delete this assignment? The student will no longer see this test.')) return;
+    try {
+      await fetch(`/api/admin/assignments/${asgId}`, { method: 'DELETE' });
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleResetAssignment = async (asgId, studentName, testTitle) => {
+    if (!confirm(`Reset "${testTitle}" for ${studentName}? Their submitted answers will be cleared and they can retake it.`)) return;
+    try {
+      await fetch(`/api/admin/assignments/${asgId}/reset`, { method: 'POST' });
+      alert('Assignment reset! Student can now retake the test.');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   // HTML Mock Test Uploader
   const handleUploadHtmlTest = async () => {
     if (!testTitle.trim()) {
@@ -293,6 +361,88 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
               {/* LEFT COLUMN: REGISTRATION & ASSIGNMENT */}
               <div style={styles.leftCol}>
                 
+                {/* A0. Bulk Import */}
+                <div className="card" style={{ marginBottom: '2rem' }}>
+                  <div style={styles.flexHeader}>
+                    <h3 style={styles.cardTitle}>📥 Bulk Import Students</h3>
+                    <button
+                      onClick={() => { setShowBulkImport(!showBulkImport); setBulkResults(null); }}
+                      className="btn btn-primary"
+                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                    >
+                      {showBulkImport ? 'Close ▲' : 'Open ▼'}
+                    </button>
+                  </div>
+
+                  {showBulkImport && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.75rem', lineHeight: '1.5' }}>
+                        Paste one student per line in the format: <strong>Full Name, Group Name</strong><br/>
+                        IDs and passwords will be auto-generated.
+                      </p>
+                      <textarea
+                        className="form-input"
+                        rows={7}
+                        placeholder={`Aria Thorne, Group A\nElara Vane, Group B\nMarcus Stone, Group A`}
+                        value={bulkImportText}
+                        onChange={(e) => setBulkImportText(e.target.value)}
+                        style={{ fontFamily: 'monospace', fontSize: '0.85rem', resize: 'vertical' }}
+                      />
+                      <button
+                        onClick={handleBulkImport}
+                        disabled={bulkImporting}
+                        className="btn btn-success"
+                        style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}
+                      >
+                        {bulkImporting ? 'Importing...' : '🚀 Import All Students'}
+                      </button>
+
+                      {bulkResults && (
+                        <div style={{ marginTop: '1rem' }}>
+                          <p style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: '600', marginBottom: '0.5rem' }}>
+                            ✅ Import Complete — {bulkResults.filter(r => r.status === 'created').length} created, {bulkResults.filter(r => r.status !== 'created').length} skipped
+                          </p>
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                              <thead>
+                                <tr style={{ borderBottom: '2px solid var(--glass-border)' }}>
+                                  <th style={{ padding: '0.4rem', textAlign: 'left', color: 'var(--text-secondary)' }}>Name</th>
+                                  <th style={{ padding: '0.4rem', textAlign: 'left', color: 'var(--text-secondary)' }}>ID</th>
+                                  <th style={{ padding: '0.4rem', textAlign: 'left', color: 'var(--text-secondary)' }}>Password</th>
+                                  <th style={{ padding: '0.4rem', textAlign: 'left', color: 'var(--text-secondary)' }}>Group</th>
+                                  <th style={{ padding: '0.4rem', textAlign: 'left', color: 'var(--text-secondary)' }}>Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {bulkResults.map((r, i) => (
+                                  <tr key={i} style={{ borderBottom: '1px solid var(--glass-border)', backgroundColor: r.status === 'created' ? 'rgba(16,185,129,0.04)' : 'rgba(244,63,94,0.04)' }}>
+                                    <td style={{ padding: '0.4rem', color: 'var(--text-primary)' }}>{r.name}</td>
+                                    <td style={{ padding: '0.4rem', fontFamily: 'monospace', color: '#6366f1' }}>{r.id}</td>
+                                    <td style={{ padding: '0.4rem', fontFamily: 'monospace', color: '#10b981' }}>{r.password}</td>
+                                    <td style={{ padding: '0.4rem', color: 'var(--text-secondary)' }}>{r.groupName || '—'}</td>
+                                    <td style={{ padding: '0.4rem', color: r.status === 'created' ? '#10b981' : '#f43f5e', fontWeight: 'bold' }}>{r.status}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const rows = bulkResults.map(r => `${r.name}\t${r.id}\t${r.password}\t${r.groupName}`).join('\n');
+                              navigator.clipboard.writeText(`Name\tID\tPassword\tGroup\n${rows}`);
+                              alert('Credentials copied to clipboard!');
+                            }}
+                            className="btn btn-secondary"
+                            style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem', fontSize: '0.8rem' }}
+                          >
+                            📋 Copy All Credentials
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* A. Register New User */}
                 <div className="card" style={{ marginBottom: '2rem' }}>
                   <h3 style={styles.cardTitle}>👤 Register New User</h3>
@@ -572,31 +722,96 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                 {/* D. Assignment Activity Logs */}
                 <div className="card">
                   <h3 style={styles.cardTitle}>📊 Live Candidate Assignments</h3>
+
+                  {/* Filters Row */}
+                  <div style={{ display: 'flex', gap: '0.75rem', margin: '0.75rem 0', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Group:</span>
+                      <select
+                        value={filterGroup}
+                        onChange={(e) => setFilterGroup(e.target.value)}
+                        style={{ fontSize: '0.78rem', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: '5px', padding: '0.25rem 0.4rem' }}
+                      >
+                        <option value="all">All Groups</option>
+                        {[...new Set(students.map(s => s.groupName).filter(Boolean))].sort().map(g => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Status:</span>
+                      <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        style={{ fontSize: '0.78rem', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: '1px solid var(--glass-border)', borderRadius: '5px', padding: '0.25rem 0.4rem' }}
+                      >
+                        <option value="all">All Statuses</option>
+                        <option value="assigned">Assigned</option>
+                        <option value="started">Started</option>
+                        <option value="completed">Completed</option>
+                      </select>
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', alignSelf: 'center', marginLeft: 'auto' }}>
+                      {assignments.filter(a => {
+                        const studentGroupName = students.find(s => s.id === a.student_id)?.groupName || '';
+                        return (filterGroup === 'all' || studentGroupName === filterGroup) && (filterStatus === 'all' || a.status === filterStatus);
+                      }).length} records
+                    </span>
+                  </div>
+
                   <div style={styles.assignmentsListScroll}>
                     {assignments.length === 0 ? (
                       <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '1rem 0' }}>No tests assigned yet.</p>
                     ) : (
-                      assignments.map(asg => (
-                        <div key={asg.id} style={styles.asgListItem}>
-                          <div>
-                            <strong>{asg.student_name}</strong> ({asg.student_id})
-                            <div style={{ fontSize: '0.8rem', color: '#cbd5e1', marginTop: '0.25rem' }}>
-                              Test: {asg.test_title}
+                      assignments
+                        .filter(asg => {
+                          const studentGroupName = students.find(s => s.id === asg.student_id)?.groupName || '';
+                          return (
+                            (filterGroup === 'all' || studentGroupName === filterGroup) &&
+                            (filterStatus === 'all' || asg.status === filterStatus)
+                          );
+                        })
+                        .map(asg => (
+                          <div key={asg.id} style={{ ...styles.asgListItem, flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <strong>{asg.student_name}</strong> <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>({asg.student_id})</span>
+                              {(() => {
+                                const grp = students.find(s => s.id === asg.student_id)?.groupName;
+                                return grp ? <span style={{ backgroundColor: 'rgba(99,102,241,0.15)', color: '#6366f1', fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '4px', marginLeft: '0.4rem', fontWeight: '600' }}>{grp}</span> : null;
+                              })()}
+                              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                                {asg.test_title}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <span style={{
+                                ...styles.asgBadge,
+                                backgroundColor: 
+                                  asg.status === 'completed' ? 'rgba(16, 185, 129, 0.15)' :
+                                  asg.status === 'started' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(99, 102, 241, 0.15)',
+                                color: 
+                                  asg.status === 'completed' ? '#10b981' :
+                                  asg.status === 'started' ? '#f59e0b' : '#6366f1'
+                              }}>
+                                {asg.status.toUpperCase()}
+                              </span>
+                              <button
+                                onClick={() => handleResetAssignment(asg.id, asg.student_name, asg.test_title)}
+                                title="Reset — allow student to retake"
+                                style={{ background: 'none', border: '1px solid var(--glass-border)', borderRadius: '4px', cursor: 'pointer', padding: '0.2rem 0.4rem', fontSize: '0.75rem', color: '#f59e0b' }}
+                              >
+                                ↺
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAssignment(asg.id)}
+                                title="Delete assignment"
+                                style={{ background: 'none', border: '1px solid var(--glass-border)', borderRadius: '4px', cursor: 'pointer', padding: '0.2rem 0.4rem', fontSize: '0.75rem', color: '#f43f5e' }}
+                              >
+                                🗑
+                              </button>
                             </div>
                           </div>
-                          <span style={{
-                            ...styles.asgBadge,
-                            backgroundColor: 
-                              asg.status === 'completed' ? 'rgba(16, 185, 129, 0.15)' :
-                              asg.status === 'started' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(99, 102, 241, 0.15)',
-                            color: 
-                              asg.status === 'completed' ? '#10b981' :
-                              asg.status === 'started' ? '#f59e0b' : '#6366f1'
-                          }}>
-                            {asg.status.toUpperCase()}
-                          </span>
-                        </div>
-                      ))
+                        ))
                     )}
                   </div>
                 </div>
