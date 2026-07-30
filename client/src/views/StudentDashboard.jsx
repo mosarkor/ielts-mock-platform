@@ -13,6 +13,8 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
   const [answerKey, setAnswerKey] = useState(null);
   const [loadingKey, setLoadingKey] = useState(false);
   const [showOnlyMistakes, setShowOnlyMistakes] = useState(false);
+  const [targetScore, setTargetScore] = useState(() => parseFloat(localStorage.getItem(`targetScore_${user.id}`)) || 7.0);
+  const [activeGuide, setActiveGuide] = useState(null);
 
   useEffect(() => {
     if (selectedReview) {
@@ -136,6 +138,8 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
 
     const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
+    const targetY = 90 - ((targetScore - 4) * 15);
+
     return (
       <div className="card" style={{ ...styles.progressCard, marginBottom: '2rem' }}>
         <h3 style={styles.cardTitle}>📊 Candidate Band Score Progress Tracker</h3>
@@ -160,6 +164,33 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
                 <span style={{ fontSize: '1.85rem', fontWeight: '800', color: '#10b981' }}>{latest.overall.toFixed(1)}</span>
               </div>
             </div>
+            
+            <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: '600' }}>🎯 Target Band Score:</span>
+              <select 
+                value={targetScore} 
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  setTargetScore(val);
+                  localStorage.setItem(`targetScore_${user.id}`, val);
+                }}
+                style={{
+                  backgroundColor: '#1f293d',
+                  color: '#ffffff',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: '6px',
+                  padding: '0.3rem 0.6rem',
+                  fontSize: '0.85rem',
+                  fontWeight: '700',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                {[5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map(s => (
+                  <option key={s} value={s}>{s.toFixed(1)}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Right panel: SVG Chart */}
@@ -177,6 +208,27 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
                   );
                 })}
                 
+                {/* Target line */}
+                <line 
+                  x1="25" 
+                  y1={targetY} 
+                  x2="380" 
+                  y2={targetY} 
+                  stroke="#f59e0b" 
+                  strokeDasharray="4 4" 
+                  strokeWidth="1.5" 
+                />
+                <text 
+                  x="385" 
+                  y={targetY + 3} 
+                  fill="#f59e0b" 
+                  fontSize="8" 
+                  fontWeight="700"
+                  textAnchor="start"
+                >
+                  T: {targetScore.toFixed(1)}
+                </text>
+
                 {/* Trend line */}
                 <path d={linePath} fill="none" stroke="#10b981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                 
@@ -199,6 +251,197 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
               </div>
             )}
           </div>
+        </div>
+      </div>
+    );
+  };
+
+  const getSkillsBreakdown = () => {
+    const graded = submissions.filter(s => s.listening_score !== null);
+    
+    // Calculate averages
+    const totalTests = graded.length;
+    const avgL = totalTests > 0 ? (graded.reduce((acc, s) => acc + s.listening_score, 0) / totalTests) : 0;
+    const avgR = totalTests > 0 ? (graded.reduce((acc, s) => acc + s.reading_score, 0) / totalTests) : 0;
+    const gradedWriting = graded.filter(s => s.writing_score !== null);
+    const avgW = gradedWriting.length > 0 ? (gradedWriting.reduce((acc, s) => acc + s.writing_score, 0) / gradedWriting.length) : 0;
+    
+    // Calculate overall average
+    const avgOverall = totalTests > 0 ? (graded.reduce((acc, s) => {
+      const overallVal = (s.listening_score + s.reading_score + (s.writing_score || 0)) / (s.writing_score !== null ? 3 : 2);
+      const decimal = overallVal - Math.floor(overallVal);
+      let roundedOverall = Math.floor(overallVal);
+      if (decimal >= 0.25 && decimal < 0.75) roundedOverall += 0.5;
+      else if (decimal >= 0.75) roundedOverall += 1.0;
+      return acc + roundedOverall;
+    }, 0) / totalTests) : 0;
+
+    // Motivation message
+    let motivation = "Start your IELTS preparation journey by taking your first assigned mock test!";
+    if (totalTests > 0) {
+      const diff = targetScore - avgOverall;
+      if (diff <= 0) {
+        motivation = `🎉 Amazing work! You are currently meeting or exceeding your target band score of ${targetScore.toFixed(1)}! Keep it up!`;
+      } else if (diff <= 0.5) {
+        motivation = `🔥 So close! You are only 0.5 bands away from your target band score of ${targetScore.toFixed(1)}! You can do this!`;
+      } else {
+        motivation = `💪 Keep practicing! You need ${diff.toFixed(1)} more bands to reach your target score of ${targetScore.toFixed(1)}. Focus on your weak spots!`;
+      }
+    }
+
+    return (
+      <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', fontWeight: '700', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.75rem', margin: 0 }}>
+          📈 Skills Performance Breakdown
+        </h3>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>🎧 Listening Average</span>
+              <strong style={{ color: 'var(--text-primary)' }}>{avgL > 0 ? `${avgL.toFixed(1)} Band` : 'N/A'}</strong>
+            </div>
+            <div style={{ height: '6px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{ width: avgL > 0 ? `${(avgL / 9) * 100}%` : '0%', height: '100%', backgroundColor: '#6366f1', borderRadius: '3px' }}></div>
+            </div>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>📖 Reading Average</span>
+              <strong style={{ color: 'var(--text-primary)' }}>{avgR > 0 ? `${avgR.toFixed(1)} Band` : 'N/A'}</strong>
+            </div>
+            <div style={{ height: '6px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{ width: avgR > 0 ? `${(avgR / 9) * 100}%` : '0%', height: '100%', backgroundColor: '#10b981', borderRadius: '3px' }}></div>
+            </div>
+          </div>
+
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>✍️ Writing Average</span>
+              <strong style={{ color: 'var(--text-primary)' }}>{avgW > 0 ? `${avgW.toFixed(1)} Band` : 'N/A'}</strong>
+            </div>
+            <div style={{ height: '6px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{ width: avgW > 0 ? `${(avgW / 9) * 100}%` : '0%', height: '100%', backgroundColor: '#f59e0b', borderRadius: '3px' }}></div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{
+          marginTop: 'auto',
+          backgroundColor: 'rgba(99, 102, 241, 0.08)',
+          border: '1px dashed rgba(99, 102, 241, 0.3)',
+          borderRadius: '8px',
+          padding: '0.75rem 1rem',
+          fontSize: '0.85rem',
+          color: 'var(--text-primary)',
+          lineHeight: '1.4'
+        }}>
+          {motivation}
+        </div>
+      </div>
+    );
+  };
+
+  const getStudyGuides = () => {
+    const guides = [
+      {
+        id: 'writing',
+        title: '✍️ Writing Band 7+ Assessment Rules',
+        content: (
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.5rem', lineHeight: '1.4' }}>
+            <p>To get a <strong>Band 7.0 or higher</strong> in Writing, you must meet the following criteria:</p>
+            <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <li><strong>Task Response:</strong> Address all parts of the task. For Task 2, present a clear position throughout. For Task 1, present a clear overview.</li>
+              <li><strong>Coherence & Cohesion:</strong> Organize ideas logically and use paragraphing effectively. Use a range of cohesive devices (e.g., *however*, *consequently*, *furthermore*).</li>
+              <li><strong>Lexical Resource:</strong> Use a wide range of vocabulary with some awareness of style and collocation. Use less common lexical items.</li>
+              <li><strong>Grammatical Range:</strong> Use a mix of simple and complex sentence forms. Most sentences must be error-free.</li>
+            </ul>
+          </div>
+        )
+      },
+      {
+        id: 'lr',
+        title: '🎧 & 📖 Listening & Reading Exam Tips',
+        content: (
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.5rem', lineHeight: '1.4' }}>
+            <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              <li><strong>Word Count Limits:</strong> Always check instructions (e.g., *NO MORE THAN TWO WORDS AND/OR A NUMBER*). Extra words will make your answer wrong.</li>
+              <li><strong>Spelling:</strong> Answers must be spelled 100% correctly. Correct grammar (singular/plural) is essential.</li>
+              <li><strong>Pacing:</strong> Do not spend more than 1 minute on a difficult question. Skip it and return if you have time.</li>
+              <li><strong>Transferring Answers:</strong> In computer-based tests, type your answers directly into the boxes. Make sure there are no extra spaces.</li>
+            </ul>
+          </div>
+        )
+      },
+      {
+        id: 'structure',
+        title: '📚 Essay Structural Layouts',
+        content: (
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.5rem', lineHeight: '1.4' }}>
+            <p><strong>Writing Task 1 structure:</strong></p>
+            <ol style={{ paddingLeft: '1.25rem', marginBottom: '0.5rem' }}>
+              <li>Intro: Paraphrase the prompt & legends.</li>
+              <li>Overview: Mention 2 main trends/highs/lows (no data values yet).</li>
+              <li>Detail Paragraph 1: Detailed data for category A.</li>
+              <li>Detail Paragraph 2: Detailed data for category B.</li>
+            </ol>
+            <p><strong>Writing Task 2 structure:</strong></p>
+            <ol style={{ paddingLeft: '1.25rem' }}>
+              <li>Intro: Paraphrase question statement + state your opinion (thesis).</li>
+              <li>Body 1: Present your first main point + explain + give example.</li>
+              <li>Body 2: Present your second main point + explain + give example.</li>
+              <li>Conclusion: Summarize points + restate your overall opinion.</li>
+            </ol>
+          </div>
+        )
+      }
+    ];
+
+    return (
+      <div className="card" style={{ padding: '1.5rem', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <h3 style={{ color: 'var(--text-primary)', fontSize: '1.15rem', fontWeight: '700', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.75rem', margin: 0 }}>
+          📚 IELTS Exam Preparation Guides
+        </h3>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {guides.map(g => {
+            const isOpen = activeGuide === g.id;
+            return (
+              <div 
+                key={g.id} 
+                style={{ 
+                  border: '1px solid var(--glass-border)', 
+                  borderRadius: '6px', 
+                  overflow: 'hidden',
+                  backgroundColor: 'var(--bg-tertiary)'
+                }}
+              >
+                <div 
+                  onClick={() => setActiveGuide(isOpen ? null : g.id)}
+                  style={{ 
+                    padding: '0.75rem 1rem', 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    fontWeight: '600',
+                    color: isOpen ? '#6366f1' : 'var(--text-primary)',
+                    fontSize: '0.9rem',
+                    userSelect: 'none'
+                  }}
+                >
+                  <span>{g.title}</span>
+                  <span>{isOpen ? '▲' : '▼'}</span>
+                </div>
+                {isOpen && (
+                  <div style={{ padding: '1rem', borderTop: '1px solid var(--glass-border)', backgroundColor: 'rgba(0,0,0,0.1)' }}>
+                    {g.content}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -248,6 +491,16 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
         ) : (
           <>
             {getProgressTracker()}
+            
+            {/* New Analytics & Study Guides Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+              {/* Skills breakdown card */}
+              {getSkillsBreakdown()}
+
+              {/* Study guides card */}
+              {getStudyGuides()}
+            </div>
+
             <div style={styles.grid}>
             {/* Left Column: Assigned Tests */}
             <div style={styles.leftCol}>
