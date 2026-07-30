@@ -294,29 +294,29 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
       {/* Review Modal */}
       {selectedReview && (
         <div style={styles.modalOverlay}>
-          <div className="glass-panel" style={styles.modalContent}>
-            <div style={styles.modalHeader}>
-              <h3>Detailed Assessment Report</h3>
+          <div className="glass-panel" style={{ ...styles.modalContent, backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+            <div style={{ ...styles.modalHeader, borderBottom: '1px solid var(--glass-border)' }}>
+              <h3 style={{ color: 'var(--text-primary)', fontWeight: '600' }}>Detailed Assessment Report</h3>
               <button onClick={() => setSelectedReview(null)} style={styles.closeBtn}>×</button>
             </div>
             
             <div style={styles.modalBody}>
-              <h4 style={{ marginBottom: '1rem' }}>{selectedReview.title}</h4>
+              <h4 style={{ marginBottom: '1rem', color: 'var(--text-primary)', fontWeight: '600' }}>{selectedReview.title}</h4>
               
-              <div style={styles.overallMetricBanner}>
-                <div style={styles.metricItem}>
-                  <span style={styles.metricVal}>{selectedReview.listening_score.toFixed(1)}</span>
-                  <span style={styles.metricLabel}>Listening Band</span>
+              <div style={{ ...styles.overallMetricBanner, backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--glass-border)' }}>
+                <div style={{ ...styles.metricItem, borderRight: '1px solid var(--glass-border)' }}>
+                  <span style={{ ...styles.metricVal, color: 'var(--text-primary)' }}>{selectedReview.listening_score.toFixed(1)}</span>
+                  <span style={{ ...styles.metricLabel, color: 'var(--text-secondary)' }}>Listening Band</span>
                 </div>
-                <div style={styles.metricItem}>
-                  <span style={styles.metricVal}>{selectedReview.reading_score.toFixed(1)}</span>
-                  <span style={styles.metricLabel}>Reading Band</span>
+                <div style={{ ...styles.metricItem, borderRight: '1px solid var(--glass-border)' }}>
+                  <span style={{ ...styles.metricVal, color: 'var(--text-primary)' }}>{selectedReview.reading_score.toFixed(1)}</span>
+                  <span style={{ ...styles.metricLabel, color: 'var(--text-secondary)' }}>Reading Band</span>
                 </div>
-                <div style={styles.metricItem}>
-                  <span style={styles.metricVal}>
+                <div style={{ ...styles.metricItem, borderRight: '1px solid var(--glass-border)' }}>
+                  <span style={{ ...styles.metricVal, color: 'var(--text-primary)' }}>
                     {selectedReview.writing_score ? selectedReview.writing_score.toFixed(1) : 'Pending'}
                   </span>
-                  <span style={styles.metricLabel}>Writing Band</span>
+                  <span style={{ ...styles.metricLabel, color: 'var(--text-secondary)' }}>Writing Band</span>
                 </div>
                 <div style={{ ...styles.metricItem, border: 'none', backgroundColor: '#6366f1' }}>
                   <span style={{ ...styles.metricVal, color: '#ffffff' }}>
@@ -327,48 +327,52 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
               </div>
 
               {selectedReview.writing_scores && (
-                <div style={styles.rubricSection}>
-                  <h5>Writing Evaluation Criteria Breakdown</h5>
+                <div style={{ ...styles.rubricSection, backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--glass-border)' }}>
+                  <h5 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '0.75rem' }}>Writing Evaluation Criteria Breakdown</h5>
                   <div style={styles.rubricsGrid}>
-                    <div style={styles.rubricRow}>
-                      <span>Task Response / Achievement:</span>
-                      <strong>{JSON.parse(selectedReview.writing_scores).ta.toFixed(1)}</strong>
+                    <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Task Response / Achievement:</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{JSON.parse(selectedReview.writing_scores).ta.toFixed(1)}</strong>
                     </div>
-                    <div style={styles.rubricRow}>
-                      <span>Coherence & Cohesion:</span>
-                      <strong>{JSON.parse(selectedReview.writing_scores).cc.toFixed(1)}</strong>
+                    <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Coherence & Cohesion:</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{JSON.parse(selectedReview.writing_scores).cc.toFixed(1)}</strong>
                     </div>
-                    <div style={styles.rubricRow}>
-                      <span>Lexical Resource (Vocabulary):</span>
-                      <strong>{JSON.parse(selectedReview.writing_scores).lr.toFixed(1)}</strong>
+                    <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Lexical Resource (Vocabulary):</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{JSON.parse(selectedReview.writing_scores).lr.toFixed(1)}</strong>
                     </div>
-                    <div style={styles.rubricRow}>
-                      <span>Grammatical Range & Accuracy:</span>
-                      <strong>{JSON.parse(selectedReview.writing_scores).gra.toFixed(1)}</strong>
+                    <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Grammatical Range & Accuracy:</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{JSON.parse(selectedReview.writing_scores).gra.toFixed(1)}</strong>
                     </div>
                   </div>
                 </div>
               )}
 
-              <div style={styles.feedbackSection}>
-                <h5>✍️ Teacher Feedback & Advice</h5>
-                <p style={styles.feedbackText}>{selectedReview.teacher_feedback || "Teacher hasn't submitted a summary feedback yet."}</p>
+              <div style={{ 
+                ...styles.feedbackSection, 
+                backgroundColor: theme === 'light' ? 'rgba(16, 185, 129, 0.05)' : 'rgba(16, 185, 129, 0.08)',
+                borderColor: theme === 'light' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.2)'
+              }}>
+                <h5 style={{ color: '#10b981', fontWeight: '600', marginBottom: '0.5rem' }}>✍️ Teacher Feedback & Advice</h5>
+                <p style={{ ...styles.feedbackText, color: theme === 'light' ? '#065f46' : '#e2e8f0' }}>{selectedReview.teacher_feedback || "Teacher hasn't submitted a summary feedback yet."}</p>
               </div>
 
               <div style={styles.essaysSection}>
-                <h5>Your Submitted Essays</h5>
-                <div style={styles.essayBox}>
-                  <h6>Writing Task 1:</h6>
-                  <p style={styles.essayText}>{JSON.parse(selectedReview.writing_answers || '{}').task1 || 'No answer submitted'}</p>
+                <h5 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '0.75rem' }}>Your Submitted Essays</h5>
+                <div style={{ ...styles.essayBox, backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--glass-border)' }}>
+                  <h6 style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: '600' }}>Writing Task 1:</h6>
+                  <p style={{ ...styles.essayText, color: 'var(--text-primary)' }}>{JSON.parse(selectedReview.writing_answers || '{}').task1 || 'No answer submitted'}</p>
                 </div>
-                <div style={{ ...styles.essayBox, marginTop: '1rem' }}>
-                  <h6>Writing Task 2:</h6>
-                  <p style={styles.essayText}>{JSON.parse(selectedReview.writing_answers || '{}').task2 || 'No answer submitted'}</p>
+                <div style={{ ...styles.essayBox, marginTop: '1rem', backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--glass-border)' }}>
+                  <h6 style={{ color: 'var(--text-secondary)', marginBottom: '0.5rem', fontWeight: '600' }}>Writing Task 2:</h6>
+                  <p style={{ ...styles.essayText, color: 'var(--text-primary)' }}>{JSON.parse(selectedReview.writing_answers || '{}').task2 || 'No answer submitted'}</p>
                 </div>
               </div>
             </div>
             
-            <div style={styles.modalFooter}>
+            <div style={{ ...styles.modalFooter, borderTop: '1px solid var(--glass-border)' }}>
               <button onClick={() => setSelectedReview(null)} className="btn btn-primary">Close Report</button>
             </div>
           </div>
