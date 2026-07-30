@@ -284,6 +284,44 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
     alert('Detailed performance report successfully copied to clipboard!');
   };
 
+  const handleCopyScoresOnly = () => {
+    if (!selectedSub) return;
+    
+    let report = `IELTS Mock Test Center — Performance Report\n`;
+    report += `==================================================\n`;
+    report += `Candidate ID: ${selectedSub.student_id}\n`;
+    report += `Candidate Name: ${selectedSub.student_name}\n`;
+    report += `Test Title: ${selectedSub.test_title}\n\n`;
+    
+    report += `BAND SCORES OVERVIEW:\n`;
+    report += `- Listening Score: Band ${selectedSub.listening_score.toFixed(1)}\n`;
+    report += `- Reading Score: Band ${selectedSub.reading_score.toFixed(1)}\n`;
+    if (selectedSub.writing_score !== null) {
+      report += `- Writing Score: Band ${selectedSub.writing_score.toFixed(1)}\n`;
+      
+      const overallVal = ((selectedSub.listening_score + selectedSub.reading_score + selectedSub.writing_score) / 3);
+      const decimal = overallVal - Math.floor(overallVal);
+      let roundedOverall = Math.floor(overallVal);
+      if (decimal >= 0.25 && decimal < 0.75) roundedOverall += 0.5;
+      else if (decimal >= 0.75) roundedOverall += 1.0;
+      report += `- Overall Score: Band ${roundedOverall.toFixed(1)}\n`;
+    } else {
+      const overallVal = ((selectedSub.listening_score + selectedSub.reading_score) / 2);
+      const decimal = overallVal - Math.floor(overallVal);
+      let roundedOverall = Math.floor(overallVal);
+      if (decimal >= 0.25 && decimal < 0.75) roundedOverall += 0.5;
+      else if (decimal >= 0.75) roundedOverall += 1.0;
+      report += `- Overall Score: Band ${roundedOverall.toFixed(1)} (Listening & Reading only)\n`;
+    }
+    report += `- Exam Integrity: ${selectedSub.violations_count || 0} Tab switches / Fullscreen exits detected\n`;
+    if (selectedSub.teacher_feedback) {
+      report += `\nTeacher Feedback:\n${selectedSub.teacher_feedback}\n`;
+    }
+    
+    navigator.clipboard.writeText(report);
+    alert('Band scores summary successfully copied to clipboard!');
+  };
+
   const toggleRevealStatus = async (subId, currentStatus) => {
     try {
       const res = await fetch(`/api/teacher/reveal/${subId}`, {
@@ -885,15 +923,24 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                         </table>
                       )}
                     </div>
-                    {answerKey && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginTop: '1.25rem' }}>
                       <button 
-                        onClick={handleCopyReport}
-                        className="btn btn-success"
-                        style={{ marginTop: '1.5rem', width: '100%', justifyContent: 'center' }}
+                        onClick={handleCopyScoresOnly}
+                        className="btn btn-secondary"
+                        style={{ width: '100%', justifyContent: 'center', backgroundColor: 'var(--text-secondary)', borderColor: 'var(--text-secondary)' }}
                       >
-                        📋 Copy Review Report to Clipboard
+                        📋 Copy Band Scores Summary
                       </button>
-                    )}
+                      {answerKey && (
+                        <button 
+                          onClick={handleCopyReport}
+                          className="btn btn-success"
+                          style={{ width: '100%', justifyContent: 'center' }}
+                        >
+                          🔍 Copy Detailed Report (with L & R Errors)
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
