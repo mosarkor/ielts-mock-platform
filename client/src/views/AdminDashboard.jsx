@@ -16,6 +16,7 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentPass, setNewStudentPass] = useState('student123');
   const [newUserRole, setNewUserRole] = useState('student');
+  const [newStudentGroup, setNewStudentGroup] = useState('');
 
   // Form States: New Assignment
   const [selectedTestId, setSelectedTestId] = useState('');
@@ -79,7 +80,8 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
           id: newStudentId.trim(),
           name: newStudentName.trim(),
           role: newUserRole,
-          password: newStudentPass
+          password: newStudentPass,
+          groupName: newUserRole === 'student' ? newStudentGroup.trim() : null
         })
       });
 
@@ -89,6 +91,7 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
       alert(`${newUserRole.charAt(0).toUpperCase() + newUserRole.slice(1)} registered successfully!`);
       setNewStudentId('');
       setNewStudentName('');
+      setNewStudentGroup('');
       fetchAdminData();
     } catch (err) {
       alert(err.message);
@@ -321,6 +324,18 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                         onChange={(e) => setNewStudentName(e.target.value)}
                       />
                     </div>
+                    {newUserRole === 'student' && (
+                      <div className="form-group">
+                        <label className="form-label">Class Group (Optional)</label>
+                        <input 
+                          type="text" 
+                          className="form-input" 
+                          placeholder="e.g. Group A, Evening IELTS..." 
+                          value={newStudentGroup}
+                          onChange={(e) => setNewStudentGroup(e.target.value)}
+                        />
+                      </div>
+                    )}
                     <div className="form-group">
                       <label className="form-label">Temporary Passcode</label>
                       <input 
@@ -377,7 +392,7 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                                   onChange={() => {}} // handled by row click
                                   style={{ pointerEvents: 'none' }}
                                 />
-                                <span>{s.name} ({s.id})</span>
+                                <span>{s.name} ({s.id}){s.groupName ? ` [${s.groupName}]` : ''}</span>
                               </div>
                             );
                           })
@@ -402,6 +417,19 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                         <div key={u.id} style={styles.asgListItem}>
                           <div>
                             <strong>{u.name}</strong> ({u.id})
+                            {u.groupName && (
+                              <span style={{ 
+                                backgroundColor: 'var(--color-indigo)', 
+                                color: '#ffffff', 
+                                fontSize: '0.7rem', 
+                                padding: '0.15rem 0.4rem', 
+                                borderRadius: '4px', 
+                                marginLeft: '0.5rem',
+                                fontWeight: '600'
+                              }}>
+                                {u.groupName}
+                              </span>
+                            )}
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                               Role: <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{u.role}</span> | Passcode: <strong style={{ color: 'var(--color-indigo)' }}>{u.passcode}</strong>
                             </div>

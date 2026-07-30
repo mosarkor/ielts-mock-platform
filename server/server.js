@@ -255,7 +255,7 @@ app.post('/api/student/assignment/start', async (req, res) => {
 app.get('/api/teacher/submissions', async (req, res) => {
   try {
     const submissions = await db.all(`
-      SELECT s.*, u.name as student_name, t.title as test_title, t.listening_data
+      SELECT s.*, u.name as student_name, u.group_name as student_group, t.title as test_title, t.listening_data
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN tests t ON s.test_id = t.id
@@ -345,7 +345,7 @@ app.get('/api/admin/overview', async (req, res) => {
 // Get all users
 app.get('/api/admin/users', async (req, res) => {
   try {
-    const users = await db.all('SELECT id, name, role, password_hash as passcode FROM users');
+    const users = await db.all('SELECT id, name, role, password_hash as passcode, group_name as groupName FROM users');
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -365,9 +365,9 @@ app.post('/api/admin/users/reset-password', async (req, res) => {
 
 // Add user
 app.post('/api/admin/users', async (req, res) => {
-  const { id, name, role, password } = req.body;
+  const { id, name, role, password, groupName } = req.body;
   try {
-    await db.run('INSERT INTO users (id, name, password_hash, role) VALUES (?, ?, ?, ?)', [id, name, password || 'student123', role]);
+    await db.run('INSERT INTO users (id, name, password_hash, role, group_name) VALUES (?, ?, ?, ?, ?)', [id, name, password || 'student123', role, groupName || null]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'User ID already exists or invalid data' });

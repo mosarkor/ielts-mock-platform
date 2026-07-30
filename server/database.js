@@ -97,9 +97,13 @@ export async function initDb() {
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         password_hash TEXT,
-        role TEXT CHECK(role IN ('student', 'teacher', 'admin')) NOT NULL
+        role TEXT CHECK(role IN ('student', 'teacher', 'admin')) NOT NULL,
+        group_name TEXT
       )
     `);
+
+    // Dynamically alter table for existing installations
+    await db.exec('ALTER TABLE users ADD COLUMN group_name TEXT').catch(() => {});
 
     await db.exec(`
       CREATE TABLE IF NOT EXISTS tests (
@@ -262,9 +266,13 @@ export async function initDb() {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       password_hash TEXT,
-      role TEXT CHECK(role IN ('student', 'teacher', 'admin')) NOT NULL
+      role TEXT CHECK(role IN ('student', 'teacher', 'admin')) NOT NULL,
+      group_name TEXT
     )
   `);
+
+  // Dynamically alter table for existing installations
+  await db.exec('ALTER TABLE users ADD COLUMN group_name TEXT').catch(() => {});
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS tests (

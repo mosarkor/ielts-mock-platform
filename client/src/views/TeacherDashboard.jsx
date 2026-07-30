@@ -22,6 +22,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [integrityFilter, setIntegrityFilter] = useState('all');
+  const [groupFilter, setGroupFilter] = useState('all');
 
   // IELTS Band Descriptor guide lookup
   const descriptors = {
@@ -491,6 +492,8 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
 
   const bandOptions = [0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0];
 
+  const studentGroups = [...new Set(submissions.map(s => s.student_group).filter(Boolean))];
+
   // Dynamic filter logic
   const filteredSubmissions = submissions.filter(sub => {
     const matchesSearch = sub.student_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -505,7 +508,9 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                               (integrityFilter === 'clean' && (sub.violations_count || 0) === 0) ||
                               (integrityFilter === 'flagged' && (sub.violations_count || 0) > 0);
     
-    return matchesSearch && matchesStatus && matchesIntegrity;
+    const matchesGroup = groupFilter === 'all' || sub.student_group === groupFilter;
+    
+    return matchesSearch && matchesStatus && matchesIntegrity && matchesGroup;
   });
 
   const pendingSubmissions = filteredSubmissions.filter(s => s.writing_score === null);
@@ -1012,6 +1017,16 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                         <option value="clean">🟢 Clean Sessions</option>
                         <option value="flagged">🔴 Proctoring Warnings</option>
                       </select>
+                      <select 
+                        value={groupFilter} 
+                        onChange={(e) => setGroupFilter(e.target.value)}
+                        style={styles.dropdownInput}
+                      >
+                        <option value="all">👥 All Groups</option>
+                        {studentGroups.map(g => (
+                          <option key={g} value={g}>👥 Group: {g}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -1030,10 +1045,22 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                 pendingSubmissions.map(sub => (
                   <div className="card" style={styles.subCard} key={sub.id}>
                     <div style={styles.subCardHeader}>
-                      <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <h4 style={styles.studentTitle}>{sub.student_name}</h4>
-                        <span style={styles.subMeta}>ID: {sub.student_id} | {sub.test_title}</span>
+                        {sub.student_group && (
+                          <span style={{ 
+                            backgroundColor: 'rgba(99, 102, 241, 0.12)', 
+                            color: '#6366f1', 
+                            fontSize: '0.7rem', 
+                            padding: '0.1rem 0.35rem', 
+                            borderRadius: '4px', 
+                            fontWeight: '600'
+                          }}>
+                            {sub.student_group}
+                          </span>
+                        )}
                       </div>
+                      <span style={styles.subMeta}>ID: {sub.student_id} | {sub.test_title}</span>
                       <span style={styles.dateLabel}>{new Date(sub.submitted_at).toLocaleDateString()}</span>
                     </div>
                     <div style={styles.miniScoresRow}>
@@ -1063,10 +1090,22 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                 gradedSubmissions.map(sub => (
                   <div className="card" style={styles.subCard} key={sub.id}>
                     <div style={styles.subCardHeader}>
-                      <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <h4 style={styles.studentTitle}>{sub.student_name}</h4>
-                        <span style={styles.subMeta}>ID: {sub.student_id} | {sub.test_title}</span>
+                        {sub.student_group && (
+                          <span style={{ 
+                            backgroundColor: 'rgba(99, 102, 241, 0.12)', 
+                            color: '#6366f1', 
+                            fontSize: '0.7rem', 
+                            padding: '0.1rem 0.35rem', 
+                            borderRadius: '4px', 
+                            fontWeight: '600'
+                          }}>
+                            {sub.student_group}
+                          </span>
+                        )}
                       </div>
+                      <span style={styles.subMeta}>ID: {sub.student_id} | {sub.test_title}</span>
                       <div style={styles.miniBadgeBox}>
                         <span style={styles.overallScoreNumMini}>{sub.writing_score.toFixed(1)}</span>
                         <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Writing Band</span>
