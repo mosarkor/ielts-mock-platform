@@ -483,7 +483,7 @@ const styles = {
   testTitle: {
     fontSize: '1.1rem',
     fontWeight: '600',
-    color: '#ffffff',
+    color: 'var(--text-primary)',
     marginBottom: '0.5rem',
   },
   statusLabel: {
@@ -535,12 +535,12 @@ const styles = {
     display: 'flex',
     gap: '1rem',
     fontSize: '0.9rem',
-    backgroundColor: 'rgba(0,0,0,0.15)',
+    backgroundColor: 'var(--bg-tertiary)',
     padding: '0.5rem 1rem',
     borderRadius: '6px',
   },
   miniScore: {
-    color: '#cbd5e1',
+    color: 'var(--text-secondary)',
   },
   errorAlert: {
     backgroundColor: 'rgba(244, 63, 94, 0.15)',
