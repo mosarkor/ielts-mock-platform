@@ -734,14 +734,17 @@ app.get('/api/admin/assignments', async (req, res) => {
 
 // Assign Test
 app.post('/api/admin/assign', async (req, res) => {
-  const { studentIds, testId } = req.body; // studentIds is an array
+  const { studentIds, testId, testIds } = req.body; // studentIds and testIds are arrays
+  const targetTestIds = Array.isArray(testIds) ? testIds : (testId ? [testId] : []);
   try {
     const stmt = await db.prepare("INSERT INTO assignments (student_id, test_id, assigned_at) VALUES (?, ?, datetime('now'))");
     for (const sId of studentIds) {
-      // Check if already assigned
-      const exists = await db.get('SELECT 1 FROM assignments WHERE student_id = ? AND test_id = ? AND status != \'completed\'', [sId, testId]);
-      if (!exists) {
-        await stmt.run(sId, testId);
+      for (const tId of targetTestIds) {
+        // Check if already assigned
+        const exists = await db.get('SELECT 1 FROM assignments WHERE student_id = ? AND test_id = ? AND status != \'completed\'', [sId, tId]);
+        if (!exists) {
+          await stmt.run(sId, tId);
+        }
       }
     }
     await stmt.finalize();

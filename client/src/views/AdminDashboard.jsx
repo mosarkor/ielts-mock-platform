@@ -19,7 +19,7 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
   const [newStudentGroup, setNewStudentGroup] = useState('');
 
   // Form States: New Assignment
-  const [selectedTestId, setSelectedTestId] = useState('');
+  const [selectedTestIds, setSelectedTestIds] = useState([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
 
   // Form States: Test Creator
@@ -56,13 +56,22 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
       setAssignments(asgData);
 
       if (testsData.length > 0) {
-        setSelectedTestId(testsData[0].id.toString());
+        setSelectedTestIds([testsData[0].id]);
       }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleTestSelection = (testId) => {
+    const numericId = parseInt(testId);
+    setSelectedTestIds(prev => 
+      prev.includes(numericId)
+        ? prev.filter(id => id !== numericId)
+        : [...prev, numericId]
+    );
   };
 
   const handleRegisterStudent = async (e) => {
@@ -145,8 +154,12 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
 
   const handleAssignTest = async (e) => {
     e.preventDefault();
-    if (!selectedTestId || selectedStudentIds.length === 0) {
-      alert('Please select a test and at least one student');
+    if (selectedStudentIds.length === 0) {
+      alert('Please select at least one student');
+      return;
+    }
+    if (selectedTestIds.length === 0) {
+      alert('Please select at least one mock test');
       return;
     }
 
@@ -156,13 +169,13 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           studentIds: selectedStudentIds,
-          testId: parseInt(selectedTestId)
+          testIds: selectedTestIds
         })
       });
 
       if (!res.ok) throw new Error('Failed to create test assignments');
 
-      alert('Test successfully assigned to selected candidates!');
+      alert('Tests successfully assigned to selected candidates!');
       setSelectedStudentIds([]);
       fetchAdminData();
     } catch (err) {
@@ -356,16 +369,35 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                   <h3 style={styles.cardTitle}>🔗 Assign Mock Exams</h3>
                   <form onSubmit={handleAssignTest} style={{ marginTop: '1rem' }}>
                     <div className="form-group">
-                      <label className="form-label">Select Mock Test</label>
-                      <select 
-                        className="form-input"
-                        value={selectedTestId}
-                        onChange={(e) => setSelectedTestId(e.target.value)}
-                      >
-                        {tests.map(t => (
-                          <option key={t.id} value={t.id}>{t.title}</option>
-                        ))}
-                      </select>
+                      <label className="form-label">Select Mock Tests (Bulk Select)</label>
+                      <div style={styles.studentSelectBox}>
+                        {tests.length === 0 ? (
+                          <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No mock tests built yet.</p>
+                        ) : (
+                          tests.map(t => {
+                            const isSelected = selectedTestIds.includes(t.id);
+                            return (
+                              <div 
+                                key={t.id} 
+                                onClick={() => toggleTestSelection(t.id)}
+                                style={{
+                                  ...styles.selectStudentRow,
+                                  backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
+                                  borderColor: isSelected ? '#6366f1' : 'transparent'
+                                }}
+                              >
+                                <input 
+                                  type="checkbox" 
+                                  checked={isSelected}
+                                  onChange={() => {}} // handled by row click
+                                  style={{ pointerEvents: 'none' }}
+                                />
+                                <span>{t.title}</span>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
 
                     <div className="form-group">
