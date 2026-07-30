@@ -242,15 +242,19 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
   // Define questions list for active module to build bottom bubbles
   let questionsForActiveModule = [];
-  if (activeModule === 'listening') {
+  if (activeModule === 'listening' && test.listening_data && test.listening_data.sections) {
     test.listening_data.sections.forEach(sec => {
-      sec.questions.forEach(q => questionsForActiveModule.push(q));
+      if (sec.questions) {
+        sec.questions.forEach(q => questionsForActiveModule.push(q));
+      }
     });
-  } else if (activeModule === 'reading') {
+  } else if (activeModule === 'reading' && test.reading_data && test.reading_data.passages) {
     test.reading_data.passages.forEach(pass => {
-      pass.questions.forEach(q => questionsForActiveModule.push(q));
+      if (pass.questions) {
+        pass.questions.forEach(q => questionsForActiveModule.push(q));
+      }
     });
-  } else {
+  } else if (activeModule === 'writing') {
     // Writing tasks
     questionsForActiveModule = [{ id: 'task1', label: 'T1' }, { id: 'task2', label: 'T2' }];
   }
