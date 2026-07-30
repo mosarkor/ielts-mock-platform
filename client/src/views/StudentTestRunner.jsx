@@ -238,76 +238,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     );
   }
 
-  if (!isExamStarted) {
-    return (
-      <div style={styles.startExamContainer}>
-        <div className="card" style={styles.startExamCard}>
-          <h2 style={{ color: '#f43f5e', marginBottom: '1rem', textAlign: 'center', fontWeight: 'bold' }}>🔒 Secure Exam Environment</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
-            This exam is monitored by the IELTS Mock Platform tab-lock and anti-cheat engine. To start the exam, you must agree to the following rules:
-          </p>
-          <ul style={{ color: 'var(--text-primary)', paddingLeft: '1.25rem', marginBottom: '2rem', fontSize: '0.9rem', lineHeight: '1.8' }}>
-            <li>You must remain in <strong>Fullscreen Mode</strong> at all times.</li>
-            <li>Switching tabs, minimizing the browser, or opening other windows is strictly prohibited.</li>
-            <li>Any attempt to leave this page will log a <strong>violation</strong>.</li>
-            <li>Accumulating <strong>3 violations</strong> will terminate your test and submit your progress automatically.</li>
-          </ul>
-          <button onClick={startExamAndEnterFullscreen} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '1.05rem', padding: '1rem' }}>
-            🔐 Agree & Begin Test
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (examTerminated) {
-    return (
-      <div style={{ ...styles.startExamContainer, backgroundColor: '#0f172a' }}>
-        <div className="card" style={{ ...styles.startExamCard, border: '2px solid #f43f5e', textAlign: 'center' }}>
-          <h2 style={{ color: '#f43f5e', marginBottom: '1.5rem', fontWeight: 'bold' }}>🚨 Test Terminated</h2>
-          <p style={{ color: '#cbd5e1', marginBottom: '2rem', lineHeight: '1.6' }}>
-            Your test session has been terminated because you exceeded the limit of 3 tab-switching or focus-loss violations.
-          </p>
-          <p style={{ color: '#f43f5e', fontWeight: 'bold', fontSize: '1.1rem' }}>
-            Your answers have been submitted automatically.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLockoutActive) {
-    return (
-      <div style={{ ...styles.startExamContainer, backgroundColor: 'rgba(15, 23, 42, 0.95)', zIndex: 99999 }}>
-        <div className="card" style={{ ...styles.startExamCard, border: '2px solid #f59e0b', textAlign: 'center' }}>
-          <h2 style={{ color: '#f59e0b', marginBottom: '1.5rem', fontWeight: 'bold' }}>⚠️ Anti-Cheat Warning</h2>
-          <p style={{ color: '#cbd5e1', marginBottom: '1rem' }}>
-            Violation Detected: <strong>{lockoutReason}</strong>
-          </p>
-          <p style={{ color: '#f43f5e', fontWeight: 'bold', marginBottom: '2rem', fontSize: '1.1rem' }}>
-            Total Violations: {violations} / 3
-          </p>
-          <button onClick={resumeFullscreen} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-            🔐 Resume Fullscreen & Continue
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (test && test.listening_data && test.listening_data.isIframe) {
-    const iframeUrl = `${window.location.origin}${test.listening_data.iframeUrl}?studentId=${user.id}&testId=${testId}`;
-    return (
-      <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
-        <iframe 
-          ref={iframeRef}
-          src={iframeUrl}
-          style={{ width: '100%', height: '100%', border: 'none' }}
-          title={test.title}
-        />
-      </div>
-    );
-  }
+  // Early returns removed to keep iframe mounted in background during lockout
 
   // Define questions list for active module to build bottom bubbles
   let questionsForActiveModule = [];
@@ -357,7 +288,18 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   };
 
   return (
-    <div className="ielts-simulator">
+    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      {test && test.listening_data && test.listening_data.isIframe ? (
+        <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
+          <iframe 
+            ref={iframeRef}
+            src={`${window.location.origin}${test.listening_data.iframeUrl}?studentId=${user.id}&testId=${testId}`}
+            style={{ width: '100%', height: '100%', border: 'none' }}
+            title={test.title}
+          />
+        </div>
+      ) : (
+        <div className="ielts-simulator">
       {/* 1. Header Bar */}
       <header className="ielts-header">
         <div className="ielts-header-left">
@@ -820,6 +762,62 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
             <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowHelpModal(false)}>
               Got it
             </button>
+          </div>
+        </div>
+      )}
+      </div>
+      )}
+
+      {/* 2. Intro overlay */}
+      {!isExamStarted && (
+        <div style={styles.startExamContainer}>
+          <div className="card" style={styles.startExamCard}>
+            <h2 style={{ color: '#f43f5e', marginBottom: '1rem', textAlign: 'center', fontWeight: 'bold' }}>🔒 Secure Exam Environment</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
+              This exam is monitored by the IELTS Mock Platform tab-lock and anti-cheat engine. To start the exam, you must agree to the following rules:
+            </p>
+            <ul style={{ color: 'var(--text-primary)', paddingLeft: '1.25rem', marginBottom: '2rem', fontSize: '0.9rem', lineHeight: '1.8' }}>
+              <li>You must remain in <strong>Fullscreen Mode</strong> at all times.</li>
+              <li>Switching tabs, minimizing the browser, or opening other windows is strictly prohibited.</li>
+              <li>Any attempt to leave this page will log a <strong>violation</strong>.</li>
+              <li>Accumulating <strong>3 violations</strong> will terminate your test and submit your progress automatically.</li>
+            </ul>
+            <button onClick={startExamAndEnterFullscreen} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '1.05rem', padding: '1rem' }}>
+              🔐 Agree & Begin Test
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Warning overlay */}
+      {isLockoutActive && !examTerminated && (
+        <div style={{ ...styles.startExamContainer, backgroundColor: 'rgba(15, 23, 42, 0.95)', zIndex: 99999 }}>
+          <div className="card" style={{ ...styles.startExamCard, border: '2px solid #f59e0b', textAlign: 'center' }}>
+            <h2 style={{ color: '#f59e0b', marginBottom: '1.5rem', fontWeight: 'bold' }}>⚠️ Anti-Cheat Warning</h2>
+            <p style={{ color: '#cbd5e1', marginBottom: '1rem' }}>
+              Violation Detected: <strong>{lockoutReason}</strong>
+            </p>
+            <p style={{ color: '#f43f5e', fontWeight: 'bold', marginBottom: '2rem', fontSize: '1.1rem' }}>
+              Total Violations: {violations} / 3
+            </p>
+            <button onClick={resumeFullscreen} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+              🔐 Resume Fullscreen & Continue
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Terminated overlay */}
+      {examTerminated && (
+        <div style={{ ...styles.startExamContainer, backgroundColor: '#0f172a', zIndex: 999999 }}>
+          <div className="card" style={{ ...styles.startExamCard, border: '2px solid #f43f5e', textAlign: 'center' }}>
+            <h2 style={{ color: '#f43f5e', marginBottom: '1.5rem', fontWeight: 'bold' }}>🚨 Test Terminated</h2>
+            <p style={{ color: '#cbd5e1', marginBottom: '2rem', lineHeight: '1.6' }}>
+              Your test session has been terminated because you exceeded the limit of 3 tab-switching or focus-loss violations.
+            </p>
+            <p style={{ color: '#f43f5e', fontWeight: 'bold', fontSize: '1.1rem' }}>
+              Your answers have been submitted automatically.
+            </p>
           </div>
         </div>
       )}
