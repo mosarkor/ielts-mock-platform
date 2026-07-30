@@ -299,7 +299,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
   };
 
   const calculateAverageClassBand = () => {
-    const graded = submissions.filter(s => s.writing_score !== null);
+    const graded = filteredSubmissions.filter(s => s.writing_score !== null);
     if (graded.length === 0) return 'N/A';
     const sum = graded.reduce((acc, s) => {
       const overallVal = (s.listening_score + s.reading_score + s.writing_score) / 3;
@@ -878,14 +878,14 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                 <div className="card" style={styles.statCard}>
                   <span style={styles.statIcon}>⏳</span>
                   <div>
-                    <h4 style={styles.statVal}>{submissions.filter(s => s.writing_score === null).length}</h4>
+                    <h4 style={styles.statVal}>{filteredSubmissions.filter(s => s.writing_score === null).length}</h4>
                     <span style={styles.statLabel}>Pending Reviews</span>
                   </div>
                 </div>
                 <div className="card" style={styles.statCard}>
                   <span style={styles.statIcon}>✅</span>
                   <div>
-                    <h4 style={styles.statVal}>{submissions.filter(s => s.writing_score !== null).length}</h4>
+                    <h4 style={styles.statVal}>{filteredSubmissions.filter(s => s.writing_score !== null).length}</h4>
                     <span style={styles.statLabel}>Graded Portfolio</span>
                   </div>
                 </div>
@@ -899,7 +899,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                 <div className="card" style={styles.statCard}>
                   <span style={styles.statIcon}>⚠️</span>
                   <div>
-                    <h4 style={styles.statVal}>{submissions.reduce((acc, s) => acc + (s.violations_count || 0), 0)}</h4>
+                    <h4 style={styles.statVal}>{filteredSubmissions.reduce((acc, s) => acc + (s.violations_count || 0), 0)}</h4>
                     <span style={styles.statLabel}>Total Violations</span>
                   </div>
                 </div>
@@ -911,7 +911,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                 <div className="card" style={styles.chartCard}>
                   <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', fontSize: '1.05rem', fontWeight: 'bold' }}>📊 Class Band Score Distribution</h4>
                   <div style={{ width: '100%', display: 'flex', justifyContent: 'center', height: '140px' }}>
-                    {submissions.filter(s => s.writing_score !== null).length === 0 ? (
+                    {filteredSubmissions.filter(s => s.writing_score !== null).length === 0 ? (
                       <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, fontSize: '0.9rem', fontStyle: 'italic' }}>
                         No graded papers available for score distribution chart.
                       </div>
@@ -920,7 +920,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                       for (let i = 4.0; i <= 9.0; i += 0.5) {
                         scoreFreq[i.toFixed(1)] = 0;
                       }
-                      submissions.filter(s => s.writing_score !== null).forEach(s => {
+                      filteredSubmissions.filter(s => s.writing_score !== null).forEach(s => {
                         const overallVal = (s.listening_score + s.reading_score + s.writing_score) / 3;
                         const decimal = overallVal - Math.floor(overallVal);
                         let roundedOverall = Math.floor(overallVal);
