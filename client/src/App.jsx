@@ -6,8 +6,14 @@ import TeacherDashboard from './views/TeacherDashboard';
 import AdminDashboard from './views/AdminDashboard';
 
 export default function App() {
-  const [user, setUser] = useState(null); // { id, name, role }
-  const [testingTestId, setTestingTestId] = useState(null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [testingTestId, setTestingTestId] = useState(() => {
+    const saved = localStorage.getItem('testingTestId');
+    return saved ? parseInt(saved) : null;
+  });
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   React.useEffect(() => {
@@ -25,20 +31,26 @@ export default function App() {
 
   const handleLoginSuccess = (loggedInUser) => {
     setUser(loggedInUser);
+    localStorage.setItem('user', JSON.stringify(loggedInUser));
     setTestingTestId(null);
+    localStorage.removeItem('testingTestId');
   };
 
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem('user');
     setTestingTestId(null);
+    localStorage.removeItem('testingTestId');
   };
 
   const handleStartTest = (testId) => {
     setTestingTestId(testId);
+    localStorage.setItem('testingTestId', testId.toString());
   };
 
   const handleFinishedTest = () => {
     setTestingTestId(null);
+    localStorage.removeItem('testingTestId');
   };
 
   // Switch View based on user authentication state and role
