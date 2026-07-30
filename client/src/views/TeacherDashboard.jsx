@@ -755,116 +755,146 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                 </form>
               </div>
             ) : (
-              <div style={styles.workspaceGrid}>
-                {/* Listening Column */}
-                <div className="card" style={{ maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ color: 'var(--text-primary)' }}>🎧 Listening Overview</h4>
-                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#6366f1' }}>
-                      Band {selectedSub.listening_score.toFixed(1)}
-                    </span>
-                  </div>
-                  
-                  <div style={{ overflowY: 'auto', flex: 1 }}>
-                    {!answerKey ? (
-                      <p style={{ color: 'var(--text-secondary)', padding: '1rem' }}>
-                        {loadingKey ? 'Extracting answer keys from mock test file...' : 'Answer key details could not be found.'}
-                      </p>
-                    ) : (
-                      <table style={styles.reviewTable}>
-                        <thead>
-                          <tr>
-                            <th style={styles.reviewTh}>Q</th>
-                            <th style={styles.reviewTh}>Student Answer</th>
-                            <th style={styles.reviewTh}>Correct Key</th>
-                            <th style={styles.reviewTh}>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Array.from({ length: 40 }, (_, idx) => {
-                            const qNum = idx + 1;
-                            const studentAns = selectedSub.listening_answers[qNum] || '';
-                            const correctArr = answerKey.answers['l' + qNum] || [];
-                            const displayCorrect = answerKey.display['l' + qNum] || correctArr.join(' / ') || '—';
-                            const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
-                            const sNorm = norm(studentAns);
-                            const isOk = correctArr.some(ans => norm(ans) === sNorm);
-                            
-                            return (
-                              <tr key={qNum} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                                <td style={styles.reviewTd}><strong>{qNum}</strong></td>
-                                <td style={styles.reviewTd}>{studentAns || '—'}</td>
-                                <td style={styles.reviewTd}>{displayCorrect}</td>
-                                <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
-                                  {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    )}
-                  </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', userSelect: 'none' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.95rem', fontWeight: '600' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={showOnlyMistakes} 
+                      onChange={(e) => setShowOnlyMistakes(e.target.checked)} 
+                    />
+                    <span>⚠️ Show only incorrect or empty answers</span>
+                  </label>
                 </div>
-
-                {/* Reading Column */}
-                <div className="card" style={{ maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ color: 'var(--text-primary)' }}>📖 Reading Overview</h4>
-                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#10b981' }}>
-                      Band {selectedSub.reading_score.toFixed(1)}
-                    </span>
+                <div style={styles.workspaceGrid}>
+                  {/* Listening Column */}
+                  <div className="card" style={{ maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ color: 'var(--text-primary)' }}>🎧 Listening Overview</h4>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#6366f1' }}>
+                        Band {selectedSub.listening_score.toFixed(1)}
+                      </span>
+                    </div>
+                    
+                    <div style={{ overflowY: 'auto', flex: 1 }}>
+                      {!answerKey ? (
+                        <p style={{ color: 'var(--text-secondary)', padding: '1rem' }}>
+                          {loadingKey ? 'Extracting answer keys from mock test file...' : 'Answer key details could not be found.'}
+                        </p>
+                      ) : (
+                        <table style={styles.reviewTable}>
+                          <thead>
+                            <tr>
+                              <th style={styles.reviewTh}>Q</th>
+                              <th style={styles.reviewTh}>Student Answer</th>
+                              <th style={styles.reviewTh}>Correct Key</th>
+                              <th style={styles.reviewTh}>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Array.from({ length: 40 }, (_, idx) => {
+                              const qNum = idx + 1;
+                              const studentAns = selectedSub.listening_answers[qNum] || '';
+                              const correctArr = answerKey.answers['l' + qNum] || [];
+                              const displayCorrect = answerKey.display['l' + qNum] || correctArr.join(' / ') || '—';
+                              const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                              const sNorm = norm(studentAns);
+                              const isOk = correctArr.some(ans => norm(ans) === sNorm);
+                              
+                              if (showOnlyMistakes && isOk) return null;
+                              
+                              return (
+                                <tr key={qNum} style={{ 
+                                  borderBottom: '1px solid var(--glass-border)',
+                                  backgroundColor: isOk 
+                                    ? 'rgba(16, 185, 129, 0.04)' 
+                                    : studentAns 
+                                      ? 'rgba(244, 63, 94, 0.04)' 
+                                      : 'rgba(148, 163, 184, 0.04)'
+                                }}>
+                                  <td style={styles.reviewTd}><strong>{qNum}</strong></td>
+                                  <td style={styles.reviewTd}>{studentAns || '—'}</td>
+                                  <td style={styles.reviewTd}>{displayCorrect}</td>
+                                  <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
+                                    {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
                   </div>
-                  
-                  <div style={{ overflowY: 'auto', flex: 1 }}>
-                    {!answerKey ? (
-                      <p style={{ color: 'var(--text-secondary)', padding: '1rem' }}>
-                        {loadingKey ? 'Extracting answer keys from mock test file...' : 'Answer key details could not be found.'}
-                      </p>
-                    ) : (
-                      <table style={styles.reviewTable}>
-                        <thead>
-                          <tr>
-                            <th style={styles.reviewTh}>Q</th>
-                            <th style={styles.reviewTh}>Student Answer</th>
-                            <th style={styles.reviewTh}>Correct Key</th>
-                            <th style={styles.reviewTh}>Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {Array.from({ length: 40 }, (_, idx) => {
-                            const qNum = idx + 1;
-                            const studentAns = selectedSub.reading_answers[qNum] || '';
-                            const correctArr = answerKey.answers['r' + qNum] || [];
-                            const displayCorrect = answerKey.display['r' + qNum] || correctArr.join(' / ') || '—';
-                            const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
-                            const sNorm = norm(studentAns);
-                            const isOk = correctArr.some(ans => norm(ans) === sNorm);
-                            
-                            return (
-                              <tr key={qNum} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                                <td style={styles.reviewTd}><strong>{qNum}</strong></td>
-                                <td style={styles.reviewTd}>{studentAns || '—'}</td>
-                                <td style={styles.reviewTd}>{displayCorrect}</td>
-                                <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
-                                  {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+
+                  {/* Reading Column */}
+                  <div className="card" style={{ maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ color: 'var(--text-primary)' }}>📖 Reading Overview</h4>
+                      <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#10b981' }}>
+                        Band {selectedSub.reading_score.toFixed(1)}
+                      </span>
+                    </div>
+                    
+                    <div style={{ overflowY: 'auto', flex: 1 }}>
+                      {!answerKey ? (
+                        <p style={{ color: 'var(--text-secondary)', padding: '1rem' }}>
+                          {loadingKey ? 'Extracting answer keys from mock test file...' : 'Answer key details could not be found.'}
+                        </p>
+                      ) : (
+                        <table style={styles.reviewTable}>
+                          <thead>
+                            <tr>
+                              <th style={styles.reviewTh}>Q</th>
+                              <th style={styles.reviewTh}>Student Answer</th>
+                              <th style={styles.reviewTh}>Correct Key</th>
+                              <th style={styles.reviewTh}>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {Array.from({ length: 40 }, (_, idx) => {
+                              const qNum = idx + 1;
+                              const studentAns = selectedSub.reading_answers[qNum] || '';
+                              const correctArr = answerKey.answers['r' + qNum] || [];
+                              const displayCorrect = answerKey.display['r' + qNum] || correctArr.join(' / ') || '—';
+                              const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                              const sNorm = norm(studentAns);
+                              const isOk = correctArr.some(ans => norm(ans) === sNorm);
+                              
+                              if (showOnlyMistakes && isOk) return null;
+                              
+                              return (
+                                <tr key={qNum} style={{ 
+                                  borderBottom: '1px solid var(--glass-border)',
+                                  backgroundColor: isOk 
+                                    ? 'rgba(16, 185, 129, 0.04)' 
+                                    : studentAns 
+                                      ? 'rgba(244, 63, 94, 0.04)' 
+                                      : 'rgba(148, 163, 184, 0.04)'
+                                }}>
+                                  <td style={styles.reviewTd}><strong>{qNum}</strong></td>
+                                  <td style={styles.reviewTd}>{studentAns || '—'}</td>
+                                  <td style={styles.reviewTd}>{displayCorrect}</td>
+                                  <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
+                                    {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                    {answerKey && (
+                      <button 
+                        onClick={handleCopyReport}
+                        className="btn btn-success"
+                        style={{ marginTop: '1.5rem', width: '100%', justifyContent: 'center' }}
+                      >
+                        📋 Copy Review Report to Clipboard
+                      </button>
                     )}
                   </div>
-                  {answerKey && (
-                    <button 
-                      onClick={handleCopyReport}
-                      className="btn btn-success"
-                      style={{ marginTop: '1.5rem', width: '100%', justifyContent: 'center' }}
-                    >
-                      📋 Copy Review Report to Clipboard
-                    </button>
-                  )}
                 </div>
               </div>
             )}
