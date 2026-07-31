@@ -765,6 +765,34 @@
   function estimateBand(correct){ const table = [[39,9.0],[37,8.5],[35,8.0],[33,7.5],[30,7.0],[27,6.5],[23,6.0],[19,5.5],[15,5.0],[13,4.5],[10,4.0],[8,3.5],[6,3.0]]; for (const [minC,band] of table){ if (correct>=minC) return band.toFixed(1); } return "2.5"; }
   $("restart-btn").addEventListener("click", () => { state.answers = {}; state.notes = []; state.currentPart = 1; state.testActive = false; state.timeLeft = 60*60; document.body.className = ""; $("app").className = ""; hide($("screen-results")); show($("screen-password")); $("pwd-input").value=""; $("id-input").value=""; $("pwd-error").textContent=""; $("id-error").textContent=""; });
 })();
+
+    if (typeof window.syncScoreToPlatform !== 'function') {
+      window.syncScoreToPlatform = function(tId, lScore, rScore, lAns, rAns) {
+        const params = new URLSearchParams(window.location.search);
+        const sId = params.get('studentId') || 'STUDENT';
+        fetch('/api/student/submit/' + tId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentId: sId,
+            listeningAnswers: lAns || {},
+            readingAnswers: rAns || {},
+            writingAnswers: {},
+            listeningScore: lScore,
+            readingScore: rScore
+          })
+        })
+        .then(r => r.json())
+        .then(d => {
+          console.log('Score synced to platform:', d);
+          if (window.parent) {
+            window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+          }
+        })
+        .catch(e => console.error('Sync error:', e));
+      };
+    }
+    
 </script>
 </body>
 </html>

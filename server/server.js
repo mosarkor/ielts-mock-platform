@@ -198,13 +198,21 @@ app.post('/api/student/submit/:testId', async (req, res) => {
         }
       }
 
+      // Check if test is a separate Reading/Listening practice test
+      const testRecord = await db.get('SELECT title FROM tests WHERE id = ?', [testId]);
+      const isSeparatePracticeTest = testRecord && (
+        testRecord.title.toLowerCase().includes('reading') || 
+        testRecord.title.toLowerCase().includes('listening')
+      );
+      const defaultIsRevealed = isSeparatePracticeTest ? 1 : 0;
+
       // Write to Submissions
       await db.run(`
         INSERT INTO submissions (
           student_id, test_id, started_at, submitted_at, 
           listening_answers, reading_answers, writing_answers, 
           listening_score, reading_score, is_revealed, violations_count
-        ) VALUES (?, ?, datetime('now', '-2 hours'), datetime('now'), ?, ?, ?, ?, ?, 0, ?)
+        ) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)
       `, 
         studentId, 
         testId, 
@@ -213,6 +221,7 @@ app.post('/api/student/submit/:testId', async (req, res) => {
         JSON.stringify(writingAnswers), 
         listeningScore, 
         readingScore,
+        defaultIsRevealed,
         violationsCount
       );
 

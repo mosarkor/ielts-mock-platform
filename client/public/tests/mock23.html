@@ -427,6 +427,34 @@ function submitTest(){
     }
 function rrow(num,lbl,chosen,correct,ok){return `<div class="rrow ${ok?'rc':'rw'}"><span class="rnum">${num}.</span><span class="rq">${lbl}</span>${ok?'<span class="rbdg ok">✓ Correct</span>':`<span class="rbdg no">✗ Yours: <b>${chosen||'–'}</b> &nbsp; Answer: <b>${correct}</b></span>`}</div>`;}
 document.addEventListener('DOMContentLoaded',()=>{buildTabs();updateArrows();});
+
+    if (typeof window.syncScoreToPlatform !== 'function') {
+      window.syncScoreToPlatform = function(tId, lScore, rScore, lAns, rAns) {
+        const params = new URLSearchParams(window.location.search);
+        const sId = params.get('studentId') || 'STUDENT';
+        fetch('/api/student/submit/' + tId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentId: sId,
+            listeningAnswers: lAns || {},
+            readingAnswers: rAns || {},
+            writingAnswers: {},
+            listeningScore: lScore,
+            readingScore: rScore
+          })
+        })
+        .then(r => r.json())
+        .then(d => {
+          console.log('Score synced to platform:', d);
+          if (window.parent) {
+            window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+          }
+        })
+        .catch(e => console.error('Sync error:', e));
+      };
+    }
+    
 </script>
 
 </body>

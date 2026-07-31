@@ -36,4 +36,32 @@ document.getElementById('submit-btn').addEventListener('click',submitTest);docum
 document.addEventListener('mouseup',function(){let sel=window.getSelection();if(!sel||sel.isCollapsed||!sel.toString().trim()){document.getElementById('toolbar').classList.remove('visible');return;}currentSelection=sel.getRangeAt(0);let rect=currentSelection.getBoundingClientRect();let tb=document.getElementById('toolbar');tb.classList.add('visible');tb.style.left=Math.max(10,rect.left+rect.width/2-55)+'px';tb.style.top=(rect.top+window.scrollY-55)+'px';});
 document.addEventListener('mousedown',function(e){if(!document.getElementById('toolbar').contains(e.target))document.getElementById('toolbar').classList.remove('visible');});window.applyHL=function(color){if(!currentSelection||currentSelection.collapsed)return;try{let mark=document.createElement('mark');mark.className='hl '+color;mark.style.background={yellow:'#ffe236',green:'#4fd98a',pink:'#ff7eb3',blue:'#60c4ff'}[color];currentSelection.surroundContents(mark);}catch(e){}window.getSelection().removeAllRanges();document.getElementById('toolbar').classList.remove('visible');};
 renderPassages();renderQuestions();renderPills();updateProgress();
+
+    if (typeof window.syncScoreToPlatform !== 'function') {
+      window.syncScoreToPlatform = function(tId, lScore, rScore, lAns, rAns) {
+        const params = new URLSearchParams(window.location.search);
+        const sId = params.get('studentId') || 'STUDENT';
+        fetch('/api/student/submit/' + tId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentId: sId,
+            listeningAnswers: lAns || {},
+            readingAnswers: rAns || {},
+            writingAnswers: {},
+            listeningScore: lScore,
+            readingScore: rScore
+          })
+        })
+        .then(r => r.json())
+        .then(d => {
+          console.log('Score synced to platform:', d);
+          if (window.parent) {
+            window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+          }
+        })
+        .catch(e => console.error('Sync error:', e));
+      };
+    }
+    
 </script></body></html>

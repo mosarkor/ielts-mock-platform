@@ -64,6 +64,34 @@ for(var mk in multiGroups){var selected=multiSelected[mk];var correctVals=multiG
 document.getElementById('score-big').textContent=correct;document.getElementById('results-content').innerHTML=html;document.getElementById('results-modal').classList.add('open');});
 document.getElementById('modal-close').addEventListener('click',function(){document.getElementById('results-modal').classList.remove('open');});
 makePills();updateProgress();
+
+    if (typeof window.syncScoreToPlatform !== 'function') {
+      window.syncScoreToPlatform = function(tId, lScore, rScore, lAns, rAns) {
+        const params = new URLSearchParams(window.location.search);
+        const sId = params.get('studentId') || 'STUDENT';
+        fetch('/api/student/submit/' + tId, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            studentId: sId,
+            listeningAnswers: lAns || {},
+            readingAnswers: rAns || {},
+            writingAnswers: {},
+            listeningScore: lScore,
+            readingScore: rScore
+          })
+        })
+        .then(r => r.json())
+        .then(d => {
+          console.log('Score synced to platform:', d);
+          if (window.parent) {
+            window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+          }
+        })
+        .catch(e => console.error('Sync error:', e));
+      };
+    }
+    
 </script>
 </body>
 </html>
