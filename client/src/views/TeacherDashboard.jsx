@@ -1088,10 +1088,24 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                               </div>
                             ))}
                           </div>
-                          {[['Part 1 Transcript', ss.part1_transcript], ['Part 2 Transcript', ss.part2_transcript], ['Part 3 Transcript', ss.part3_transcript]].map(([title, text]) => text && (
-                            <div key={title} style={{ marginBottom: '0.75rem' }}>
-                              <div style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.3rem' }}>{title}</div>
-                              <div style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', padding: '0.75rem', fontSize: '0.83rem', color: 'var(--text-primary)', lineHeight: '1.6', whiteSpace: 'pre-wrap', border: '1px solid var(--glass-border)', maxHeight: '180px', overflowY: 'auto' }}>{text}</div>
+                          {[
+                            ['Part 1 Transcript & Audio', ss.part1_transcript, ss.part1_audio],
+                            ['Part 2 Transcript & Audio', ss.part2_transcript, ss.part2_audio],
+                            ['Part 3 Transcript & Audio', ss.part3_transcript, ss.part3_audio]
+                          ].map(([title, text, audioUrl]) => (text || audioUrl) && (
+                            <div key={title} style={{ marginBottom: '0.85rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</span>
+                                {audioUrl && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>🎧 Play Voice Audio:</span>
+                                    <audio controls src={audioUrl} style={{ height: '28px', borderRadius: '4px', outline: 'none' }} />
+                                  </div>
+                                )}
+                              </div>
+                              {text && (
+                                <div style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', padding: '0.75rem', fontSize: '0.83rem', color: 'var(--text-primary)', lineHeight: '1.6', whiteSpace: 'pre-wrap', border: '1px solid var(--glass-border)', maxHeight: '180px', overflowY: 'auto' }}>{text}</div>
+                              )}
                             </div>
                           ))}
                         </div>

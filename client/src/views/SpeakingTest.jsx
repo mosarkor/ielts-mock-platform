@@ -55,13 +55,106 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
     }
   };
 
-  const handleToggleRecording = () => {
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+  const [part1AudioBlobs, setPart1AudioBlobs] = useState([]);
+  const [part2AudioBlob, setPart2AudioBlob] = useState(null);
+  const [part3AudioBlobs, setPart3AudioBlobs] = useState([]);
+
+  const startMediaRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      const mr = new MediaRecorder(stream);
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data);
+      };
+      mr.start(250);
+      mediaRecorderRef.current = mr;
+    } catch (e) {
+      console.warn('Microphone stream error:', e);
+    }
+  };
+
+  const stopMediaRecording = () => {
+    return new Promise((resolve) => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        mediaRecorderRef.current.onstop = () => {
+          const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          resolve(blob);
+        };
+        try { mediaRecorderRef.current.stop(); } catch (e) { resolve(null); }
+      } else {
+        resolve(null);
+      }
+    });
+  };
+
+  const handleToggleRecording = async () => {
     if (recording) {
       setRecording(false);
       stopRecognition();
+      const blob = await stopMediaRecording();
+      if (blob && blob.size > 0) {
+        if (step === 'part1') setPart1AudioBlobs(prev => [...prev, blob]);
+        if (step === 'part2') setPart2AudioBlob(blob);
+        if (step === 'part3') setPart3AudioBlobs(prev => [...prev, blob]);
+      }
     } else {
       setRecording(true);
       startRecognition();
+      startMediaRecording();
+    }
+  };
+
+  const blobToBase64 = (blob) => new Promise((resolve) => {
+    if (!blob || blob.size === 0) return resolve('');
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+
+  const combineBlobs = (blobs) => {
+    if (!blobs || blobs.length === 0) return null;
+    return new Blob(blobs, { type: 'audio/webm' });
+  };
+
+  const doSubmit = async (finalTranscripts) => {
+    setStep('submitting');
+    try {
+      const p1Blob = combineBlobs(part1AudioBlobs);
+      const p2Blob = part2AudioBlob;
+      const p3Blob = combineBlobs(part3AudioBlobs);
+
+      const [p1Base64, p2Base64, p3Base64] = await Promise.all([
+        blobToBase64(p1Blob),
+        blobToBase64(p2Blob),
+        blobToBase64(p3Blob)
+      ]);
+
+      const res = await fetch('/api/speaking/submit-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentId: user.id,
+          promptId: prompt.prompt_id,
+          assignmentId: assignment.id,
+          part1AudioBase64: p1Base64,
+          part2AudioBase64: p2Base64,
+          part3AudioBase64: p3Base64,
+          part1Transcript: finalTranscripts.part1,
+          part2Transcript: finalTranscripts.part2,
+          part3Transcript: finalTranscripts.part3
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Submission failed');
+      setResults(data.scores);
+      setStep('results');
+    } catch (err) {
+      setError(err.message);
+      setStep('error');
     }
   };
 
@@ -135,30 +228,6 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
     }
   };
 
-  const doSubmit = async (finalTranscripts) => {
-    setStep('submitting');
-    try {
-      const res = await fetch('/api/speaking/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentId: user.id,
-          promptId: prompt.prompt_id,
-          assignmentId: assignment.id,
-          part1Transcript: finalTranscripts.part1,
-          part2Transcript: finalTranscripts.part2,
-          part3Transcript: finalTranscripts.part3
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Submission failed');
-      setResults(data.scores);
-      setStep('results');
-    } catch (err) {
-      setError(err.message);
-      setStep('error');
-    }
-  };
 
   const bandColor = (s) => s >= 7.5 ? '#10b981' : s >= 6.0 ? '#6366f1' : s >= 4.5 ? '#f59e0b' : '#f43f5e';
 

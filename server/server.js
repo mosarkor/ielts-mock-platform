@@ -14,7 +14,8 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Initialize Database connection
@@ -1104,6 +1105,119 @@ app.post('/api/speaking/submit', async (req, res) => {
 
     res.json({ success: true, message: 'Submitted for teacher review' });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Helper: Transcribe recorded audio file using OpenAI Whisper API
+async function transcribeAudioWithWhisper(audioBuffer, ext, aiSettings) {
+  if (!audioBuffer || audioBuffer.length < 100) return { text: '', publicUrl: null };
+  
+  const uploadsDir = path.join(__dirname, 'public', 'uploads', 'audio');
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+  const tempFileName = `speaking_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext || 'webm'}`;
+  const tempFilePath = path.join(uploadsDir, tempFileName);
+  fs.writeFileSync(tempFilePath, audioBuffer);
+
+  const publicUrl = `/uploads/audio/${tempFileName}`;
+
+  let text = '';
+  try {
+    if (aiSettings.openai_api_key) {
+      const openai = new OpenAI({ apiKey: aiSettings.openai_api_key });
+      const transcription = await openai.audio.transcriptions.create({
+        file: fs.createReadStream(tempFilePath),
+        model: 'whisper-1',
+        language: 'en'
+      });
+      text = transcription.text ? transcription.text.trim() : '';
+    }
+  } catch (err) {
+    console.error('Whisper transcription error:', err.message);
+  }
+
+  return { text, publicUrl };
+}
+
+// Student — Submit speaking test WITH RECORDED AUDIO blobs (OpenAI Whisper pipeline)
+app.post('/api/speaking/submit-audio', async (req, res) => {
+  const { studentId, promptId, assignmentId, part1AudioBase64, part2AudioBase64, part3AudioBase64, part1Transcript, part2Transcript, part3Transcript } = req.body;
+  
+  if (!studentId || !promptId) {
+    return res.status(400).json({ error: 'studentId and promptId required' });
+  }
+
+  try {
+    const aiSettings = await db.get('SELECT * FROM ai_settings LIMIT 1');
+    if (!aiSettings) return res.status(500).json({ error: 'AI settings not configured' });
+
+    let finalPart1Text = part1Transcript || '';
+    let finalPart2Text = part2Transcript || '';
+    let finalPart3Text = part3Transcript || '';
+
+    let part1AudioUrl = null;
+    let part2AudioUrl = null;
+    let part3AudioUrl = null;
+
+    // Transcribe Part 1 Audio with Whisper if provided
+    if (part1AudioBase64) {
+      const buffer = Buffer.from(part1AudioBase64.replace(/^data:audio\/\w+;base64,/, ''), 'base64');
+      const resWhisper = await transcribeAudioWithWhisper(buffer, 'webm', aiSettings);
+      if (resWhisper.text) finalPart1Text = resWhisper.text;
+      part1AudioUrl = resWhisper.publicUrl;
+    }
+
+    // Transcribe Part 2 Audio with Whisper if provided
+    if (part2AudioBase64) {
+      const buffer = Buffer.from(part2AudioBase64.replace(/^data:audio\/\w+;base64,/, ''), 'base64');
+      const resWhisper = await transcribeAudioWithWhisper(buffer, 'webm', aiSettings);
+      if (resWhisper.text) finalPart2Text = resWhisper.text;
+      part2AudioUrl = resWhisper.publicUrl;
+    }
+
+    // Transcribe Part 3 Audio with Whisper if provided
+    if (part3AudioBase64) {
+      const buffer = Buffer.from(part3AudioBase64.replace(/^data:audio\/\w+;base64,/, ''), 'base64');
+      const resWhisper = await transcribeAudioWithWhisper(buffer, 'webm', aiSettings);
+      if (resWhisper.text) finalPart3Text = resWhisper.text;
+      part3AudioUrl = resWhisper.publicUrl;
+    }
+
+    // Restore punctuation
+    finalPart1Text = await punctuateTranscriptWithAI(finalPart1Text, aiSettings);
+    finalPart2Text = await punctuateTranscriptWithAI(finalPart2Text, aiSettings);
+    finalPart3Text = await punctuateTranscriptWithAI(finalPart3Text, aiSettings);
+
+    // Evaluate with AI (GPT-4o or Gemini)
+    const { result, provider } = await evaluateSpeaking(
+      { part1: finalPart1Text, part2: finalPart2Text, part3: finalPart3Text },
+      aiSettings
+    );
+
+    // Save submission with audio URLs and Whispered transcripts
+    await db.run(`
+      INSERT INTO speaking_submissions 
+        (student_id, prompt_id, part1_transcript, part2_transcript, part3_transcript,
+         fluency_score, lexical_score, grammar_score, pronunciation_score, overall_score, ai_feedback, ai_provider, is_revealed,
+         part1_audio, part2_audio, part3_audio)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+    `, [
+      studentId, promptId,
+      finalPart1Text || '', finalPart2Text || '', finalPart3Text || '',
+      result.fluency, result.lexical, result.grammar, result.pronunciation, result.overall,
+      JSON.stringify(result.feedback), provider,
+      part1AudioUrl, part2AudioUrl, part3AudioUrl
+    ]);
+
+    // Mark assignment as submitted
+    if (assignmentId) {
+      await db.run("UPDATE speaking_assignments SET status = 'submitted' WHERE id = ?", [assignmentId]);
+    }
+
+    res.json({ success: true, message: 'Submitted and transcribed with OpenAI Whisper' });
+  } catch (error) {
+    console.error('Submit audio error:', error);
     res.status(500).json({ error: error.message });
   }
 });
