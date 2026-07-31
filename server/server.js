@@ -898,7 +898,7 @@ app.post('/api/admin/settings', async (req, res) => {
   try {
     const existing = await db.get('SELECT id FROM ai_settings LIMIT 1');
     if (existing) {
-      const updates = ['provider = ?', "updated_at = datetime('now')"];
+      const updates = ['provider = ?', "updated_at = CURRENT_TIMESTAMP"];
       const vals = [provider];
       if (gemini_api_key !== undefined && gemini_api_key !== '') {
         updates.push('gemini_api_key = ?'); vals.push(gemini_api_key);

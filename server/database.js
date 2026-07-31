@@ -388,7 +388,7 @@ export async function initDb() {
       part1_questions TEXT NOT NULL,
       part2_cue_card TEXT NOT NULL,
       part3_questions TEXT NOT NULL,
-      created_at TEXT DEFAULT (datetime('now'))
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
@@ -397,7 +397,7 @@ export async function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       student_id TEXT NOT NULL,
       prompt_id INTEGER NOT NULL,
-      assigned_at TEXT DEFAULT (datetime('now')),
+      assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       status TEXT CHECK(status IN ('assigned','submitted')) DEFAULT 'assigned',
       FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (prompt_id) REFERENCES speaking_prompts(id) ON DELETE CASCADE
@@ -420,7 +420,7 @@ export async function initDb() {
       ai_feedback TEXT,
       ai_provider TEXT,
       is_revealed INTEGER DEFAULT 0,
-      submitted_at TEXT DEFAULT (datetime('now')),
+      submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (prompt_id) REFERENCES speaking_prompts(id) ON DELETE CASCADE
     )
@@ -432,7 +432,7 @@ export async function initDb() {
       provider TEXT DEFAULT 'gemini',
       gemini_api_key TEXT,
       openai_api_key TEXT,
-      updated_at TEXT DEFAULT (datetime('now'))
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
