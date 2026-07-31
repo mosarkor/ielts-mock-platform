@@ -38,6 +38,11 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
   const [filterGroup, setFilterGroup] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
+  // Directory & Assign Search States
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [userGroupFilter, setUserGroupFilter] = useState('all');
+  const [assignSearchTerm, setAssignSearchTerm] = useState('');
+
   // Speaking Module States
   const [speakingPrompts, setSpeakingPrompts] = useState([]);
   const [aiSettings, setAiSettings] = useState({ provider: 'gemini', gemini_api_key_set: false, openai_api_key_set: false });
@@ -677,12 +682,47 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                     </div>
 
                     <div className="form-group">
-                      <label className="form-label">Select Candidates (Bulk Select)</label>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                        <label className="form-label" style={{ margin: 0 }}>Select Candidates (Bulk Select)</label>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          Selected: {selectedStudentIds.length}
+                        </span>
+                      </div>
+
+                      {/* Instant Search Bar for Assign Box */}
+                      <input
+                        type="text"
+                        placeholder="🔍 Search candidate by name, ID (e.g. G1-03) or group..."
+                        value={assignSearchTerm}
+                        onChange={e => setAssignSearchTerm(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '0.45rem 0.75rem',
+                          borderRadius: '6px',
+                          border: '1px solid var(--glass-border)',
+                          backgroundColor: 'var(--bg-tertiary)',
+                          color: 'var(--text-primary)',
+                          fontSize: '0.82rem',
+                          marginBottom: '0.5rem',
+                          outline: 'none',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+
                       <div style={styles.studentSelectBox}>
                         {students.length === 0 ? (
                           <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No students registered.</p>
-                        ) : (
-                          students.map(s => {
+                        ) : (() => {
+                          const filtered = students.filter(s => {
+                            const term = assignSearchTerm.toLowerCase();
+                            return s.name.toLowerCase().includes(term) ||
+                                   s.id.toLowerCase().includes(term) ||
+                                   (s.groupName && s.groupName.toLowerCase().includes(term));
+                          });
+                          if (filtered.length === 0) {
+                            return <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '0.5rem' }}>No candidates found matching "{assignSearchTerm}"</p>;
+                          }
+                          return filtered.map(s => {
                             const isSelected = selectedStudentIds.includes(s.id);
                             return (
                               <div 
@@ -703,8 +743,8 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                                 <span>{s.name} ({s.id}){s.groupName ? ` [${s.groupName}]` : ''}</span>
                               </div>
                             );
-                          })
-                        )}
+                          });
+                        })()}
                       </div>
                     </div>
 
@@ -716,15 +756,83 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
 
                 {/* E. User Directory */}
                 <div className="card" style={{ marginTop: '2rem' }}>
-                  <h3 style={styles.cardTitle}>👥 System Accounts & Staff</h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <h3 style={{ ...styles.cardTitle, margin: 0 }}>👥 System Accounts & Staff</h3>
+                    <span style={{ backgroundColor: 'var(--color-indigo)', color: '#fff', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.2rem 0.5rem', borderRadius: '12px' }}>
+                      Total: {allUsers.length}
+                    </span>
+                  </div>
+
+                  {/* Directory Search & Filter Controls */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                    <input
+                      type="text"
+                      placeholder="🔍 Search name, ID (G1-01), passcode..."
+                      value={userSearchTerm}
+                      onChange={e => setUserSearchTerm(e.target.value)}
+                      style={{
+                        flex: 2,
+                        minWidth: '160px',
+                        padding: '0.5rem 0.75rem',
+                        borderRadius: '6px',
+                        border: '1px solid var(--glass-border)',
+                        backgroundColor: 'var(--bg-tertiary)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.82rem',
+                        outline: 'none'
+                      }}
+                    />
+                    <select
+                      value={userGroupFilter}
+                      onChange={e => setUserGroupFilter(e.target.value)}
+                      style={{
+                        flex: 1,
+                        minWidth: '110px',
+                        padding: '0.5rem',
+                        borderRadius: '6px',
+                        border: '1px solid var(--glass-border)',
+                        backgroundColor: 'var(--bg-tertiary)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.82rem',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="all">📁 All Groups</option>
+                      <option value="Group 1">Group 1</option>
+                      <option value="Group 2">Group 2</option>
+                      <option value="Group 3">Group 3</option>
+                      <option value="Group 4">Group 4</option>
+                      <option value="teacher">Staff / Teachers</option>
+                    </select>
+                  </div>
+
                   <div style={styles.assignmentsListScroll}>
                     {allUsers.length === 0 ? (
                       <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '1rem 0' }}>No accounts found.</p>
-                    ) : (
-                      allUsers.map(u => (
+                    ) : (() => {
+                      const filteredUsers = allUsers.filter(u => {
+                        const term = userSearchTerm.toLowerCase();
+                        const matchesSearch = u.name.toLowerCase().includes(term) ||
+                                              u.id.toLowerCase().includes(term) ||
+                                              (u.passcode && String(u.passcode).toLowerCase().includes(term));
+                        
+                        let matchesGroup = true;
+                        if (userGroupFilter !== 'all') {
+                          if (userGroupFilter === 'teacher') matchesGroup = u.role === 'teacher' || u.role === 'admin';
+                          else matchesGroup = u.groupName === userGroupFilter;
+                        }
+                        return matchesSearch && matchesGroup;
+                      });
+
+                      if (filteredUsers.length === 0) {
+                        return <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '1rem 0', textAlign: 'center' }}>No accounts found matching your search.</p>;
+                      }
+
+                      return filteredUsers.map(u => (
                         <div key={u.id} style={styles.asgListItem}>
                           <div>
-                            <strong>{u.name}</strong> ({u.id})
+                            <strong>{u.name}</strong> <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>({u.id})</span>
                             {u.groupName && (
                               <span style={{ 
                                 backgroundColor: 'var(--color-indigo)', 
@@ -761,8 +869,8 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                             )}
                           </div>
                         </div>
-                      ))
-                    )}
+                      ));
+                    })()}
                   </div>
                 </div>
 
