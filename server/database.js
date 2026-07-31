@@ -692,6 +692,25 @@ async function ensureCustomDataSeeded(db) {
     }
   } catch (e) {}
 
+  // Ensure Reading Tests 11-20 exist in tests table
+  for (let i = 11; i <= 20; i++) {
+    const title = `IELTS Reading Test ${i}`;
+    const mockFileName = `mock${i}.html`;
+    const mockListening = { isIframe: true, iframeUrl: `/tests/${mockFileName}` };
+    
+    try {
+      const exists = await db.get('SELECT id FROM tests WHERE title LIKE ?', [`%Reading Test ${i}%`]);
+      if (!exists) {
+        await db.run(
+          `INSERT INTO tests (title, listening_data, reading_data, writing_data, created_by) VALUES (?, ?, ?, ?, ?)`,
+          [title, JSON.stringify(mockListening), JSON.stringify({}), JSON.stringify({}), 'admin']
+        );
+      }
+    } catch (e) {
+      console.error(`Error seeding ${title}:`, e.message);
+    }
+  }
+
   // Auto-assign Reading Tests 11-20 & Speaking Prompts to all candidate accounts
   try {
     const allStudents = await db.all("SELECT id FROM users WHERE role = 'student'");
