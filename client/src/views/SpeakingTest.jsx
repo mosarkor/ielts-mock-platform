@@ -37,11 +37,11 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
     recognition.continuous = true;
     recognition.interimResults = false;
     recognition.onresult = (e) => {
-      let final = '';
+      let transcriptText = '';
       for (let i = 0; i < e.results.length; i++) {
-        if (e.results[i].isFinal) final += e.results[i][0].transcript + ' ';
+        transcriptText += e.results[i][0].transcript + ' ';
       }
-      if (final.trim()) setCurrentTyping(prev => prev + ' ' + final.trim());
+      setCurrentTyping(transcriptText.trim());
     };
     recognition.onerror = () => {};
     try { recognition.start(); } catch (e) {}
