@@ -711,7 +711,7 @@ async function ensureCustomDataSeeded(db) {
     }
   }
 
-  // Ensure Full Mock Test 21 exists in tests table
+  // Ensure Full Mock Test 21 & 22 exist in tests table
   try {
     const title21 = 'IELTS Full CDI Mock Test 11';
     const exists21 = await db.get('SELECT id FROM tests WHERE id = 21 OR title = ?', [title21]);
@@ -719,6 +719,14 @@ async function ensureCustomDataSeeded(db) {
       await db.run(
         `INSERT INTO tests (id, title, listening_data, reading_data, writing_data, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
         [21, title21, JSON.stringify({ isIframe: true, iframeUrl: '/tests/mock21.html' }), JSON.stringify({}), JSON.stringify({}), 'admin']
+      );
+    }
+    const title22 = 'IELTS Full CDI Mock Test 10';
+    const exists22 = await db.get('SELECT id FROM tests WHERE id = 22 OR title = ?', [title22]);
+    if (!exists22) {
+      await db.run(
+        `INSERT INTO tests (id, title, listening_data, reading_data, writing_data, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
+        [22, title22, JSON.stringify({ isIframe: true, iframeUrl: '/tests/mock22.html' }), JSON.stringify({}), JSON.stringify({}), 'admin']
       );
     }
   } catch (e) {}
