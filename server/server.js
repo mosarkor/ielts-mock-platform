@@ -4,6 +4,8 @@ import { initDb } from './database.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -802,6 +804,274 @@ app.post('/api/admin/assignments/:id/reset', async (req, res) => {
   }
 });
 
+
+
+
+// ----------------------------------------
+// SPEAKING MODULE APIS
+// ----------------------------------------
+
+// Helper: evaluate speaking with AI
+async function evaluateSpeaking(transcripts, aiSettings) {
+  const { part1, part2, part3 } = transcripts;
+  const combinedText = `
+PART 1 (Interview):
+${part1 || '[No response]'}
+
+PART 2 (Long Turn):
+${part2 || '[No response]'}
+
+PART 3 (Discussion):
+${part3 || '[No response]'}
+  `.trim();
+
+  const systemPrompt = `You are a certified IELTS Speaking examiner with 10+ years of experience.
+Evaluate the candidate's Speaking test responses below strictly against official IELTS Band Descriptors (Bands 4.0–9.0).
+Score each criterion to the nearest 0.5 band.
+
+Return ONLY a valid JSON object with this exact structure:
+{
+  "fluency": <number>,
+  "lexical": <number>,
+  "grammar": <number>,
+  "pronunciation": <number>,
+  "overall": <number>,
+  "feedback": {
+    "fluency": "<one concise improvement tip>",
+    "lexical": "<one concise improvement tip>",
+    "grammar": "<one concise improvement tip>",
+    "pronunciation": "<one concise improvement tip>",
+    "overall": "<2-3 sentence overall assessment>"
+  }
+}
+The "overall" score should be the mean of the four criteria rounded to the nearest 0.5.`;
+
+  const userMessage = `Evaluate these IELTS Speaking responses:\n\n${combinedText}`;
+
+  try {
+    if (aiSettings.provider === 'openai' && aiSettings.openai_api_key) {
+      const openai = new OpenAI({ apiKey: aiSettings.openai_api_key });
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage }
+        ],
+        response_format: { type: 'json_object' },
+        max_tokens: 600
+      });
+      return { result: JSON.parse(response.choices[0].message.content), provider: 'openai' };
+    } else if (aiSettings.gemini_api_key) {
+      const genAI = new GoogleGenerativeAI(aiSettings.gemini_api_key);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const result = await model.generateContent(`${systemPrompt}\n\n${userMessage}`);
+      const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return { result: JSON.parse(text), provider: 'gemini' };
+    } else {
+      throw new Error('No AI API key configured. Please add your Gemini or OpenAI key in Admin Settings.');
+    }
+  } catch (err) {
+    throw new Error(`AI evaluation failed: ${err.message}`);
+  }
+}
+
+// Admin Settings — Get
+app.get('/api/admin/settings', async (req, res) => {
+  try {
+    const settings = await db.get('SELECT * FROM ai_settings LIMIT 1');
+    // Don't expose full keys — mask them
+    if (settings) {
+      settings.gemini_api_key_set = !!(settings.gemini_api_key);
+      settings.openai_api_key_set = !!(settings.openai_api_key);
+      delete settings.gemini_api_key;
+      delete settings.openai_api_key;
+    }
+    res.json(settings || { provider: 'gemini', gemini_api_key_set: false, openai_api_key_set: false });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Admin Settings — Update
+app.post('/api/admin/settings', async (req, res) => {
+  const { provider, gemini_api_key, openai_api_key } = req.body;
+  try {
+    const existing = await db.get('SELECT id FROM ai_settings LIMIT 1');
+    if (existing) {
+      const updates = ['provider = ?', "updated_at = datetime('now')"];
+      const vals = [provider];
+      if (gemini_api_key !== undefined && gemini_api_key !== '') {
+        updates.push('gemini_api_key = ?'); vals.push(gemini_api_key);
+      }
+      if (openai_api_key !== undefined && openai_api_key !== '') {
+        updates.push('openai_api_key = ?'); vals.push(openai_api_key);
+      }
+      vals.push(existing.id);
+      await db.run(`UPDATE ai_settings SET ${updates.join(', ')} WHERE id = ?`, vals);
+    } else {
+      await db.run('INSERT INTO ai_settings (provider, gemini_api_key, openai_api_key) VALUES (?, ?, ?)', [provider, gemini_api_key || null, openai_api_key || null]);
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Speaking Prompts — List
+app.get('/api/admin/speaking/prompts', async (req, res) => {
+  try {
+    const prompts = await db.all('SELECT * FROM speaking_prompts ORDER BY created_at DESC');
+    res.json(prompts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Speaking Prompts — Create
+app.post('/api/admin/speaking/prompts', async (req, res) => {
+  const { title, part1Questions, part2CueCard, part3Questions } = req.body;
+  if (!title || !part1Questions || !part2CueCard || !part3Questions) {
+    return res.status(400).json({ error: 'All prompt fields are required' });
+  }
+  try {
+    await db.run(
+      'INSERT INTO speaking_prompts (title, part1_questions, part2_cue_card, part3_questions) VALUES (?, ?, ?, ?)',
+      [title, JSON.stringify(part1Questions), part2CueCard, JSON.stringify(part3Questions)]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Speaking Prompts — Delete
+app.delete('/api/admin/speaking/prompts/:id', async (req, res) => {
+  try {
+    await db.run('DELETE FROM speaking_prompts WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Speaking Assign — Assign prompt to students
+app.post('/api/admin/speaking/assign', async (req, res) => {
+  const { studentIds, promptId } = req.body;
+  if (!Array.isArray(studentIds) || !promptId) {
+    return res.status(400).json({ error: 'studentIds array and promptId required' });
+  }
+  try {
+    for (const sId of studentIds) {
+      const exists = await db.get('SELECT 1 FROM speaking_assignments WHERE student_id = ? AND prompt_id = ? AND status = ?', [sId, promptId, 'assigned']);
+      if (!exists) {
+        await db.run("INSERT INTO speaking_assignments (student_id, prompt_id) VALUES (?, ?)", [sId, promptId]);
+      }
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Student — Get speaking assignments
+app.get('/api/speaking/assignments/:studentId', async (req, res) => {
+  try {
+    const assignments = await db.all(`
+      SELECT sa.id, sa.status, sa.assigned_at,
+             sp.id as prompt_id, sp.title, sp.part1_questions, sp.part2_cue_card, sp.part3_questions
+      FROM speaking_assignments sa
+      JOIN speaking_prompts sp ON sa.prompt_id = sp.id
+      WHERE sa.student_id = ?
+      ORDER BY sa.assigned_at DESC
+    `, [req.params.studentId]);
+    res.json(assignments);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Student — Get their own speaking results
+app.get('/api/speaking/results/:studentId', async (req, res) => {
+  try {
+    const results = await db.all(`
+      SELECT ss.*, sp.title as prompt_title
+      FROM speaking_submissions ss
+      JOIN speaking_prompts sp ON ss.prompt_id = sp.id
+      WHERE ss.student_id = ? AND ss.is_revealed = 1
+      ORDER BY ss.submitted_at DESC
+    `, [req.params.studentId]);
+    res.json(results);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Student — Submit speaking test (transcripts only — audio recorded in browser)
+app.post('/api/speaking/submit', async (req, res) => {
+  const { studentId, promptId, assignmentId, part1Transcript, part2Transcript, part3Transcript } = req.body;
+  if (!studentId || !promptId) {
+    return res.status(400).json({ error: 'studentId and promptId required' });
+  }
+  try {
+    // Get AI settings
+    const aiSettings = await db.get('SELECT * FROM ai_settings LIMIT 1');
+    if (!aiSettings) return res.status(500).json({ error: 'AI settings not configured' });
+
+    // Evaluate with AI
+    const { result, provider } = await evaluateSpeaking(
+      { part1: part1Transcript, part2: part2Transcript, part3: part3Transcript },
+      aiSettings
+    );
+
+    // Save submission
+    await db.run(`
+      INSERT INTO speaking_submissions 
+        (student_id, prompt_id, part1_transcript, part2_transcript, part3_transcript,
+         fluency_score, lexical_score, grammar_score, pronunciation_score, overall_score, ai_feedback, ai_provider)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      studentId, promptId,
+      part1Transcript || '', part2Transcript || '', part3Transcript || '',
+      result.fluency, result.lexical, result.grammar, result.pronunciation, result.overall,
+      JSON.stringify(result.feedback), provider
+    ]);
+
+    // Mark assignment as submitted
+    if (assignmentId) {
+      await db.run("UPDATE speaking_assignments SET status = 'submitted' WHERE id = ?", [assignmentId]);
+    }
+
+    res.json({ success: true, scores: result });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Teacher — List all speaking submissions (pending reveal)
+app.get('/api/teacher/speaking', async (req, res) => {
+  try {
+    const submissions = await db.all(`
+      SELECT ss.*, u.name as student_name, sp.title as prompt_title
+      FROM speaking_submissions ss
+      JOIN users u ON ss.student_id = u.id
+      JOIN speaking_prompts sp ON ss.prompt_id = sp.id
+      ORDER BY ss.submitted_at DESC
+    `);
+    res.json(submissions);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Teacher — Send/reveal score to student
+app.post('/api/teacher/speaking/:id/send', async (req, res) => {
+  try {
+    await db.run('UPDATE speaking_submissions SET is_revealed = 1 WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Serve built static React client files in production
 const distPath = path.join(__dirname, '../client/dist');

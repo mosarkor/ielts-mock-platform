@@ -24,6 +24,11 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
   const [integrityFilter, setIntegrityFilter] = useState('all');
   const [groupFilter, setGroupFilter] = useState('all');
 
+  // Speaking
+  const [speakingSubmissions, setSpeakingSubmissions] = useState([]);
+  const [activeSection, setActiveSection] = useState('writing'); // 'writing' | 'speaking'
+  const [expandedSpeaking, setExpandedSpeaking] = useState(null);
+
   // IELTS Band Descriptor guide lookup
   const descriptors = {
     ta: {
@@ -155,10 +160,14 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
   const fetchSubmissions = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/teacher/submissions');
-      if (!res.ok) throw new Error('Failed to fetch submissions list');
-      const data = await res.json();
+      const [subRes, spkRes] = await Promise.all([
+        fetch('/api/teacher/submissions'),
+        fetch('/api/teacher/speaking')
+      ]);
+      if (!subRes.ok) throw new Error('Failed to fetch submissions list');
+      const data = await subRes.json();
       setSubmissions(data);
+      if (spkRes.ok) setSpeakingSubmissions(await spkRes.json());
     } catch (err) {
       setError(err.message);
     } finally {
@@ -949,7 +958,129 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
         ) : (
           /* MAIN LISTINGS VIEW */
           <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '2.5rem' }}>
+            {/* Section Tabs */}
+            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              {[['writing', '✏️ Writing Submissions'], ['speaking', '🎙️ Speaking Submissions']].map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveSection(key)}
+                  className="btn"
+                  style={{
+                    padding: '0.5rem 1.1rem',
+                    borderRadius: '8px',
+                    border: '1px solid var(--glass-border)',
+                    backgroundColor: activeSection === key ? 'var(--color-indigo)' : 'var(--bg-secondary)',
+                    color: '#fff',
+                    fontWeight: activeSection === key ? '700' : '400',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {label}
+                  {key === 'speaking' && speakingSubmissions.filter(s => !s.is_revealed).length > 0 && (
+                    <span style={{ marginLeft: '0.5rem', backgroundColor: '#f43f5e', borderRadius: '10px', padding: '0.1rem 0.45rem', fontSize: '0.75rem', fontWeight: '800' }}>
+                      {speakingSubmissions.filter(s => !s.is_revealed).length}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Speaking Submissions Panel */}
+            {activeSection === 'speaking' && (
+              <div>
+                {speakingSubmissions.length === 0 ? (
+                  <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎙️</div>
+                    <p>No speaking submissions yet. Assign speaking tests to students from the Admin Dashboard.</p>
+                  </div>
+                ) : speakingSubmissions.map(ss => {
+                  const fb = (() => { try { return JSON.parse(ss.ai_feedback || '{}'); } catch { return {}; } })();
+                  const bandColor = (s) => s >= 7.5 ? '#10b981' : s >= 6.0 ? '#6366f1' : s >= 4.5 ? '#f59e0b' : '#f43f5e';
+                  const isExpanded = expandedSpeaking === ss.id;
+                  return (
+                    <div className="card" key={ss.id} style={{ marginBottom: '1.25rem', borderLeft: `4px solid ${ss.is_revealed ? '#10b981' : '#6366f1'}` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{ss.student_name}</strong>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>({ss.student_id})</span>
+                            <span style={{ backgroundColor: ss.is_revealed ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)', color: ss.is_revealed ? '#10b981' : '#6366f1', fontSize: '0.75rem', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: '700' }}>
+                              {ss.is_revealed ? '✅ Sent to Student' : '⏳ Pending'}
+                            </span>
+                          </div>
+                          <div style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', marginTop: '0.25rem' }}>
+                            {ss.prompt_title} · {new Date(ss.submitted_at).toLocaleDateString()} · via {ss.ai_provider || 'AI'}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', gap: '0.4rem' }}>
+                            {[['F', ss.fluency_score], ['L', ss.lexical_score], ['G', ss.grammar_score], ['P', ss.pronunciation_score]].map(([l, s]) => (
+                              <div key={l} style={{ textAlign: 'center', backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', padding: '0.25rem 0.4rem', minWidth: '36px' }}>
+                                <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{l}</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: '800', color: bandColor(s) }}>{s?.toFixed(1)}</div>
+                              </div>
+                            ))}
+                            <div style={{ textAlign: 'center', backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: '6px', padding: '0.25rem 0.4rem', minWidth: '44px', border: '1px solid rgba(99,102,241,0.3)' }}>
+                              <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>OVR</div>
+                              <div style={{ fontSize: '0.9rem', fontWeight: '900', color: bandColor(ss.overall_score) }}>{ss.overall_score?.toFixed(1)}</div>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setExpandedSpeaking(isExpanded ? null : ss.id)}
+                            style={{ background: 'none', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '0.3rem 0.6rem', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.8rem' }}
+                          >
+                            {isExpanded ? 'Hide ▲' : 'Details ▼'}
+                          </button>
+                          {!ss.is_revealed && (
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`Send speaking results to ${ss.student_name}?`)) return;
+                                await fetch(`/api/teacher/speaking/${ss.id}/send`, { method: 'POST' });
+                                fetchSubmissions();
+                              }}
+                              className="btn btn-success"
+                              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                            >
+                              📤 Send to Student
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {isExpanded && (
+                        <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem' }}>
+                          {fb.overall && (
+                            <div style={{ backgroundColor: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+                              <strong style={{ color: 'var(--text-primary)', fontStyle: 'normal' }}>📝 AI Overall Assessment:</strong><br/>{fb.overall}
+                            </div>
+                          )}
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
+                            {[['Fluency', 'fluency'], ['Lexical', 'lexical'], ['Grammar', 'grammar'], ['Pronunciation', 'pronunciation']].map(([label, key]) => (
+                              <div key={key} style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', padding: '0.6rem 0.75rem', border: '1px solid var(--glass-border)' }}>
+                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>{label}</div>
+                                <div style={{ fontWeight: '800', fontSize: '1.1rem', color: bandColor(ss[`${key}_score`]) }}>{ss[`${key}_score`]?.toFixed(1)}</div>
+                                {fb[key] && <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.3rem', lineHeight: 1.4 }}>{fb[key]}</div>}
+                              </div>
+                            ))}
+                          </div>
+                          {[['Part 1 Transcript', ss.part1_transcript], ['Part 2 Transcript', ss.part2_transcript], ['Part 3 Transcript', ss.part3_transcript]].map(([title, text]) => text && (
+                            <div key={title} style={{ marginBottom: '0.75rem' }}>
+                              <div style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.3rem' }}>{title}</div>
+                              <div style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', padding: '0.75rem', fontSize: '0.83rem', color: 'var(--text-primary)', lineHeight: '1.6', whiteSpace: 'pre-wrap', border: '1px solid var(--glass-border)', maxHeight: '180px', overflowY: 'auto' }}>{text}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeSection === 'writing' && (
+            <><div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '2.5rem' }}>
               {/* 1. Analytics Summary Row */}
               <div style={styles.statsRow}>
                 <div className="card" style={styles.statCard}>
@@ -1230,7 +1361,9 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                 ))
               )}
             </div>
-          </div>
+            </div>
+            </>
+            )}
           </>
         )}
       </main>

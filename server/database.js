@@ -150,6 +150,61 @@ export async function initDb() {
     // Dynamically alter table for existing installations
     await db.exec('ALTER TABLE submissions ADD COLUMN violations_count INTEGER DEFAULT 0').catch(() => {});
 
+    // Speaking module tables
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS speaking_prompts (
+        id SERIAL PRIMARY KEY,
+        title TEXT NOT NULL,
+        part1_questions TEXT NOT NULL,
+        part2_cue_card TEXT NOT NULL,
+        part3_questions TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS speaking_assignments (
+        id SERIAL PRIMARY KEY,
+        student_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        prompt_id INTEGER NOT NULL REFERENCES speaking_prompts(id) ON DELETE CASCADE,
+        assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        status TEXT CHECK(status IN ('assigned', 'submitted')) DEFAULT 'assigned'
+      )
+    `);
+
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS speaking_submissions (
+        id SERIAL PRIMARY KEY,
+        student_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        prompt_id INTEGER NOT NULL REFERENCES speaking_prompts(id) ON DELETE CASCADE,
+        part1_transcript TEXT,
+        part2_transcript TEXT,
+        part3_transcript TEXT,
+        fluency_score DOUBLE PRECISION,
+        lexical_score DOUBLE PRECISION,
+        grammar_score DOUBLE PRECISION,
+        pronunciation_score DOUBLE PRECISION,
+        overall_score DOUBLE PRECISION,
+        ai_feedback TEXT,
+        ai_provider TEXT,
+        is_revealed INTEGER DEFAULT 0,
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS ai_settings (
+        id SERIAL PRIMARY KEY,
+        provider TEXT DEFAULT 'gemini',
+        gemini_api_key TEXT,
+        openai_api_key TEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Seed default AI settings row
+    await db.exec(`INSERT INTO ai_settings (provider) SELECT 'gemini' WHERE NOT EXISTS (SELECT 1 FROM ai_settings)`);
+
     // Seed if empty
     const userCount = await db.get('SELECT COUNT(*) as count FROM users');
     if (parseInt(userCount.count) === 0) {
@@ -323,6 +378,68 @@ export async function initDb() {
 
   // Dynamically alter table for existing installations
   await db.exec('ALTER TABLE submissions ADD COLUMN violations_count INTEGER DEFAULT 0').catch(() => {});
+
+  // Speaking module tables
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS speaking_prompts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      part1_questions TEXT NOT NULL,
+      part2_cue_card TEXT NOT NULL,
+      part3_questions TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS speaking_assignments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id TEXT NOT NULL,
+      prompt_id INTEGER NOT NULL,
+      assigned_at TEXT DEFAULT (datetime('now')),
+      status TEXT CHECK(status IN ('assigned','submitted')) DEFAULT 'assigned',
+      FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (prompt_id) REFERENCES speaking_prompts(id) ON DELETE CASCADE
+    )
+  `);
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS speaking_submissions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id TEXT NOT NULL,
+      prompt_id INTEGER NOT NULL,
+      part1_transcript TEXT,
+      part2_transcript TEXT,
+      part3_transcript TEXT,
+      fluency_score REAL,
+      lexical_score REAL,
+      grammar_score REAL,
+      pronunciation_score REAL,
+      overall_score REAL,
+      ai_feedback TEXT,
+      ai_provider TEXT,
+      is_revealed INTEGER DEFAULT 0,
+      submitted_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (prompt_id) REFERENCES speaking_prompts(id) ON DELETE CASCADE
+    )
+  `);
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS ai_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      provider TEXT DEFAULT 'gemini',
+      gemini_api_key TEXT,
+      openai_api_key TEXT,
+      updated_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  // Seed default AI settings
+  const aiRow = await db.get('SELECT id FROM ai_settings LIMIT 1');
+  if (!aiRow) {
+    await db.run("INSERT INTO ai_settings (provider) VALUES ('gemini')");
+  }
 
   const userCount = await db.get('SELECT COUNT(*) as count FROM users');
   if (userCount.count === 0) {

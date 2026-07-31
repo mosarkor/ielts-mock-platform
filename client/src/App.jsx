@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import LoginPortal from './views/LoginPortal';
 import StudentDashboard from './views/StudentDashboard';
 import StudentTestRunner from './views/StudentTestRunner';
+import SpeakingTest from './views/SpeakingTest';
 import TeacherDashboard from './views/TeacherDashboard';
 import AdminDashboard from './views/AdminDashboard';
 
@@ -14,6 +15,7 @@ export default function App() {
     const saved = localStorage.getItem('testingTestId');
     return saved ? parseInt(saved) : null;
   });
+  const [speakingAssignment, setSpeakingAssignment] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   React.useEffect(() => {
@@ -53,6 +55,14 @@ export default function App() {
     localStorage.removeItem('testingTestId');
   };
 
+  const handleStartSpeaking = (assignment) => {
+    setSpeakingAssignment(assignment);
+  };
+
+  const handleFinishedSpeaking = () => {
+    setSpeakingAssignment(null);
+  };
+
   // Switch View based on user authentication state and role
   if (!user) {
     return <LoginPortal onLoginSuccess={handleLoginSuccess} theme={theme} toggleTheme={toggleTheme} />;
@@ -68,11 +78,21 @@ export default function App() {
         />
       );
     }
+    if (speakingAssignment) {
+      return (
+        <SpeakingTest
+          user={user}
+          assignment={speakingAssignment}
+          onFinished={handleFinishedSpeaking}
+        />
+      );
+    }
     return (
       <StudentDashboard 
         user={user} 
         onLogout={handleLogout} 
-        onStartTest={handleStartTest} 
+        onStartTest={handleStartTest}
+        onStartSpeaking={handleStartSpeaking}
         theme={theme}
         toggleTheme={toggleTheme}
       />

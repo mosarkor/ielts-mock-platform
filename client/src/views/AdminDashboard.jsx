@@ -38,6 +38,22 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
   const [filterGroup, setFilterGroup] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
+  // Speaking Module States
+  const [speakingPrompts, setSpeakingPrompts] = useState([]);
+  const [aiSettings, setAiSettings] = useState({ provider: 'gemini', gemini_api_key_set: false, openai_api_key_set: false });
+  const [showSpeakingPanel, setShowSpeakingPanel] = useState(false);
+  const [spTitle, setSpTitle] = useState('');
+  const [spPart1, setSpPart1] = useState('Tell me about your hometown.\nWhat do you like to do in your free time?\nDo you prefer studying alone or with others?');
+  const [spPart2, setSpPart2] = useState('Describe a memorable journey you have taken.\n\nYou should say:\n- Where you went\n- Who you went with\n- What you did there\n- And explain why it was memorable');
+  const [spPart3, setSpPart3] = useState('How has tourism changed in recent years?\nWhat are the advantages and disadvantages of traveling abroad?\nDo you think travel broadens the mind?');
+  const [savingPrompt, setSavingPrompt] = useState(false);
+  const [newGeminiKey, setNewGeminiKey] = useState('');
+  const [newOpenaiKey, setNewOpenaiKey] = useState('');
+  const [newAiProvider, setNewAiProvider] = useState('gemini');
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [speakingAssignStudents, setSpeakingAssignStudents] = useState([]);
+  const [speakingAssignPrompt, setSpeakingAssignPrompt] = useState('');
+
   useEffect(() => {
     fetchAdminData();
   }, []);
@@ -67,6 +83,18 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
 
       if (testsData.length > 0) {
         setSelectedTestIds([testsData[0].id]);
+      }
+
+      // Load speaking data
+      const [spkPromptsRes, settingsRes] = await Promise.all([
+        fetch('/api/admin/speaking/prompts'),
+        fetch('/api/admin/settings')
+      ]);
+      if (spkPromptsRes.ok) setSpeakingPrompts(await spkPromptsRes.json());
+      if (settingsRes.ok) {
+        const s = await settingsRes.json();
+        setAiSettings(s);
+        setNewAiProvider(s.provider || 'gemini');
       }
     } catch (err) {
       setError(err.message);
@@ -234,6 +262,104 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
       setBulkImporting(false);
     }
   };
+
+  // Speaking Module Handlers
+  const handleSaveAiSettings = async (e) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          provider: newAiProvider,
+          gemini_api_key: newGeminiKey,
+          openai_api_key: newOpenaiKey
+        })
+      });
+      if (!res.ok) throw new Error('Failed to update AI settings');
+      alert('AI Provider settings saved successfully!');
+      setNewGeminiKey('');
+      setNewOpenaiKey('');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const handleCreateSpeakingPrompt = async (e) => {
+    e.preventDefault();
+    if (!spTitle || !spPart1 || !spPart2 || !spPart3) {
+      alert('Please fill out all prompt fields.');
+      return;
+    }
+    setSavingPrompt(true);
+    try {
+      const part1Questions = spPart1.split('\n').map(q => q.trim()).filter(Boolean);
+      const part3Questions = spPart3.split('\n').map(q => q.trim()).filter(Boolean);
+
+      const res = await fetch('/api/admin/speaking/prompts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: spTitle,
+          part1Questions,
+          part2CueCard: spPart2,
+          part3Questions
+        })
+      });
+      if (!res.ok) throw new Error('Failed to create speaking prompt');
+      alert('Speaking prompt created successfully!');
+      setSpTitle('');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSavingPrompt(false);
+    }
+  };
+
+  const handleDeleteSpeakingPrompt = async (id) => {
+    if (!confirm('Are you sure you want to delete this speaking prompt?')) return;
+    try {
+      const res = await fetch(`/api/admin/speaking/prompts/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete prompt');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleAssignSpeaking = async (e) => {
+    e.preventDefault();
+    if (!speakingAssignPrompt) {
+      alert('Please select a speaking prompt.');
+      return;
+    }
+    if (speakingAssignStudents.length === 0) {
+      alert('Please select at least one student.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/speaking/assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentIds: speakingAssignStudents,
+          promptId: parseInt(speakingAssignPrompt)
+        })
+      });
+      if (!res.ok) throw new Error('Failed to assign speaking test');
+      alert('Speaking test assigned to selected candidates!');
+      setSpeakingAssignStudents([]);
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
 
   // Assignment Management
   const handleDeleteAssignment = async (asgId) => {
@@ -816,7 +942,132 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                   </div>
                 </div>
 
+                {/* F. Speaking Module & AI Settings */}
+                <div className="card" style={{ marginBottom: '2rem' }}>
+                  <div style={styles.flexHeader}>
+                    <h3 style={styles.cardTitle}>🎙️ Speaking Module & AI Settings</h3>
+                    <button
+                      onClick={() => setShowSpeakingPanel(!showSpeakingPanel)}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                    >
+                      {showSpeakingPanel ? 'Hide Panel ▲' : 'Manage Speaking & AI ▼'}
+                    </button>
+                  </div>
+
+                  {/* Quick AI Provider Status */}
+                  <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span>Active Provider: <strong style={{ color: '#6366f1', textTransform: 'uppercase' }}>{aiSettings.provider || 'gemini'}</strong></span>
+                    <span>Gemini Key: <strong style={{ color: aiSettings.gemini_api_key_set ? '#10b981' : '#f43f5e' }}>{aiSettings.gemini_api_key_set ? '✅ Set' : '❌ Not Set'}</strong></span>
+                    <span>OpenAI Key: <strong style={{ color: aiSettings.openai_api_key_set ? '#10b981' : '#f43f5e' }}>{aiSettings.openai_api_key_set ? '✅ Set' : '❌ Not Set'}</strong></span>
+                  </div>
+
+                  {showSpeakingPanel && (
+                    <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                      {/* AI Settings Form */}
+                      <form onSubmit={handleSaveAiSettings} style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '10px', padding: '1.25rem', border: '1px solid var(--glass-border)' }}>
+                        <h4 style={{ color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: '700', marginBottom: '1rem' }}>🤖 AI Evaluation Provider & API Keys</h4>
+                        <div className="form-group">
+                          <label className="form-label">Active Provider</label>
+                          <select className="form-input" value={newAiProvider} onChange={e => setNewAiProvider(e.target.value)}>
+                            <option value="gemini">Google Gemini 2.0 Flash (Recommended)</option>
+                            <option value="openai">OpenAI GPT-4o</option>
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Google Gemini API Key {aiSettings.gemini_api_key_set && '(Already configured — leave blank to keep)'}</label>
+                          <input type="password" className="form-input" placeholder="AIzaSy..." value={newGeminiKey} onChange={e => setNewGeminiKey(e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">OpenAI API Key {aiSettings.openai_api_key_set && '(Already configured — leave blank to keep)'}</label>
+                          <input type="password" className="form-input" placeholder="sk-..." value={newOpenaiKey} onChange={e => setNewOpenaiKey(e.target.value)} />
+                        </div>
+                        <button type="submit" disabled={savingSettings} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.85rem' }}>
+                          {savingSettings ? 'Saving...' : 'Save AI Configuration ⚙️'}
+                        </button>
+                      </form>
+
+                      {/* Create Prompt Form */}
+                      <form onSubmit={handleCreateSpeakingPrompt} style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '10px', padding: '1.25rem', border: '1px solid var(--glass-border)' }}>
+                        <h4 style={{ color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: '700', marginBottom: '1rem' }}>📝 Add New Speaking Prompt</h4>
+                        <div className="form-group">
+                          <label className="form-label">Prompt Title</label>
+                          <input type="text" className="form-input" placeholder="e.g. Speaking Test 1 — Travel & Hometown" value={spTitle} onChange={e => setSpTitle(e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Part 1 Questions (One question per line)</label>
+                          <textarea rows={3} className="form-input" value={spPart1} onChange={e => setSpPart1(e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Part 2 Cue Card Topic</label>
+                          <textarea rows={4} className="form-input" value={spPart2} onChange={e => setSpPart2(e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Part 3 Questions (One question per line)</label>
+                          <textarea rows={3} className="form-input" value={spPart3} onChange={e => setSpPart3(e.target.value)} />
+                        </div>
+                        <button type="submit" disabled={savingPrompt} className="btn btn-success" style={{ width: '100%', justifyContent: 'center', fontSize: '0.85rem' }}>
+                          {savingPrompt ? 'Creating...' : 'Save Speaking Prompt +'}
+                        </button>
+                      </form>
+
+                      {/* Prompts List & Assign */}
+                      <div style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '10px', padding: '1.25rem', border: '1px solid var(--glass-border)' }}>
+                        <h4 style={{ color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: '700', marginBottom: '1rem' }}>📋 Prompts & Assignment</h4>
+                        {speakingPrompts.length === 0 ? (
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No speaking prompts created yet.</p>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                            {speakingPrompts.map(p => (
+                              <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0.75rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '6px', border: '1px solid var(--glass-border)' }}>
+                                <span style={{ color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: '600' }}>{p.title}</span>
+                                <button onClick={() => handleDeleteSpeakingPrompt(p.id)} className="btn btn-danger" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>Delete</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {speakingPrompts.length > 0 && (
+                          <form onSubmit={handleAssignSpeaking}>
+                            <div className="form-group">
+                              <label className="form-label">Select Prompt to Assign</label>
+                              <select className="form-input" value={speakingAssignPrompt} onChange={e => setSpeakingAssignPrompt(e.target.value)}>
+                                <option value="">-- Select Speaking Prompt --</option>
+                                {speakingPrompts.map(p => (
+                                  <option key={p.id} value={p.id}>{p.title}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Select Candidates</label>
+                              <div style={styles.studentSelectBox}>
+                                {students.map(s => {
+                                  const isSel = speakingAssignStudents.includes(s.id);
+                                  return (
+                                    <div
+                                      key={s.id}
+                                      onClick={() => setSpeakingAssignStudents(prev => isSel ? prev.filter(id => id !== s.id) : [...prev, s.id])}
+                                      style={{ ...styles.selectStudentRow, backgroundColor: isSel ? 'rgba(99,102,241,0.15)' : 'transparent', borderColor: isSel ? '#6366f1' : 'transparent' }}
+                                    >
+                                      <input type="checkbox" checked={isSel} onChange={() => {}} style={{ pointerEvents: 'none' }} />
+                                      <span>{s.name} ({s.id}){s.groupName ? ` [${s.groupName}]` : ''}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                            <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.85rem' }}>
+                              Assign Speaking Test 🎙️
+                            </button>
+                          </form>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
               </div>
+
 
             </div>
           </div>

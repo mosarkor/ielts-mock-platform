@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 
-export default function StudentDashboard({ user, onLogout, onStartTest, theme, toggleTheme }) {
+export default function StudentDashboard({ user, onLogout, onStartTest, onStartSpeaking, theme, toggleTheme }) {
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
@@ -15,6 +15,8 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
   const [showOnlyMistakes, setShowOnlyMistakes] = useState(false);
   const [targetScore, setTargetScore] = useState(() => parseFloat(localStorage.getItem(`targetScore_${user.id}`)) || 7.0);
   const [activeGuide, setActiveGuide] = useState(null);
+  const [speakingAssignments, setSpeakingAssignments] = useState([]);
+  const [speakingResults, setSpeakingResults] = useState([]);
 
   useEffect(() => {
     if (selectedReview) {
@@ -57,6 +59,14 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
       const data = await res.json();
       setAssignments(data.assignments);
       setSubmissions(data.submissions);
+
+      // Load speaking data in parallel
+      const [spkAsgRes, spkResRes] = await Promise.all([
+        fetch(`/api/speaking/assignments/${user.id}`),
+        fetch(`/api/speaking/results/${user.id}`)
+      ]);
+      if (spkAsgRes.ok) setSpeakingAssignments(await spkAsgRes.json());
+      if (spkResRes.ok) setSpeakingResults(await spkResRes.json());
     } catch (err) {
       setError(err.message);
     } finally {
@@ -532,11 +542,68 @@ export default function StudentDashboard({ user, onLogout, onStartTest, theme, t
                   </div>
                 ))
               )}
+
+              {/* Speaking Assignments */}
+              {speakingAssignments.length > 0 && (
+                <>
+                  <h3 style={{ ...styles.sectionTitle, marginTop: '2rem' }}>🎙️ Speaking Tests</h3>
+                  {speakingAssignments.map(sa => (
+                    <div className="card" style={styles.assignmentCard} key={sa.id}>
+                      <div>
+                        <h4 style={styles.testTitle}>{sa.title}</h4>
+                        <span style={{ ...styles.statusLabel, backgroundColor: sa.status === 'submitted' ? '#10b981' : '#6366f1' }}>
+                          {sa.status === 'submitted' ? 'Submitted' : 'Assigned'}
+                        </span>
+                        <p style={styles.dateLabel}>Assigned: {new Date(sa.assigned_at).toLocaleDateString()}</p>
+                      </div>
+                      {sa.status !== 'submitted' && onStartSpeaking && (
+                        <button
+                          onClick={() => onStartSpeaking(sa)}
+                          className="btn btn-success"
+                          style={styles.actionBtn}
+                        >
+                          Start Speaking 🎙️
+                        </button>
+                      )}
+                      {sa.status === 'submitted' && (
+                        <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: '600' }}>✅ Awaiting result</span>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
 
             {/* Right Column: Past Results */}
             <div style={styles.rightCol}>
               <h3 style={styles.sectionTitle}>🏆 Past Results & Performance Feedback</h3>
+              {/* Speaking Results */}
+              {speakingResults.length > 0 && speakingResults.map(sr => {
+                const fb = (() => { try { return JSON.parse(sr.ai_feedback || '{}'); } catch { return {}; } })();
+                const bandColor = (s) => s >= 7.5 ? '#10b981' : s >= 6.0 ? '#6366f1' : s >= 4.5 ? '#f59e0b' : '#f43f5e';
+                return (
+                  <div className="card" style={{ ...styles.resultCard, borderLeft: '4px solid #6366f1', marginBottom: '1.5rem' }} key={sr.id}>
+                    <div style={styles.resultHeader}>
+                      <h4 style={styles.testTitle}>🎙️ {sr.prompt_title}</h4>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                        <span style={{ ...styles.statusLabel, backgroundColor: '#6366f1' }}>Speaking</span>
+                        <span style={{ ...styles.statusLabel, backgroundColor: bandColor(sr.overall_score), fontSize: '0.8rem' }}>Band {sr.overall_score?.toFixed(1)}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', margin: '1rem 0' }}>
+                      {[['Fluency', sr.fluency_score], ['Lexical', sr.lexical_score], ['Grammar', sr.grammar_score], ['Pronunciation', sr.pronunciation_score]].map(([label, score]) => (
+                        <div key={label} style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', padding: '0.5rem 0.75rem', border: '1px solid var(--glass-border)' }}>
+                          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block' }}>{label}</span>
+                          <span style={{ fontWeight: '800', fontSize: '1.1rem', color: bandColor(score) }}>{score?.toFixed(1)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {fb.overall && <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0.5rem 0 0', fontStyle: 'italic' }}>"{fb.overall}"</p>}
+                    <p style={styles.dateLabel}>Submitted: {new Date(sr.submitted_at).toLocaleDateString()}</p>
+                  </div>
+                );
+              })}
+
               {submissions.length === 0 ? (
                 <div className="card" style={styles.emptyCard}>
                   <p>No graded results released yet. Submissions are marked by teachers within 24 hours.</p>
