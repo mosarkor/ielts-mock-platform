@@ -29,6 +29,14 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
   const [activeSection, setActiveSection] = useState('writing'); // 'writing' | 'speaking'
   const [expandedSpeaking, setExpandedSpeaking] = useState(null);
 
+  // Speaking Edit Modal State
+  const [editingSpeakingSub, setEditingSpeakingSub] = useState(null);
+  const [editFluency, setEditFluency] = useState(6.0);
+  const [editLexical, setEditLexical] = useState(6.0);
+  const [editGrammar, setEditGrammar] = useState(6.0);
+  const [editPronunciation, setEditPronunciation] = useState(6.0);
+  const [editFeedbackText, setEditFeedbackText] = useState('');
+
   // IELTS Band Descriptor guide lookup
   const descriptors = {
     ta: {
@@ -1028,6 +1036,21 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                             </div>
                           </div>
                           <button
+                            onClick={() => {
+                              setEditingSpeakingSub(ss);
+                              setEditFluency(ss.fluency_score || 6.0);
+                              setEditLexical(ss.lexical_score || 6.0);
+                              setEditGrammar(ss.grammar_score || 6.0);
+                              setEditPronunciation(ss.pronunciation_score || 6.0);
+                              const fbObj = (() => { try { return JSON.parse(ss.ai_feedback || '{}'); } catch { return {}; } })();
+                              setEditFeedbackText(fbObj.overall || (typeof ss.ai_feedback === 'string' ? ss.ai_feedback : '') || '');
+                            }}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                          >
+                            ✏️ Grade / Edit
+                          </button>
+                          <button
                             onClick={() => setExpandedSpeaking(isExpanded ? null : ss.id)}
                             style={{ background: 'none', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '0.3rem 0.6rem', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.8rem' }}
                           >
@@ -1373,6 +1396,141 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
           userId={user.id} 
           onClose={() => setShowPwdModal(false)} 
         />
+      )}
+
+      {/* Speaking Evaluation & Edit Modal */}
+      {editingSpeakingSub && (
+        <div style={styles.modalOverlay}>
+          <div className="glass-panel" style={{ ...styles.modalContent, backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', maxWidth: '640px' }}>
+            <div style={{ ...styles.modalHeader, borderBottom: '1px solid var(--glass-border)' }}>
+              <h3 style={{ color: 'var(--text-primary)', fontWeight: '700' }}>✏️ Evaluate Speaking Test — {editingSpeakingSub.student_name}</h3>
+              <button onClick={() => setEditingSpeakingSub(null)} style={styles.closeBtn}>×</button>
+            </div>
+
+            <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                <strong>Prompt:</strong> {editingSpeakingSub.prompt_title} | Candidate ID: <strong>{editingSpeakingSub.student_id}</strong>
+              </div>
+
+              {/* Criterion Score Selectors */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                {[
+                  ['Fluency & Coherence', editFluency, setEditFluency],
+                  ['Lexical Resource', editLexical, setEditLexical],
+                  ['Grammatical Range', editGrammar, setEditGrammar],
+                  ['Pronunciation', editPronunciation, setEditPronunciation]
+                ].map(([label, val, setter]) => (
+                  <div key={label} style={{ backgroundColor: 'var(--bg-tertiary)', padding: '0.85rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>{label}</label>
+                    <select
+                      value={val}
+                      onChange={e => setter(parseFloat(e.target.value))}
+                      style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', fontWeight: 'bold' }}
+                    >
+                      {[4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map(s => (
+                        <option key={s} value={s}>Band {s.toFixed(1)}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              {/* Overall Band Auto calculation */}
+              <div style={{ backgroundColor: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '8px', padding: '0.85rem', textAlign: 'center' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>Calculated Overall Band</span>
+                <div style={{ fontSize: '2.25rem', fontWeight: '900', color: '#6366f1' }}>
+                  {(() => {
+                    const avg = (editFluency + editLexical + editGrammar + editPronunciation) / 4;
+                    const dec = avg - Math.floor(avg);
+                    let ovr = Math.floor(avg);
+                    if (dec >= 0.25 && dec < 0.75) ovr += 0.5;
+                    else if (dec >= 0.75) ovr += 1.0;
+                    return ovr.toFixed(1);
+                  })()}
+                </div>
+              </div>
+
+              {/* Feedback Textarea */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>📝 Teacher Summary Assessment & Feedback</label>
+                <textarea
+                  rows={4}
+                  value={editFeedbackText}
+                  onChange={e => setEditFeedbackText(e.target.value)}
+                  placeholder="Add personalized comments or tips for the student..."
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', fontSize: '0.88rem', resize: 'vertical' }}
+                />
+              </div>
+
+              {/* Save Buttons */}
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  onClick={async () => {
+                    const avg = (editFluency + editLexical + editGrammar + editPronunciation) / 4;
+                    const dec = avg - Math.floor(avg);
+                    let ovr = Math.floor(avg);
+                    if (dec >= 0.25 && dec < 0.75) ovr += 0.5;
+                    else if (dec >= 0.75) ovr += 1.0;
+
+                    const fbObj = { overall: editFeedbackText };
+
+                    await fetch(`/api/teacher/speaking/${editingSpeakingSub.id}/update`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        fluency: editFluency,
+                        lexical: editLexical,
+                        grammar: editGrammar,
+                        pronunciation: editPronunciation,
+                        overall: ovr,
+                        feedback: fbObj
+                      })
+                    });
+
+                    setEditingSpeakingSub(null);
+                    fetchSubmissions();
+                  }}
+                  className="btn btn-primary"
+                  style={{ flex: 1, justifyContent: 'center' }}
+                >
+                  💾 Save Grades
+                </button>
+                <button
+                  onClick={async () => {
+                    const avg = (editFluency + editLexical + editGrammar + editPronunciation) / 4;
+                    const dec = avg - Math.floor(avg);
+                    let ovr = Math.floor(avg);
+                    if (dec >= 0.25 && dec < 0.75) ovr += 0.5;
+                    else if (dec >= 0.75) ovr += 1.0;
+
+                    const fbObj = { overall: editFeedbackText };
+
+                    await fetch(`/api/teacher/speaking/${editingSpeakingSub.id}/update`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        fluency: editFluency,
+                        lexical: editLexical,
+                        grammar: editGrammar,
+                        pronunciation: editPronunciation,
+                        overall: ovr,
+                        feedback: fbObj
+                      })
+                    });
+
+                    await fetch(`/api/teacher/speaking/${editingSpeakingSub.id}/send`, { method: 'POST' });
+                    setEditingSpeakingSub(null);
+                    fetchSubmissions();
+                  }}
+                  className="btn btn-success"
+                  style={{ flex: 1, justifyContent: 'center' }}
+                >
+                  📤 Save & Release to Student
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

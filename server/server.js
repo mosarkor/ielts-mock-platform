@@ -1073,6 +1073,25 @@ app.post('/api/teacher/speaking/:id/send', async (req, res) => {
   }
 });
 
+// Teacher — Edit/Override speaking scores & feedback
+app.post('/api/teacher/speaking/:id/update', async (req, res) => {
+  const { fluency, lexical, grammar, pronunciation, overall, feedback } = req.body;
+  try {
+    await db.run(`
+      UPDATE speaking_submissions 
+      SET fluency_score = ?, lexical_score = ?, grammar_score = ?, pronunciation_score = ?, overall_score = ?, ai_feedback = ?
+      WHERE id = ?
+    `, [
+      fluency, lexical, grammar, pronunciation, overall,
+      typeof feedback === 'string' ? feedback : JSON.stringify(feedback),
+      req.params.id
+    ]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Serve built static React client files in production
 const distPath = path.join(__dirname, '../client/dist');
 app.use(express.static(distPath));
