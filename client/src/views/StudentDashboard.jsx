@@ -524,12 +524,19 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                   <div className="card" style={styles.assignmentCard} key={asg.assignment_id}>
                     <div>
                       <h4 style={styles.testTitle}>{asg.title}</h4>
-                      <span style={{
-                        ...styles.statusLabel,
-                        backgroundColor: asg.status === 'started' ? '#f59e0b' : '#6366f1'
-                      }}>
-                        {asg.status === 'started' ? 'In Progress' : 'Assigned'}
-                      </span>
+                      <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem', flexWrap: 'wrap' }}>
+                        {asg.title.toLowerCase().includes('reading') ? (
+                          <span style={{ ...styles.statusLabel, backgroundColor: '#10b981' }}>📖 Reading Test</span>
+                        ) : (
+                          <span style={{ ...styles.statusLabel, backgroundColor: '#6366f1' }}>📝 Full Mock Test</span>
+                        )}
+                        <span style={{
+                          ...styles.statusLabel,
+                          backgroundColor: asg.status === 'started' ? '#f59e0b' : '#3b82f6'
+                        }}>
+                          {asg.status === 'started' ? 'In Progress' : 'Assigned'}
+                        </span>
+                      </div>
                       <p style={styles.dateLabel}>Assigned on: {new Date(asg.assigned_at).toLocaleDateString()}</p>
                     </div>
                     <button 
