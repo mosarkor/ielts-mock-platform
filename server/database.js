@@ -300,6 +300,7 @@ export async function initDb() {
       console.log('Cloud database seeding completed successfully!');
     }
 
+    await ensureCustomDataSeeded(db);
     return db;
   }
 
@@ -537,5 +538,158 @@ export async function initDb() {
     console.log('Seeding completed successfully!');
   }
 
+  await ensureCustomDataSeeded(db);
   return db;
 }
+
+async function ensureCustomDataSeeded(db) {
+  const students = [
+    ['G1-01', 'Aydemi Kamalova', 'RQLD2E', 'Group 1'],
+    ['G1-02', 'Aydemir Akmatov', 'NRP7EX', 'Group 1'],
+    ['G1-03', 'Myktybek Anarbaev', 'W9P547', 'Group 1'],
+    ['G1-04', 'Nursaid Asanov', 'HQJ7Z5', 'Group 1'],
+    ['G1-05', 'Belek Tazhibaev', 'H63J5C', 'Group 1'],
+    ['G1-06', 'Daniel Abdilakimov', 'VLQY8S', 'Group 1'],
+    ['G1-07', 'Nurtilek Kozhomzharov', 'QSRSYE', 'Group 1'],
+    ['G1-08', 'Muhammad Saparbaev', '2PCAC2', 'Group 1'],
+    ['G1-09', 'Eldar Akzholov', 'PYMQUU', 'Group 1'],
+    ['G1-10', 'Mukhammed Choenbaev', 'AHSPZC', 'Group 1'],
+    ['G1-11', 'Daniel Abdamitov', 'MHNY58', 'Group 1'],
+    ['G1-12', 'Mukhammedali Parmanov', 'TZWR5V', 'Group 1'],
+    ['G1-13', 'Kayrat Mamadaliev', '8GDGR7', 'Group 1'],
+
+    ['G2-01', 'Iskender Abdinabiev', '5XYWCD', 'Group 2'],
+    ['G2-02', 'Fatima Kasymbekova', 'TX8R83', 'Group 2'],
+    ['G2-03', 'Zalkarbek Ergeshbaev', 'DKH8T9', 'Group 2'],
+    ['G2-04', 'Nurtilek Musaev', 'UMLUK4', 'Group 2'],
+    ['G2-05', 'Saule Abdisalamova', 'WGZBUQ', 'Group 2'],
+    ['G2-06', 'Aruuzhan Askarbekova', 'JE37FQ', 'Group 2'],
+    ['G2-07', 'Teyitbek Yunusov', 'XY4L8G', 'Group 2'],
+    ['G2-08', 'Bektemir Saypillaev', '9RAFDL', 'Group 2'],
+    ['G2-09', 'Beyshegul Samatova', 'DDASST', 'Group 2'],
+    ['G2-10', 'Akmarzhan Abdygaparova', 'LL24HR', 'Group 2'],
+    ['G2-11', 'Gulazema Suyunbaeva', 'BHU9CR', 'Group 2'],
+    ['G2-12', 'Aruuke Begalieva', 'Y5Q2H5', 'Group 2'],
+    ['G2-13', 'Azatbek Kadyrov', 'ED3RYG', 'Group 2'],
+    ['G2-14', 'Fatima Barakova', 'QR6C26', 'Group 2'],
+    ['G2-15', 'Abdurakhim Tanikulov', 'UHX86R', 'Group 2'],
+
+    ['G3-01', 'Bayel Shamshiev', 'Y8LUD9', 'Group 3'],
+    ['G3-02', 'Timur Taabaldiev', '5RGJUG', 'Group 3'],
+    ['G3-03', 'Zeynep Sagynbaeva', 'UYLQP3', 'Group 3'],
+    ['G3-04', 'Abbos Khomitkhonov', 'YQ9EJS', 'Group 3'],
+    ['G3-05', 'Zalkarbek Salibaev', 'Y7JGBV', 'Group 3'],
+    ['G3-06', 'Daniel Karimberdiev', 'TRKT8G', 'Group 3'],
+    ['G3-07', 'Abdullo Abdullaev', 'QDVMWG', 'Group 3'],
+    ['G3-08', 'Aiganysh Abdukarova', 'YCM3QA', 'Group 3'],
+    ['G3-09', 'Zhanysh Anarbaev', 'LJS2HF', 'Group 3'],
+    ['G3-10', 'Aelita Abdykaparova', 'UG3NFK', 'Group 3'],
+    ['G3-11', 'Mukhammadyunus Abduzhabbarov', 'GKRT64', 'Group 3'],
+    ['G3-12', 'Salokhidin Umarov', 'SLF4MU', 'Group 3'],
+
+    ['G4-01', 'Aibiyke Aitieva', 'KS5KAT', 'Group 4'],
+    ['G4-02', 'Rayana Askatbekova', 'T5ZX2Q', 'Group 4'],
+    ['G4-03', 'Baykhan Medetbekov', 'S9NTDL', 'Group 4'],
+    ['G4-04', 'Akylay Berkoshova', '9QFFNU', 'Group 4'],
+    ['G4-05', 'Reykhana Turgunbaeva', 'CGMTCA', 'Group 4'],
+    ['G4-06', 'Artur Madymarov', 'ZBLQ5Q', 'Group 4'],
+    ['G4-07', 'Nurbakyt Akylbekov', 'JM9LH6', 'Group 4'],
+    ['G4-08', 'Eldar Akynbaev', 'ZKWLNT', 'Group 4'],
+    ['G4-09', 'Muktarbek Nasirdinov', 'DPTZB3', 'Group 4'],
+    ['G4-10', 'Kanatbek Taychikov', 'ZWT6PB', 'Group 4'],
+    ['G4-11', 'Saykal Saynazarova', '32NQBC', 'Group 4'],
+    ['G4-12', 'Dariga Zhanyshbekova', '7P8AKS', 'Group 4'],
+    ['G4-13', 'Elvira Mederbekova', '3YC2SU', 'Group 4'],
+    ['G4-14', 'Nurel Koldoshbaev', 'HMV4JY', 'Group 4']
+  ];
+
+  for (const s of students) {
+    try {
+      const exists = await db.get('SELECT 1 FROM users WHERE id = ?', [s[0]]);
+      if (!exists) {
+        await db.run(
+          `INSERT INTO users (id, name, password_hash, role, group_name) VALUES (?, ?, ?, 'student', ?)`,
+          [s[0], s[1], s[2], s[3]]
+        );
+      }
+    } catch (e) {}
+  }
+
+  // Speaking Prompts
+  try {
+    const promptCheck = await db.get('SELECT COUNT(*) as count FROM speaking_prompts');
+    const count = parseInt(promptCheck?.count || promptCheck?.cnt || 0);
+    if (count === 0) {
+      const prompts = [
+        {
+          title: 'Speaking Test 1 — Architecture & Tall Buildings',
+          part1: ['Where do you study or work?', 'Are you a student or are you currently working?', 'What do you like most about your field of study or job?', 'Do you think artificial intelligence is helpful for learning?'],
+          part2: `Describe a tall building you like or dislike.\n\nYou should say:\n• Where the building is\n• What the building looks like (height, design, function)\n• Whether you like it or dislike it (and why)\n• And explain how living or working in such a building might affect people`,
+          part3: ['What are the advantages and disadvantages of living in tall buildings?', 'Do you think cities should build more tall buildings in the future?', 'Why do many large companies build skyscrapers as their main offices?']
+        },
+        {
+          title: 'Speaking Test 2 — Travel & Beautiful Cities',
+          part1: ['Do you often look out of the window when you travel?', 'What kind of natural views do you enjoy best?', 'Do you like the view from your window at home?', 'Would you like to live somewhere with a beautiful view in the future?'],
+          part2: `Describe a city that you have been to and would like to visit again.\n\nYou should say:\n• When you visited it\n• What you did while you were there\n• What made the city memorable\n• And explain why you would like to visit it again`,
+          part3: ['What elements make a city attractive to international visitors?', 'How are cities in your country different from those in other countries?', 'Why do many people prefer living in or visiting big cities?']
+        },
+        {
+          title: 'Speaking Test 3 — Sports & Live Events',
+          part1: ['What do you usually do in your spare time?', 'Has the way you spend your free time changed compared to the past?', 'Do you prefer spending your free time alone or with others?', 'Have you ever been a member of a sports team?'],
+          part2: `Describe a live sports event you watched and liked.\n\nYou should say:\n• When and where you watched it\n• Who you watched it with\n• What happened during the event\n• And explain why you enjoyed watching this sports event`,
+          part3: ['Why do people enjoy watching sports events live in a stadium?', 'Is watching sports live better than watching them on television?', 'Should governments invest public funds into hosting major international sports events?']
+        },
+        {
+          title: 'Speaking Test 4 — Holidays & Vacations',
+          part1: ['Do you live in a noisy or a quiet neighborhood?', 'Is the area where you live crowded or peaceful?', 'Where do you usually like to go when you have free time in your area?', 'Do you know many people who live near your home?'],
+          part2: `Describe a place where you had a memorable holiday or vacation.\n\nYou should say:\n• Where it was located\n• When you went there\n• What activities you did during the holiday\n• And explain why you would recommend this place to others`,
+          part3: ['Where do people in your country usually go for their annual holidays?', 'What kinds of places do people enjoy visiting on holiday?', 'Why do some holiday destinations become significantly more popular than others?']
+        },
+        {
+          title: 'Speaking Test 5 — Food & Special Celebrations',
+          part1: ['How often do you eat meals out at restaurants?', 'Do you eat different kinds of food at different times of the year?', 'Is it important for family members to have meals together regularly?', 'What is your favorite dish to eat during celebrations?'],
+          part2: `Describe a kind of food people eat during a special event or festival.\n\nYou should say:\n• What the food is\n• Which special occasion(s) people prepare and eat it on\n• How it is made or where people buy it\n• And explain why this food is special to you or to people in your culture`,
+          part3: ['Have festival and celebration foods changed over time in your country?', 'What is the most popular traditional festival food in your country?', 'Why do people consider special foods an important part of cultural celebrations?']
+        },
+        {
+          title: 'Speaking Test 6 — Entertainment & Movies',
+          part1: ['Do you think laughing and humor are important in daily life?', 'Are you good at telling jokes to your friends or family?', 'Do your friends enjoy telling jokes or funny stories?', 'Why do people enjoy watching comedies or humorous things?'],
+          part2: `Describe a movie you watched and enjoyed recently.\n\nYou should say:\n• When and where you watched it\n• Who you watched it with\n• What the storyline of the movie was about\n• And explain why you enjoyed watching this movie`,
+          part3: ['What essential qualities make a great actor or actress?', 'Is self-confidence the most important factor for success in acting?', 'What factors make a movie successful globally?']
+        },
+        {
+          title: 'Speaking Test 7 — Language Learning & Communication',
+          part1: ['What kinds of things do you usually type on a daily basis?', 'Do you type on a computer or phone keyboard more often?', 'Do you think touch typing is an essential skill for work or study?', 'How do you practice or improve your typing speed and accuracy?'],
+          part2: `Describe a person who is very good at learning foreign languages.\n\nYou should say:\n• Who this person is\n• How you know this person\n• What languages he or she can speak or learn\n• And explain why you think this person is so effective at learning languages`,
+          part3: ['How do young children naturally learn new languages compared to adults?', 'What are the main personal and professional benefits of learning a foreign language?', 'What major obstacles do people encounter when trying to master a new language?']
+        },
+        {
+          title: 'Speaking Test 8 — Technology & Gadgets',
+          part1: ['Do you frequently use headphones or earphones?', 'In what situations do you prefer using headphones?', 'What type of headphones do you currently use?', 'Under what conditions or circumstances would you avoid using headphones?'],
+          part2: `Describe a piece of technology (other than a smartphone) that you would like to own.\n\nYou should say:\n• What technological device it is\n• How much it costs\n• What you would use it for in your daily life or work\n• And explain why you would like to own this device`,
+          part3: ['How has modern technology transformed the way people work and study?', 'Do you think people today rely excessively on technological devices?', 'Which modern technological gadgets are most indispensable in your country?']
+        },
+        {
+          title: 'Speaking Test 9 — Career & Future Ambitions',
+          part1: ['What do you usually do first when you get up in the morning?', 'Do you spend your morning routine the same on weekends as on weekdays?', 'Do you consider breakfast an essential meal of the day?', 'Do you prefer waking up early in the morning or staying up late at night?'],
+          part2: `Describe your ideal or perfect job.\n\nYou should say:\n• What job or career it is\n• Where or how you first learned about this career\n• What skills or qualifications you need to acquire to get this job\n• And explain why you think this would be your perfect job`,
+          part3: ['Are salary and personal interest equally important when choosing a career?', 'Do the majority of people in your country genuinely enjoy their jobs?', 'What key factors should people consider before deciding on a career path?']
+        },
+        {
+          title: 'Speaking Test 10 — Personal Growth & Wise Advice',
+          part1: ['Have you ever forgotten an important appointment or task?', 'Do you find it easy or difficult to remember people’s names?', 'What specific things do you need to remember in your daily routine?', 'Would you consider yourself good at memorizing information?'],
+          part2: `Describe a person who gave you clever or smart advice.\n\nYou should say:\n• Who this person is\n• What situation or problem you were facing\n• What advice or solution he or she provided\n• And explain why you think this was clever or helpful advice`,
+          part3: ['Are highly intelligent children naturally happier in life?', 'Are people born with intelligence or do they develop it through effort and education?', 'How crucial is the role of schools and teachers in helping students become smart and critical thinkers?']
+        }
+      ];
+
+      for (const p of prompts) {
+        await db.run(
+          `INSERT INTO speaking_prompts (title, part1_questions, part2_cue_card, part3_questions) VALUES (?, ?, ?, ?)`,
+          [p.title, JSON.stringify(p.part1), p.part2, JSON.stringify(p.part3)]
+        );
+      }
+    }
+  } catch (e) {}
+}
+
