@@ -1112,6 +1112,18 @@ app.post('/api/teacher/speaking/:id/update', async (req, res) => {
   }
 });
 
+// Admin / Teacher — Reset student speaking test assignment for re-take
+app.post('/api/admin/speaking/reset/:studentId', async (req, res) => {
+  const { studentId } = req.params;
+  try {
+    await db.run('DELETE FROM speaking_submissions WHERE student_id = ?', [studentId]);
+    await db.run('UPDATE speaking_assignments SET status = "assigned" WHERE student_id = ?', [studentId]);
+    res.json({ success: true, message: `Speaking assignment reset for ${studentId}` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Serve built static React client files in production
 const distPath = path.join(__dirname, '../client/dist');
 app.use(express.static(distPath));
