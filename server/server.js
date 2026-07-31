@@ -831,6 +831,42 @@ app.post('/api/admin/assignments/clear-all', async (req, res) => {
 // SPEAKING MODULE APIS
 // ----------------------------------------
 
+// Helper: AI Punctuation & Formatting Restorer for Speech Transcripts
+async function punctuateTranscriptWithAI(rawText, aiSettings) {
+  if (!rawText || rawText.includes('[No answer]') || rawText.trim().length < 5) return rawText;
+  
+  const systemPrompt = `You are a professional speech transcript editor. 
+Your task is to take raw speech-to-text transcript (which lacks punctuation and capitalization) and restore natural punctuation (commas, full stops, question marks, capital letters).
+CRITICAL RULES:
+- Do NOT alter the candidate's choice of words or original grammar structures.
+- Keep exact wording intact.
+- Add natural commas, periods, question marks, and capitalization.
+- Return ONLY the punctuated text without commentary.`;
+
+  try {
+    if (aiSettings.provider === 'openai' && aiSettings.openai_api_key) {
+      const openai = new OpenAI({ apiKey: aiSettings.openai_api_key });
+      const res = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: rawText }
+        ],
+        max_tokens: 1000
+      });
+      return res.choices[0].message.content.trim();
+    } else if (aiSettings.gemini_api_key) {
+      const genAI = new GoogleGenerativeAI(aiSettings.gemini_api_key);
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const res = await model.generateContent(`${systemPrompt}\n\nRaw Speech Transcript:\n${rawText}`);
+      return res.response.text().replace(/```\n?/g, '').trim();
+    }
+  } catch (e) {
+    console.error('Punctuation auto-restoration failed:', e.message);
+  }
+  return rawText;
+}
+
 // Helper: evaluate speaking with AI
 async function evaluateSpeaking(transcripts, aiSettings) {
   const { part1, part2, part3 } = transcripts;
@@ -1037,9 +1073,14 @@ app.post('/api/speaking/submit', async (req, res) => {
     const aiSettings = await db.get('SELECT * FROM ai_settings LIMIT 1');
     if (!aiSettings) return res.status(500).json({ error: 'AI settings not configured' });
 
+    // Auto-restore natural punctuation, commas, full stops & capitalization using AI
+    const cleanPart1 = await punctuateTranscriptWithAI(part1Transcript, aiSettings);
+    const cleanPart2 = await punctuateTranscriptWithAI(part2Transcript, aiSettings);
+    const cleanPart3 = await punctuateTranscriptWithAI(part3Transcript, aiSettings);
+
     // Evaluate with AI
     const { result, provider } = await evaluateSpeaking(
-      { part1: part1Transcript, part2: part2Transcript, part3: part3Transcript },
+      { part1: cleanPart1, part2: cleanPart2, part3: cleanPart3 },
       aiSettings
     );
 
@@ -1051,7 +1092,7 @@ app.post('/api/speaking/submit', async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `, [
       studentId, promptId,
-      part1Transcript || '', part2Transcript || '', part3Transcript || '',
+      cleanPart1 || '', cleanPart2 || '', cleanPart3 || '',
       result.fluency, result.lexical, result.grammar, result.pronunciation, result.overall,
       JSON.stringify(result.feedback), provider
     ]);
