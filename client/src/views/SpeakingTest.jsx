@@ -67,9 +67,15 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
 
   // Part 1 next
   const handlePart1Next = () => {
+    const text = currentTyping.trim();
+    if (!text) {
+      if (!confirm('🎙️ No response was detected. Did you speak into the microphone? Click OK to proceed with no answer, or Cancel to record/type your response.')) {
+        return;
+      }
+    }
     if (recording) { setRecording(false); stopRecognition(); }
     const updated = [...part1Answers];
-    updated[currentQ] = currentTyping || '[No answer]';
+    updated[currentQ] = text || '[No answer]';
     setPart1Answers(updated);
     setCurrentTyping('');
     if (currentQ < part1Qs.length - 1) {
@@ -92,10 +98,15 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
 
   // Part 2 next
   const handlePart2Next = () => {
+    const text = currentTyping.trim();
+    if (!text) {
+      if (!confirm('🎙️ No response was detected for Cue Card Part 2. Did you speak into the microphone? Click OK to proceed anyway, or Cancel to record/type your answer.')) {
+        return;
+      }
+    }
     if (recording) { setRecording(false); stopRecognition(); }
     if (prepRunning) { clearInterval(prepTimerRef.current); setPrepRunning(false); }
-    const full = currentTyping.trim();
-    setTranscripts(prev => ({ ...prev, part2: (prev.part2 + ' ' + full).trim() }));
+    setTranscripts(prev => ({ ...prev, part2: (prev.part2 + ' ' + text).trim() }));
     setCurrentTyping('');
     setCurrentQ(0);
     setStep('part3');
@@ -103,9 +114,15 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
 
   // Part 3 next
   const handlePart3Next = () => {
+    const text = currentTyping.trim();
+    if (!text) {
+      if (!confirm('🎙️ No response was detected. Did you speak into the microphone? Click OK to proceed with no answer, or Cancel to record/type your response.')) {
+        return;
+      }
+    }
     if (recording) { setRecording(false); stopRecognition(); }
     const updated = [...part3Answers];
-    updated[currentQ] = currentTyping || '[No answer]';
+    updated[currentQ] = text || '[No answer]';
     setPart3Answers(updated);
     setCurrentTyping('');
     if (currentQ < part3Qs.length - 1) {
@@ -253,6 +270,21 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
           )}
         </div>
 
+        {/* Live Speech Transcript & Editable Box */}
+        <div style={{ marginTop: '0.75rem', marginBottom: '1rem' }}>
+          <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: '0.3rem' }}>
+            📝 Speech Transcript (Live Voice-to-Text):
+          </label>
+          <textarea
+            rows={3}
+            className="form-input"
+            placeholder="Your spoken words will appear here live... (You can also type or edit your response directly)"
+            value={currentTyping}
+            onChange={(e) => setCurrentTyping(e.target.value)}
+            style={{ fontFamily: 'sans-serif', fontSize: '0.9rem', width: '100%', resize: 'vertical' }}
+          />
+        </div>
+
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
           <button onClick={handleToggleRecording} className={recording ? 'btn btn-danger' : 'btn btn-secondary'} style={{ flex: 1, justifyContent: 'center' }}>{recording ? '⏹ Stop Recording' : '⏺ Record Answer'}</button>
           <button onClick={handlePart1Next} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>{currentQ < part1Qs.length - 1 ? 'Next Question →' : 'Finish Part 1 →'}</button>
@@ -322,13 +354,28 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
           ) : (
             <div>
               <div style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '1.05rem', marginBottom: '0.25rem' }}>
-                {transcripts.part2 ? '✅ Speech Recorded' : 'Ready for Long Turn'}
+                {currentTyping ? '✅ Speech Recorded' : 'Ready for Long Turn'}
               </div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
-                {transcripts.part2 ? 'Long turn audio recorded. Click Continue to proceed.' : 'Press "Start Speaking" below when ready.'}
+                {currentTyping ? 'Long turn audio recorded. Click Continue to proceed.' : 'Press "Start Speaking" below when ready.'}
               </p>
             </div>
           )}
+        </div>
+
+        {/* Live Speech Transcript & Editable Box */}
+        <div style={{ marginTop: '0.75rem', marginBottom: '1rem' }}>
+          <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: '0.3rem' }}>
+            📝 Speech Transcript (Live Voice-to-Text):
+          </label>
+          <textarea
+            rows={3}
+            className="form-input"
+            placeholder="Your spoken words for cue card long turn will appear here... (You can also type or edit directly)"
+            value={currentTyping}
+            onChange={(e) => setCurrentTyping(e.target.value)}
+            style={{ fontFamily: 'sans-serif', fontSize: '0.9rem', width: '100%', resize: 'vertical' }}
+          />
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
@@ -408,6 +455,21 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
               </p>
             </div>
           )}
+        </div>
+
+        {/* Live Speech Transcript & Editable Box */}
+        <div style={{ marginTop: '0.75rem', marginBottom: '1rem' }}>
+          <label style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '600', marginBottom: '0.3rem' }}>
+            📝 Speech Transcript (Live Voice-to-Text):
+          </label>
+          <textarea
+            rows={3}
+            className="form-input"
+            placeholder="Your spoken words will appear here live... (You can also type or edit your response directly)"
+            value={currentTyping}
+            onChange={(e) => setCurrentTyping(e.target.value)}
+            style={{ fontFamily: 'sans-serif', fontSize: '0.9rem', width: '100%', resize: 'vertical' }}
+          />
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
