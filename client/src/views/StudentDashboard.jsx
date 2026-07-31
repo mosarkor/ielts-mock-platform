@@ -90,10 +90,11 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
     }
   };
 
-  // Helper to round IELTS score to nearest 0.5
-  const getIeltsOverall = (l, r, w) => {
-    if (!w) return ((l + r) / 2).toFixed(1);
-    const avg = (l + r + w) / 3;
+  // Helper to round IELTS score to nearest 0.5 according to official IELTS rules
+  const getIeltsOverall = (l, r, w, s) => {
+    const validScores = [l, r, w, s].filter(v => v !== null && v !== undefined && !isNaN(v));
+    if (validScores.length === 0) return '–';
+    const avg = validScores.reduce((acc, score) => acc + score, 0) / validScores.length;
     const decimal = avg - Math.floor(avg);
     if (decimal < 0.25) return Math.floor(avg).toFixed(1);
     if (decimal < 0.75) return (Math.floor(avg) + 0.5).toFixed(1);
@@ -685,7 +686,10 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                         </div>
                       ) : (
                         fullMockSubs.map((sub) => {
-                          const overall = getIeltsOverall(sub.listening_score, sub.reading_score, sub.writing_score);
+                          const speakingSub = speakingResults.find(s => s.student_id === sub.student_id);
+                          const spkScore = speakingSub ? speakingSub.overall_score : null;
+                          const overall = getIeltsOverall(sub.listening_score, sub.reading_score, sub.writing_score, spkScore);
+
                           return (
                             <div className="card" style={{ ...styles.resultCard, marginBottom: '1rem' }} key={sub.id}>
                               <div style={styles.resultHeader}>
@@ -699,6 +703,7 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                                 <span style={styles.miniScore}>🎧 Listening: <strong>{sub.listening_score ? sub.listening_score.toFixed(1) : '–'}</strong></span>
                                 <span style={styles.miniScore}>📖 Reading: <strong>{sub.reading_score ? sub.reading_score.toFixed(1) : '–'}</strong></span>
                                 <span style={styles.miniScore}>✍️ Writing: <strong>{sub.writing_score ? sub.writing_score.toFixed(1) : 'Pending'}</strong></span>
+                                <span style={styles.miniScore}>🎙️ Speaking: <strong>{spkScore ? spkScore.toFixed(1) : '–'}</strong></span>
                               </div>
                               <p style={styles.dateLabel}>Submitted: {new Date(sub.submitted_at).toLocaleDateString()}</p>
                               <button 
