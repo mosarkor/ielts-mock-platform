@@ -729,6 +729,23 @@ async function ensureCustomDataSeeded(db) {
         [22, title22, JSON.stringify({ isIframe: true, iframeUrl: '/tests/mock22.html' }), JSON.stringify({}), JSON.stringify({}), 'admin']
       );
     }
+
+    const extraTests = [
+      { id: 23, title: 'IELTS Listening Test 1', file: 'mock23.html' },
+      { id: 24, title: 'IELTS Listening Test 2', file: 'mock24.html' },
+      { id: 25, title: 'IELTS Listening Test 3', file: 'mock25.html' },
+      { id: 26, title: 'IELTS Reading Test 21', file: 'mock26.html' },
+      { id: 27, title: 'IELTS Reading Test 22', file: 'mock27.html' }
+    ];
+    for (const et of extraTests) {
+      const exists = await db.get('SELECT id FROM tests WHERE id = ? OR title = ?', [et.id, et.title]);
+      if (!exists) {
+        await db.run(
+          `INSERT INTO tests (id, title, listening_data, reading_data, writing_data, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
+          [et.id, et.title, JSON.stringify({ isIframe: true, iframeUrl: `/tests/${et.file}` }), JSON.stringify({}), JSON.stringify({}), 'admin']
+        );
+      }
+    }
   } catch (e) {}
 
   // Seeding finished

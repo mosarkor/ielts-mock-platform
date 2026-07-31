@@ -1,0 +1,744 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Full Listening Test — Real Exam | Jasurbek</title>
+<style>
+  :root{
+    --ielts-red:#d2122e;--border:#c9c9c9;--text:#1a1a1a;--muted:#6b6b6b;
+    --bg-panel:#f0f0f0;--focus-blue:#2b6fd6;--highlight:#ffe066;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:#fff;}
+  button,input,select{font:inherit;}
+  #app{height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  .brand-badge{position:relative;width:60px;height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;}
+  .brand-badge .ring{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(from 0deg,#d2122e,#ff8a3d,#ffd23f,#2b6fd6,#d2122e);animation:spin 4s linear infinite;}
+  .brand-badge .photo{position:relative;width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;z-index:2;animation:pulse 2.4s ease-in-out infinite;background:#fff;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(210,18,46,.35);}50%{box-shadow:0 0 0 6px rgba(210,18,46,0);}}
+
+  .gate-screen{height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;padding:18px;}
+  .gate-card{background:#fff;border:1px solid var(--border);border-radius:4px;padding:40px 44px;width:min(380px,100%);box-shadow:0 2px 10px rgba(0,0,0,.08);text-align:center;}
+  .gate-brand-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;}
+  .gate-logo{font-size:26px;font-weight:800;color:var(--ielts-red);letter-spacing:1px;}
+  .gate-sub{font-size:13px;color:var(--muted);margin-bottom:26px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;font-weight:bold;margin-bottom:6px;}
+  .gate-card input[type=text],.gate-card input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:3px;font-size:15px;margin-bottom:18px;}
+  .gate-card input:focus{outline:2px solid var(--focus-blue);border-color:var(--focus-blue);}
+  .gate-btn{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:3px;font-size:15px;cursor:pointer;}
+  .gate-btn:hover{background:#000;}
+  .gate-error{color:var(--ielts-red);font-size:13px;margin:-10px 0 14px;min-height:16px;text-align:left;}
+  .gate-footer{margin-top:16px;font-size:11px;color:#999;}
+  .gate-footer a{color:var(--focus-blue);text-decoration:none;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff;min-height:72px;gap:14px;}
+  .topbar-left{display:flex;align-items:center;gap:14px;min-width:0;}
+  .ielts-logo{font-size:20px;font-weight:800;color:var(--ielts-red);letter-spacing:.5px;}
+  .taker-id-block{font-size:12px;line-height:1.35;min-width:0;}
+  .status-line{color:#333;font-size:12px;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:360px;}
+  .status-line.low{color:var(--ielts-red);}
+  .topbar-right{display:flex;align-items:center;gap:13px;font-size:18px;color:#222;flex-shrink:0;}
+  .topbar-right .icon-btn{cursor:pointer;background:none;border:none;font-size:18px;color:#222;padding:4px;display:flex;align-items:center;}
+
+  .main-wrap{flex:1;overflow:hidden;position:relative;display:flex;background:#fff;}
+  .content{flex:1;overflow-y:auto;padding:22px 76px 90px 26px;scroll-behavior:smooth;}
+  .part-banner{background:var(--bg-panel);border:1px solid #ddd;border-radius:2px;padding:12px 16px;margin-bottom:18px;}
+  .part-banner b{font-size:14px;}
+  .part-banner div.instr{font-size:13px;margin-top:2px;}
+  .card-title{font-weight:bold;font-size:16px;text-align:center;margin:6px 0 16px;text-decoration:underline;}
+  .notes-block{font-size:14px;line-height:2.3;max-width:980px;}
+  .notes-row{margin:2px 0;}
+  .section-title{font-weight:bold;margin:16px 0 6px;font-size:14px;}
+  .question-block{scroll-margin-top:16px;border-radius:4px;padding:2px 3px;}
+  .question-block.jump-flash{animation:jumpFlash 1.2s ease;}
+  @keyframes jumpFlash{0%{background:#fff2a8;}100%{background:transparent;}}
+
+  input.blank{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 8px;font-size:14px;width:160px;text-align:center;font-family:inherit;background:#fff;color:#111;}
+  input.blank.wide{width:190px;}
+  input.blank:focus{outline:none;border-color:var(--focus-blue);box-shadow:0 0 0 1px var(--focus-blue);}
+  select.blank-select{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 6px;font-size:13px;font-family:inherit;background:#fafcff;width:150px;color:#111;}
+
+  .mc-question{margin-bottom:20px;max-width:940px;line-height:1.5;}
+  .mc-question .qnum,.matching-row .qnum{display:inline-block;border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;margin-right:6px;vertical-align:top;}
+  .mc-opts{margin-top:6px;}
+  .mc-opts label{display:block;font-size:13px;margin:6px 0 0 22px;cursor:pointer;}
+  .mc-opts input{margin-right:8px;}
+
+  .matching-key{border:1px solid #ddd;background:#fafafa;padding:12px 16px;margin:10px 0 18px;max-width:760px;font-size:13px;line-height:1.8;}
+  .matching-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;max-width:760px;}
+  .matching-row .label-text{flex:1;}
+
+  .map-ref-wrap{margin:14px 0 18px;text-align:left;}
+  .map-ref-wrap img{max-width:760px;width:100%;height:auto;border:1px solid #999;border-radius:2px;background:#fff;}
+  .map-caption{font-size:11px;color:#777;margin-top:4px;}
+
+  .audio-gate-overlay{position:absolute;inset:0;background:rgba(100,100,100,.68);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:30;color:#fff;text-align:center;padding:24px;}
+  .audio-gate-overlay.show{display:flex;}
+  .headphone-icon{font-size:70px;margin-bottom:10px;}
+  .audio-gate-overlay p{max-width:600px;font-size:14px;margin:6px 0 4px;}
+  .play-btn{margin-top:16px;background:#111;color:#fff;border:none;padding:10px 24px;font-size:15px;border-radius:3px;cursor:pointer;min-width:120px;}
+  .play-btn:hover{background:#000;}
+  .play-btn:disabled{background:#555;cursor:wait;}
+  .audio-error{font-size:13px;color:#ffe066;min-height:18px;margin-top:12px;max-width:620px;}
+
+  .nav-arrows{position:absolute;right:20px;bottom:18px;display:flex;gap:4px;z-index:10;}
+  .nav-arrows button{width:44px;height:36px;background:#111;color:#fff;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+  .nav-arrows button:disabled{background:#ccc;cursor:not-allowed;color:#888;}
+  .nav-arrows button:hover:not(:disabled){background:#000;}
+
+  .selection-menu{position:fixed;background:#fff;border:1px solid #999;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;z-index:100;border-radius:2px;}
+  .selection-menu button{border:none;background:none;padding:8px 12px;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .selection-menu button:hover{background:#f0f0f0;}
+  .selection-menu button+button{border-left:1px solid #ddd;}
+  mark.hl{background:var(--highlight);cursor:pointer;}
+
+  .notes-panel{width:250px;border-left:1px solid var(--border);background:#f0f0f0;padding:16px;flex-shrink:0;display:none;overflow-y:auto;}
+  .notes-panel.open{display:block;}
+  .notes-panel-title{font-weight:bold;font-size:13px;margin-bottom:14px;color:var(--ielts-red);}
+  .notes-panel-empty{color:#555;font-size:13px;text-align:center;margin-top:40px;line-height:1.6;}
+  .note-entry{background:#fff;border:1px solid #ccc;border-radius:3px;padding:8px 10px;margin-bottom:10px;font-size:12px;}
+  .note-entry .quoted{font-style:italic;color:#333;overflow-wrap:anywhere;}
+
+  .bottombar{border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;height:52px;flex-shrink:0;background:#fff;font-size:13px;justify-content:space-between;overflow-x:auto;gap:12px;}
+  .part-nav-group{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .part-nav-group .part-label{font-weight:bold;color:#333;white-space:nowrap;cursor:pointer;padding:4px 10px;border-radius:3px;}
+  .part-nav-group .part-label.active-part{color:#fff;background:var(--ielts-red);}
+  .qnum-btn{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:12px;border:1px solid transparent;color:#333;cursor:pointer;background:none;border-radius:2px;}
+  .qnum-btn:hover{border-color:#aaa;}
+  .qnum-btn.answered{color:var(--focus-blue);font-weight:bold;border-color:#9bb8e8;background:#f4f8ff;}
+  .part-count{color:#777;font-size:12px;white-space:nowrap;}
+  .submit-check{width:36px;height:36px;background:#f0f0f0;border:none;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:#333;flex-shrink:0;}
+  .submit-check:hover{background:#e2e2e2;}
+
+  .menu-overlay{position:absolute;inset:0;background:#fff;z-index:40;display:none;flex-direction:column;}
+  .menu-overlay.open{display:flex;}
+  .menu-header{display:grid;grid-template-columns:96px 1fr 40px;align-items:center;padding:14px 16px;border-bottom:1px solid #eee;font-size:15px;font-weight:600;background:#fff;color:#111;}
+  .menu-header .back-btn{grid-column:1;justify-self:start;background:none;border:none;cursor:pointer;font-size:14px;color:#111;display:none;align-items:center;gap:2px;padding:4px 0;white-space:nowrap;}
+  .menu-header .back-btn.show{display:flex;}
+  .menu-header .title-text{grid-column:2;text-align:center;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .menu-header .close-btn{grid-column:3;justify-self:end;background:none;border:none;cursor:pointer;font-size:18px;color:#111;}
+  .menu-body{padding:20px;max-width:440px;margin:0 auto;width:100%;background:#fff;}
+  .menu-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid #ddd;cursor:pointer;font-size:14px;background:#fff;color:#111;}
+  .menu-item+.menu-item{border-top:none;}
+  .menu-item.danger{background:var(--ielts-red);color:#fff;border-color:var(--ielts-red);font-weight:600;}
+  .menu-item .chev{font-size:15px;}
+  .option-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid #ddd;font-size:13px;cursor:pointer;background:#fff;color:#111;}
+  .option-row+.option-row{border-top:none;}
+  .option-row .check{width:16px;color:#111;display:inline-block;}
+  .swatch{width:60px;height:22px;border:1px solid #999;display:flex;align-items:center;justify-content:center;gap:2px;}
+  .swatch .bar{width:3px;height:12px;}
+  .sw-bw .bar{background:#333;}.sw-bw{background:#eee;}.sw-wb{background:#111;}.sw-wb .bar{background:#eee;}.sw-yb{background:#111;}.sw-yb .bar{background:#e8c400;}
+
+  #app.textsize-large .content{font-size:16px;}
+  #app.textsize-extralarge .content{font-size:19px;}
+
+  .results-wrap{padding:26px 34px;overflow-y:auto;height:100%;}
+  .results-wrap h1{color:var(--ielts-red);font-size:22px;margin-bottom:4px;}
+  .score-box{display:inline-block;border:1px solid #ddd;border-radius:4px;padding:14px 26px;text-align:center;margin:14px 12px 22px 0;}
+  .score-box .num{font-size:28px;font-weight:800;color:var(--ielts-red);}
+  .score-box .lbl{font-size:11px;color:#666;}
+  table.review-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.review-table th,table.review-table td{border:1px solid #ddd;padding:7px 10px;text-align:left;vertical-align:top;}
+  table.review-table th{background:var(--bg-panel);}
+  .ok{color:#1a8a3d;font-weight:bold;}.no{color:var(--ielts-red);font-weight:bold;}
+  .restart-btn{margin-top:20px;background:#111;color:#fff;border:none;padding:9px 20px;border-radius:3px;cursor:pointer;font-size:14px;}
+  .brand-footer{margin-top:24px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#666;}
+  .brand-footer a{color:var(--focus-blue);text-decoration:none;font-weight:bold;}
+
+  body.contrast-wb #app,body.contrast-wb .content,body.contrast-wb .main-wrap,body.contrast-wb .topbar,body.contrast-wb .bottombar,body.contrast-wb .menu-overlay,body.contrast-wb .menu-header,body.contrast-wb .menu-body{background:#000!important;color:#fff!important;}
+  body.contrast-wb .part-banner{background:#1a1a1a;border-color:#444;}
+  body.contrast-wb input.blank,body.contrast-wb select{background:#111;color:#fff;border-color:#666;}
+  body.contrast-wb .matching-key{background:#111;border-color:#444;}
+  body.contrast-wb .menu-item,body.contrast-wb .option-row{background:#111;color:#fff;border-color:#444;}
+  body.contrast-wb .menu-item.danger{background:var(--ielts-red);color:#fff;}
+  body.contrast-wb .menu-header .close-btn,body.contrast-wb .menu-header .back-btn,body.contrast-wb .qnum-btn{color:#fff;}
+  body.contrast-wb .submit-check{background:#222;color:#fff;}
+  body.contrast-wb .notes-panel{background:#111;color:#fff;}
+  body.contrast-wb .note-entry{background:#1a1a1a;color:#fff;border-color:#444;}
+
+  body.contrast-yb #app,body.contrast-yb .content,body.contrast-yb .main-wrap,body.contrast-yb .topbar,body.contrast-yb .bottombar,body.contrast-yb .menu-overlay,body.contrast-yb .menu-header,body.contrast-yb .menu-body{background:#000!important;color:#f2d70a!important;}
+  body.contrast-yb .part-banner{background:#1a1a1a;border-color:#555;}
+  body.contrast-yb input.blank,body.contrast-yb select{background:#111;color:#f2d70a;border-color:#f2d70a;}
+  body.contrast-yb .matching-key{background:#111;border-color:#555;}
+  body.contrast-yb .menu-item,body.contrast-yb .option-row{background:#111;color:#f2d70a;border-color:#555;}
+  body.contrast-yb .menu-item.danger{background:var(--ielts-red);color:#fff;}
+  body.contrast-yb .menu-header .close-btn,body.contrast-yb .menu-header .back-btn,body.contrast-yb .qnum-btn{color:#f2d70a;}
+  body.contrast-yb .submit-check{background:#222;color:#f2d70a;}
+  body.contrast-yb .notes-panel{background:#111;color:#f2d70a;}
+  body.contrast-yb .note-entry{background:#1a1a1a;color:#f2d70a;border-color:#555;}
+
+  .hidden{display:none!important;}
+  @media(max-width:760px){
+    .topbar{padding:8px 10px;}.brand-badge{width:50px;height:50px}.brand-badge .photo{width:44px;height:44px}.ielts-logo{display:none}.topbar-right>span{display:none}.content{padding:16px 14px 88px}.notes-panel{position:absolute;right:0;top:0;bottom:0;z-index:25;width:min(280px,85vw)}.status-line{max-width:180px}.bottombar{padding:0 10px}.gate-card{padding:30px 24px}.results-wrap{padding:20px 14px}.review-table{min-width:650px}.results-wrap{overflow:auto}}
+
+  .form-card{border:1px solid #999;max-width:930px;padding:22px 26px;margin:12px auto 20px;background:#fff;}
+  .form-heading{text-align:center;font-weight:bold;font-size:17px;line-height:1.5;margin-bottom:18px;}
+  .form-row{display:grid;grid-template-columns:220px minmax(0,1fr);gap:10px;align-items:center;margin:8px 0;font-size:14px;}
+  .form-label{font-weight:500;}
+  .form-notes{margin-top:7px;}
+  .form-note-row{display:grid;grid-template-columns:220px 22px minmax(0,1fr);gap:8px;align-items:center;margin:8px 0;font-size:14px;}
+  .timeline-card{border:1px solid #999;max-width:930px;padding:20px 24px;margin:12px auto 20px;background:#fff;}
+  .timeline-title{text-align:center;font-weight:bold;font-size:16px;margin-bottom:16px;}
+  .timeline-period{font-weight:bold;margin:18px 0 8px;}
+  .timeline-sub{font-weight:bold;text-decoration:underline;margin:10px 0 5px;}
+  .timeline-row{margin:7px 0;font-size:14px;line-height:1.8;}
+  .timeline-bullet{margin:5px 0 5px 24px;font-size:14px;line-height:1.8;}
+  .pair-help{font-size:12px;color:#666;margin:7px 0 12px;}
+  @media(max-width:760px){.form-row{grid-template-columns:1fr}.form-note-row{grid-template-columns:22px 1fr}.form-note-row .form-label{grid-column:1/-1}.form-card,.timeline-card{padding:16px 14px}}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="gate-screen" id="screen-password" class="gate-screen hidden">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="#" target="_blank" rel="noopener">
+          <span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Full Listening Test Access</div>
+      <label for="pwd-input">Enter Password</label>
+      <input type="password" id="pwd-input" placeholder="Password" autocomplete="off">
+      <div class="gate-error" id="pwd-error"></div>
+      <button class="gate-btn" id="pwd-submit">Continue</button>
+      <div class="gate-footer">Real Exam Full Listening Test — <a href="#" target="_blank" rel="noopener">Jasurbek's blog</a></div>
+    </div>
+  </div>
+
+  <div class="gate-screen hidden" id="screen-id">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="#" target="_blank" rel="noopener">
+          <span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Enter your Test Taker ID</div>
+      <label for="id-input">Test Taker ID</label>
+      <input type="text" id="id-input" placeholder="e.g. 123456789" autocomplete="off">
+      <div class="gate-error" id="id-error"></div>
+      <button class="gate-btn" id="id-submit">Start Test</button>
+      <div class="gate-footer">Real Exam Full Listening Test — <a href="#" target="_blank" rel="noopener">Jasurbek's blog</a></div>
+    </div>
+  </div>
+
+  <div class="hidden" id="screen-test" style="height:100%;display:flex;flex-direction:column;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a class="brand-badge" href="#" target="_blank" rel="noopener">
+          <span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="ielts-logo">IELTS</div>
+        <div class="taker-id-block">
+          <div><span style="font-weight:bold;">Test taker ID:</span> <span id="taker-id-display"></span></div>
+          <div class="status-line" id="status-line">Audio not started</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span>📶</span><span>🔔</span>
+        <button class="icon-btn" id="hamburger-btn" title="Menu" aria-label="Open menu">☰</button>
+        <button class="icon-btn" id="notes-toggle-btn" title="Notes" aria-label="Toggle notes">✏️</button>
+      </div>
+    </div>
+
+    <div class="main-wrap">
+      <div class="content" id="content"></div>
+      <div class="notes-panel" id="notes-panel"><div class="notes-panel-title">Notes</div><div id="notes-list"></div></div>
+
+      <div class="audio-gate-overlay" id="audio-gate-overlay">
+        <div class="headphone-icon">🎧</div>
+        <p>You will be listening to an audio clip during this test. You will not be permitted to pause or rewind the audio while answering the questions.</p>
+        <p><b>To continue, click Play.</b></p>
+        <button class="play-btn" id="play-audio-btn">▶ Play</button>
+        <div class="audio-error" id="audio-error"></div>
+      </div>
+
+      <div class="menu-overlay" id="menu-overlay">
+        <div class="menu-header">
+          <button class="back-btn" id="menu-back-btn">‹ Options</button>
+          <span id="menu-header-title" class="title-text">Options</span>
+          <button class="close-btn" id="menu-close-btn">✕</button>
+        </div>
+        <div class="menu-body">
+          <div id="menu-root-view">
+            <div class="menu-item danger" id="menu-submit-btn" style="margin-bottom:16px;"><span>🚀 Go to submission page</span><span class="chev">›</span></div>
+            <div class="menu-item" id="menu-contrast-btn"><span>◐ Contrast</span><span class="chev">›</span></div>
+            <div class="menu-item" id="menu-textsize-btn"><span>🔍 Text size</span><span class="chev">›</span></div>
+          </div>
+          <div id="menu-contrast-view" class="hidden">
+            <div class="option-row" data-contrast="bw"><span><span class="check">✔</span> Black on white</span><span class="swatch sw-bw"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+            <div class="option-row" data-contrast="wb"><span><span class="check"></span> White on black</span><span class="swatch sw-wb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+            <div class="option-row" data-contrast="yb"><span><span class="check"></span> Yellow on black</span><span class="swatch sw-yb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+          </div>
+          <div id="menu-textsize-view" class="hidden">
+            <div class="option-row" data-textsize="regular"><span><span class="check">✔</span> Regular</span></div>
+            <div class="option-row" data-textsize="large"><span><span class="check"></span> Large</span></div>
+            <div class="option-row" data-textsize="extralarge"><span><span class="check"></span> Extra large</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-arrows"><button id="prev-btn" aria-label="Previous part">←</button><button id="next-btn" aria-label="Next part">→</button></div>
+    </div>
+    <div class="bottombar" id="bottombar"></div>
+  </div>
+
+  <div class="hidden results-wrap" id="screen-results">
+    <h1>Listening Test — Result</h1>
+    <div style="font-size:13px;color:#666;">Test taker ID: <span id="results-taker-id"></span></div>
+    <div>
+      <div class="score-box"><div class="num" id="score-correct">0</div><div class="lbl">Correct</div></div>
+      <div class="score-box"><div class="num">40</div><div class="lbl">Total</div></div>
+      <div class="score-box"><div class="num" id="score-band">0.0</div><div class="lbl">Est. Band</div></div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="review-table">
+        <thead><tr><th style="width:50px;">Q#</th><th>Your Answer</th><th>Correct Answer</th><th style="width:70px;">Result</th></tr></thead>
+        <tbody id="review-body"></tbody>
+      </table>
+    </div>
+    <button class="restart-btn" id="restart-btn">Restart</button>
+    <div class="brand-footer">📢 Real Exam Full Listening Test — <a href="#" target="_blank" rel="noopener">Jasurbek's blog (Telegram)</a></div>
+  </div>
+</div>
+
+<audio id="test-audio" preload="metadata" src="https://audio.jukehost.co.uk/019fa8aa-5443-705a-809a-a37b44e047ff"></audio>
+
+<script>
+(() => {
+  "use strict";
+
+  const REQUIRED_PASSWORD = "";
+
+  const answerKey = {
+    1:"Simmons",2:"Ocean Drive",3:"Unlimited",4:"24 months",5:"White",6:"Goldfish",7:"30 June",8:"Cable",9:"Home phone",10:"Security",
+    11:"D",12:"B",13:"H",14:"A",15:"C",16:"G",17:"tourists",18:"Monday",19:"happy dragon",20:"3231190",
+    21:"B",22:"C",23:"A",24:"B",25:"A",26:"documents",27:"shortlist",28:"tailor",29:"call",30:"ask questions",
+    31:"petrol stations",32:"Scotland",33:"head office",34:"retrained",35:"fresh food",36:"manager",37:"profits",38:"stages",39:"strategies",40:"organisation"
+  };
+
+  const acceptedAnswers = {
+    2:["Ocean Drive"],
+    4:["24 months","24 month"],
+    7:["30 June","30th June","June 30","June 30th"],
+    9:["Home phone","homephone"],
+    17:["tourists","tourist"],
+    19:["happy dragon","the happy dragon"],
+    27:["shortlist","short list"],
+    31:["petrol stations","petrol station"],
+    40:["organisation","organization"]
+  };
+  const pairGroups = {};
+  const numericQuestions = new Set([20]);
+  const state = {answers:{},currentPart:1,takerId:"",notes:[],testStarted:false,submitting:false};
+  const $ = id => document.getElementById(id);
+  const show = el => el.classList.remove("hidden");
+  const hide = el => el.classList.add("hidden");
+
+  function escapeHtml(value){
+    return String(value ?? "").replace(/[&<>'"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch]));
+  }
+  function partBanner(title,range){return `<div class="part-banner"><b>${title}</b><div class="instr">Answer questions ${range}.</div></div>`;}
+  function inputBlank(qnum,extraClass=""){
+    const val=escapeHtml(state.answers[qnum]||"");
+    return `<span class="question-block" data-question="${qnum}"><input class="blank ${extraClass}" data-q="${qnum}" value="${val}" placeholder="${qnum}" aria-label="Question ${qnum}"></span>`;
+  }
+  function mcQuestion(qnum,text,options){
+    const selected=state.answers[qnum];
+    return `<div class="mc-question question-block" data-question="${qnum}"><span class="qnum">${qnum}</span> ${text}<div class="mc-opts">${options.map((opt,i)=>{const val=String.fromCharCode(65+i);return `<label><input type="radio" name="q${qnum}" value="${val}" ${selected===val?"checked":""}> <b>${val}</b>&nbsp;&nbsp;${opt}</label>`;}).join("")}</div></div>`;
+  }
+  function choiceSelect(qnum,letters,pair=""){
+    const val=state.answers[qnum]||"";
+    return `<select class="blank-select" data-q="${qnum}" ${pair?`data-pair="${pair}"`:""} aria-label="Question ${qnum}"><option value="">--</option>${letters.map(l=>`<option value="${l}" ${val===l?"selected":""}>${l}</option>`).join("")}</select>`;
+  }
+  function matchingRow(qnum,text,letters,pair=""){
+    return `<div class="matching-row question-block" data-question="${qnum}"><span class="qnum">${qnum}</span><span class="label-text">${text}</span>${choiceSelect(qnum,letters,pair)}</div>`;
+  }
+
+  function renderPart1(){
+    return `${partBanner("Part 1","1–10")}
+      <div style="font-size:13px;margin-bottom:10px;"><b>Questions 1–10</b><br>Complete the notes below.<br>Write <b>ONE WORD AND/OR A NUMBER</b> for each answer.</div>
+      <div class="form-card">
+        <div class="form-heading">NEW PASSWORD</div>
+        <div class="form-row"><span class="form-label">Call taken by:</span><span>Natasha</span></div>
+        <div class="form-row"><span class="form-label">Customer's full name:</span><span>Michael ${inputBlank(1,"wide")}</span></div>
+        <div class="form-row"><span class="form-label">Date of birth:</span><span>27 March 1988</span></div>
+        <div class="form-row"><span class="form-label">Previous address:</span><span>319 ${inputBlank(2,"wide")} East Providence</span></div>
+        <div class="form-row"><span class="form-label">Phone number:</span><span>049248002</span></div>
+        <div class="form-row"><span class="form-label">Data allowance:</span><span>${inputBlank(3,"wide")}</span></div>
+        <div class="form-row"><span class="form-label">Current plan:</span><span>${inputBlank(4,"wide")}</span></div>
+        <div class="form-row"><span class="form-label">Mother's maiden name:</span><span>${inputBlank(5,"wide")}</span></div>
+        <div class="form-row"><span class="form-label">First pet:</span><span>${inputBlank(6,"wide")}</span></div>
+        <div class="form-row"><span class="form-label">New password sent on:</span><span>${inputBlank(7,"wide")}</span></div>
+        <div class="section-title" style="margin-top:20px;text-decoration:underline;">Extra services required:</div>
+        <div class="form-notes">
+          <div class="form-note-row"><span></span><span>•</span><span>new ${inputBlank(8,"wide")}</span></div>
+          <div class="form-note-row"><span></span><span>•</span><span>cancel ${inputBlank(9,"wide")}</span></div>
+          <div class="form-note-row"><span></span><span>•</span><span>${inputBlank(10,"wide")} pack</span></div>
+        </div>
+      </div>`;
+  }
+
+  function renderPart2(){
+    const lettersAI=["A","B","C","D","E","F","G","H","I"];
+    return `${partBanner("Part 2","11–20")}
+      <div style="font-size:13px;margin-bottom:10px;"><b>Questions 11–16</b><br>Choose <b>SIX</b> answers from the box and write the correct letter, <b>A–I</b>.<br><br>Where can each of the following items be found?</div>
+      <div class="matching-key"><b>Locations</b><br>
+        A) on washing machine<br>
+        B) in hallway cupboard<br>
+        C) in hot water cupboard<br>
+        D) next to back door<br>
+        E) in bathroom<br>
+        F) on top of television<br>
+        G) in bedroom<br>
+        H) under kitchen sink<br>
+        I) above front door
+      </div>
+      ${matchingRow(11,"Alarm",lettersAI)}
+      ${matchingRow(12,"Garage key",lettersAI)}
+      ${matchingRow(13,"Laundry detergent",lettersAI)}
+      ${matchingRow(14,"Beach towels",lettersAI)}
+      ${matchingRow(15,"Bath towels",lettersAI)}
+      ${matchingRow(16,"Light bulbs",lettersAI)}
+
+      <div style="font-size:13px;margin:28px 0 12px;"><b>Questions 17–20</b><br>Write <b>NO MORE THAN TWO WORDS AND/OR A NUMBER</b> for each answer.</div>
+      <div class="timeline-card">
+        <div class="timeline-row">Difficult parking in town at the weekend because of so many ${inputBlank(17,"wide")}</div>
+        <div class="timeline-row">Museum is closed on ${inputBlank(18,"wide")}</div>
+        <div class="timeline-period" style="margin-top:20px;">Recommended places to eat:</div>
+        <div class="timeline-row">${inputBlank(19,"wide")} for Chinese food</div>
+        <div class="timeline-row">Pizzeria for Italian food</div>
+        <div class="timeline-row">Phone number for takeaway pizza ${inputBlank(20,"wide")}</div>
+      </div>`;
+  }
+
+  function renderPart3(){
+    return `${partBanner("Part 3","21–30")}
+      <div style="font-size:13px;margin-bottom:12px;"><b>Questions 21–25</b><br>Choose the correct letter, <b>A, B or C</b>.</div>
+      ${mcQuestion(21,"Why did Joanne accept the offer from Gregory Associates?",["it covered her travel expenses","it was from a well-known company","it was the only offer she received"])}
+      ${mcQuestion(22,"Joanne was disappointed because",["she found the work routine repetitive","the staff were not very helpful","the work was not related to her studies"])}
+      ${mcQuestion(23,"What did Joanne like best about her internship?",["observing how the workplace operates","being responsible for completing projects","working closely with the project managers"])}
+      ${mcQuestion(24,"What was the hardest part of the internship?",["combining it with her studies","living on so little money","working such long hours"])}
+      ${mcQuestion(25,"During the internship Joanne",["changed her mind about her career","received a job offer from the company","decided not to continue her studies"])}
+
+      <div style="font-size:13px;margin:28px 0 10px;"><b>Questions 26–30</b><br>Complete the notes below.<br>Write <b>NO MORE THAN TWO WORDS</b> for each answer.</div>
+      <div class="timeline-card">
+        <div class="timeline-title" style="text-align:left;">How to apply for an internship</div>
+        <div class="timeline-row question-block" data-question="26"><span class="qnum">26</span> ${inputBlank(26,"wide")}</div>
+        <div class="timeline-row question-block" data-question="27"><span class="qnum">27</span> ${inputBlank(27,"wide")}</div>
+        <div class="timeline-row question-block" data-question="28"><span class="qnum">28</span> ${inputBlank(28,"wide")}</div>
+        <div class="timeline-row question-block" data-question="29"><span class="qnum">29</span> ${inputBlank(29,"wide")}</div>
+        <div class="timeline-row question-block" data-question="30"><span class="qnum">30</span> ${inputBlank(30,"wide")}</div>
+      </div>`;
+  }
+
+  function renderPart4(){
+    return `${partBanner("Part 4","31–40")}
+      <div style="font-size:13px;margin-bottom:10px;"><b>Questions 31–40</b><br>Complete the notes below.<br>Write <b>NO MORE THAN TWO WORDS</b> for each answer.</div>
+      <div class="timeline-card">
+        <div class="timeline-title">Research on A Chain Store in the UK</div>
+
+        <div class="timeline-period">Initial expansion</div>
+        <div class="timeline-bullet">• The company expanded by opening more ${inputBlank(31,"wide")} to increase market share in England.</div>
+        <div class="timeline-bullet">• They could raise capital by reducing the number of branches in southern ${inputBlank(32,"wide")}.</div>
+
+        <div class="timeline-period">Consultation</div>
+        <div class="timeline-bullet">• They shut down the ${inputBlank(33,"wide")} of the convenience stores in Oxford.</div>
+        <div class="timeline-bullet">• Over 200 staff had to be transferred and ${inputBlank(34,"wide")}.</div>
+        <div class="timeline-bullet">• A new brand image was established to focus on selling ${inputBlank(35,"wide")}.</div>
+
+        <div class="timeline-period">The future way</div>
+        <div class="timeline-bullet">• A ${inputBlank(36,"wide")} was assigned to hold each discussion.</div>
+        <div class="timeline-bullet">• Retail stores should be flexible in making ${inputBlank(37,"wide")}.</div>
+        <div class="timeline-bullet">• Changes should be introduced in ${inputBlank(38,"wide")} so that the staff can become accustomed to the new rules.</div>
+
+        <div class="timeline-period">Conclusion</div>
+        <div class="timeline-bullet">• Be open-minded about the ${inputBlank(39,"wide")} for expansion they choose.</div>
+        <div class="timeline-bullet">• Companies have saved costs by changing the structure of the ${inputBlank(40,"wide")} department.</div>
+      </div>`;
+  }
+
+  const partRenderers={1:renderPart1,2:renderPart2,3:renderPart3,4:renderPart4};
+  const partRanges={1:[1,10],2:[11,20],3:[21,30],4:[31,40]};
+  function partForQuestion(q){if(q<=10)return 1;if(q<=20)return 2;if(q<=30)return 3;return 4;}
+
+  function renderPart(part){
+    state.currentPart=part;
+    $("content").innerHTML=partRenderers[part]();
+    attachListeners();
+    $("content").scrollTop=0;
+    $("prev-btn").disabled=part===1;
+    $("next-btn").disabled=part===4;
+    renderBottomBar();
+  }
+
+  function attachListeners(){
+    document.querySelectorAll("#content input.blank").forEach(inp=>inp.addEventListener("input",e=>{const q=Number(e.target.dataset.q);const v=e.target.value;if(v.trim())state.answers[q]=v;else delete state.answers[q];renderBottomBar();}));
+    document.querySelectorAll("#content select[data-q]").forEach(sel=>sel.addEventListener("change",e=>{
+      const q=Number(e.target.dataset.q);const value=e.target.value;
+      if(value&&pairGroups[q]){
+        const otherQ=pairGroups[q].find(n=>n!==q);
+        if(state.answers[otherQ]===value){
+          delete state.answers[otherQ];
+          const other=document.querySelector(`#content select[data-q="${otherQ}"]`);
+          if(other)other.value="";
+        }
+      }
+      if(value)state.answers[q]=value;else delete state.answers[q];
+      renderBottomBar();
+    }));
+    document.querySelectorAll("#content input[type=radio]").forEach(r=>r.addEventListener("change",e=>{const q=Number(e.target.name.replace("q",""));state.answers[q]=e.target.value;renderBottomBar();}));
+  }
+
+  function isAnswered(q){return state.answers[q]!=null&&String(state.answers[q]).trim()!=="";}
+  function renderBottomBar(){
+    let html="";
+    for(let p=1;p<=4;p++){
+      const [start,end]=partRanges[p];
+      if(p===state.currentPart){
+        html+=`<div class="part-nav-group"><span class="part-label active-part">Part ${p}</span>`;
+        for(let q=start;q<=end;q++)html+=`<button class="qnum-btn ${isAnswered(q)?"answered":""}" data-jump="${q}" aria-label="Question ${q}">${q}</button>`;
+        html+="</div>";
+      }else{
+        let count=0;for(let q=start;q<=end;q++)if(isAnswered(q))count++;
+        html+=`<div class="part-nav-group"><span class="part-label" data-partjump="${p}">Part ${p}</span><span class="part-count">${count} of ${end-start+1}</span></div>`;
+      }
+    }
+    html+='<button class="submit-check" id="submit-check-btn" aria-label="Submit test">✔</button>';
+    $("bottombar").innerHTML=html;
+    document.querySelectorAll("#bottombar [data-partjump]").forEach(el=>el.addEventListener("click",()=>renderPart(Number(el.dataset.partjump))));
+    document.querySelectorAll("#bottombar [data-jump]").forEach(el=>el.addEventListener("click",()=>jumpToQuestion(Number(el.dataset.jump))));
+    $("submit-check-btn").addEventListener("click",()=>submitTest(true));
+  }
+
+  function jumpToQuestion(q){
+    const targetPart=partForQuestion(q);
+    if(targetPart!==state.currentPart)renderPart(targetPart);
+    requestAnimationFrame(()=>{
+      const target=document.querySelector(`[data-question="${q}"]`)||document.querySelector(`[data-q="${q}"]`);
+      if(target){target.scrollIntoView({behavior:"smooth",block:"center"});target.classList.add("jump-flash");setTimeout(()=>target.classList.remove("jump-flash"),1300);const control=target.matches("input,select")?target:target.querySelector("input,select");if(control)control.focus({preventScroll:true});}
+    });
+  }
+
+  $("prev-btn").addEventListener("click",()=>{if(state.currentPart>1)renderPart(state.currentPart-1);});
+  $("next-btn").addEventListener("click",()=>{if(state.currentPart<4)renderPart(state.currentPart+1);else submitTest(true);});
+
+  $("pwd-submit").addEventListener("click",()=>{
+    const val=$("pwd-input").value.trim();
+    if(val===REQUIRED_PASSWORD){$("pwd-error").textContent="";hide($("screen-password"));show($("screen-id"));$("id-input").focus();}
+    else{$("pwd-error").textContent="Incorrect password. Please try again.";$("pwd-input").select();}
+  });
+  $("pwd-input").addEventListener("keydown",e=>{if(e.key==="Enter")$("pwd-submit").click();});
+
+  $("id-submit").addEventListener("click",()=>{
+    const val=$("id-input").value.trim();
+    if(!val){$("id-error").textContent="Please enter your Test Taker ID.";return;}
+    state.takerId=val;state.testStarted=true;
+    $("taker-id-display").textContent=val;$("results-taker-id").textContent=val;$("id-error").textContent="";
+    hide($("screen-id"));show($("screen-test"));renderPart(1);$("audio-gate-overlay").classList.add("show");enterFullscreen();
+  });
+  $("id-input").addEventListener("keydown",e=>{if(e.key==="Enter")$("id-submit").click();});
+
+  function enterFullscreen(){const el=document.documentElement;const req=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;if(req){try{const result=req.call(el);if(result&&result.catch)result.catch(()=>{});}catch(_){}}}
+
+  const audioEl=$("test-audio");
+  $("play-audio-btn").addEventListener("click",async e=>{
+    const btn=e.currentTarget;
+    btn.disabled=true;btn.textContent="Loading…";$("audio-error").textContent="";
+    try{
+      audioEl.currentTime=0;
+      await audioEl.play();
+      $("audio-gate-overlay").classList.remove("show");
+      $("status-line").textContent="🔊 Audio is playing";
+    }catch(err){
+      btn.disabled=false;btn.textContent="▶ Try again";
+      $("audio-error").textContent="Audio could not start. Check your internet connection and try again.";
+      $("status-line").textContent="Audio failed to start";$("status-line").classList.add("low");
+    }
+  });
+  audioEl.addEventListener("play",()=>{$("status-line").textContent="🔊 Audio is playing";$("status-line").classList.remove("low");});
+  audioEl.addEventListener("pause",()=>{if(!audioEl.ended){$("status-line").textContent="⏸ Audio paused";$("status-line").classList.add("low");}});
+  audioEl.addEventListener("ended",()=>{$("status-line").textContent="Audio finished";$("status-line").classList.remove("low");});
+  audioEl.addEventListener("error",()=>{if($("audio-gate-overlay").classList.contains("show"))$("audio-error").textContent="Audio failed to load. Check the audio link or your connection.";});
+
+  $("hamburger-btn").addEventListener("click",()=>{$("menu-overlay").classList.add("open");showMenuRoot();});
+  $("menu-close-btn").addEventListener("click",()=>$("menu-overlay").classList.remove("open"));
+  $("menu-back-btn").addEventListener("click",showMenuRoot);
+  function showMenuRoot(){$("menu-header-title").textContent="Options";$("menu-back-btn").classList.remove("show");$("menu-root-view").classList.remove("hidden");$("menu-contrast-view").classList.add("hidden");$("menu-textsize-view").classList.add("hidden");}
+  $("menu-submit-btn").addEventListener("click",()=>{$("menu-overlay").classList.remove("open");submitTest(true);});
+  $("menu-contrast-btn").addEventListener("click",()=>{$("menu-header-title").textContent="Contrast";$("menu-back-btn").classList.add("show");$("menu-root-view").classList.add("hidden");$("menu-contrast-view").classList.remove("hidden");});
+  $("menu-textsize-btn").addEventListener("click",()=>{$("menu-header-title").textContent="Text size";$("menu-back-btn").classList.add("show");$("menu-root-view").classList.add("hidden");$("menu-textsize-view").classList.remove("hidden");});
+  document.querySelectorAll("[data-contrast]").forEach(row=>row.addEventListener("click",()=>{document.body.classList.remove("contrast-wb","contrast-yb");if(row.dataset.contrast==="wb")document.body.classList.add("contrast-wb");if(row.dataset.contrast==="yb")document.body.classList.add("contrast-yb");document.querySelectorAll("[data-contrast] .check").forEach(c=>c.textContent="");row.querySelector(".check").textContent="✔";}));
+  document.querySelectorAll("[data-textsize]").forEach(row=>row.addEventListener("click",()=>{$("app").classList.remove("textsize-regular","textsize-large","textsize-extralarge");$("app").classList.add("textsize-"+row.dataset.textsize);document.querySelectorAll("[data-textsize] .check").forEach(c=>c.textContent="");row.querySelector(".check").textContent="✔";}));
+
+  let activeSelectionMenu=null;
+  function removeSelectionMenu(){if(activeSelectionMenu){activeSelectionMenu.remove();activeSelectionMenu=null;}}
+  function renderNotesPanel(){const list=$("notes-list");if(state.notes.length===0){list.innerHTML='<div class="notes-panel-empty">Your private notes will show here<br><br>Select text to highlight or create a note.</div>';return;}list.innerHTML=state.notes.map(n=>`<div class="note-entry"><div class="quoted">“${escapeHtml(n)}”</div></div>`).join("");}
+  renderNotesPanel();
+  $("notes-toggle-btn").addEventListener("click",()=>$("notes-panel").classList.toggle("open"));
+
+  function showHighlightMenu(rect,onNote,onHighlight,onClear){
+    removeSelectionMenu();
+    const menu=document.createElement("div");menu.className="selection-menu";
+    const left=Math.min(Math.max(6,rect.left),window.innerWidth-210);const top=Math.min(rect.bottom+4,window.innerHeight-70);
+    menu.style.left=left+"px";menu.style.top=top+"px";
+    let html="";if(onNote)html+='<button data-action="note">📝<span>Note</span></button>';if(onHighlight)html+='<button data-action="highlight">🖊<span>Highlight</span></button>';if(onClear)html+='<button data-action="clear">🧹<span>Clear</span></button>';
+    menu.innerHTML=html;document.body.appendChild(menu);activeSelectionMenu=menu;
+    const bind=(action,fn)=>{const b=menu.querySelector(`[data-action="${action}"]`);if(b)b.addEventListener("click",()=>{fn();removeSelectionMenu();});};
+    if(onNote)bind("note",onNote);if(onHighlight)bind("highlight",onHighlight);if(onClear)bind("clear",onClear);
+  }
+
+  $("content").addEventListener("mouseup",e=>{
+    if(e.target&&e.target.tagName==="MARK"&&e.target.classList.contains("hl")){
+      const markEl=e.target;showHighlightMenu(markEl.getBoundingClientRect(),null,null,()=>{const parent=markEl.parentNode;while(markEl.firstChild)parent.insertBefore(markEl.firstChild,markEl);parent.removeChild(markEl);parent.normalize();});return;
+    }
+    removeSelectionMenu();const sel=window.getSelection();if(!sel||sel.isCollapsed||!sel.toString().trim())return;if(!$("content").contains(sel.anchorNode))return;
+    const range=sel.getRangeAt(0).cloneRange();const rect=range.getBoundingClientRect();const selectedText=sel.toString().trim();
+    showHighlightMenu(rect,()=>{state.notes.push(selectedText);renderNotesPanel();$("notes-panel").classList.add("open");},()=>{try{const mark=document.createElement("mark");mark.className="hl";range.surroundContents(mark);}catch(_){}} ,null);
+  });
+  document.addEventListener("mousedown",e=>{if(activeSelectionMenu&&!activeSelectionMenu.contains(e.target))removeSelectionMenu();});
+
+  function normalize(q,str){
+    let s=String(str??"").trim().toLowerCase()
+      .replace(/[’‘]/g,"'")
+      .replace(/&/g,"and")
+      .replace(/(the)/g,"the")
+      .replace(/[^a-z0-9]+/g,"");
+    if(numericQuestions.has(Number(q)))s=String(str??"").replace(/[^0-9]/g,"");
+    return s;
+  }
+
+  function isCorrectAnswer(q,userAns){
+    const n=Number(q);
+    const accepted=acceptedAnswers[n]||[answerKey[n]];
+    return accepted.some(ans=>normalize(n,userAns)===normalize(n,ans));
+  }
+
+  function submitTest(askConfirmation){
+    if(state.submitting)return;
+    const unanswered=[];for(let q=1;q<=40;q++)if(!isAnswered(q))unanswered.push(q);
+    if(askConfirmation){
+      const msg=unanswered.length?`You have ${unanswered.length} unanswered question${unanswered.length===1?"":"s"}. Submit the test now?`:"Submit the test now?";
+      if(!window.confirm(msg))return;
+    }
+    state.submitting=true;
+    audioEl.pause();
+    let correct=0,rows="";
+    for(let q=1;q<=40;q++){
+      const userAns=state.answers[q]||"";const correctAns=answerKey[q];const isCorrect=isCorrectAnswer(q,userAns);if(isCorrect)correct++;
+      rows+=`<tr><td>${q}</td><td>${userAns?escapeHtml(userAns):'<i style="color:#999;">(no answer)</i>'}</td><td>${escapeHtml(correctAns)}</td><td>${isCorrect?'<span class="ok">✔</span>':'<span class="no">✘</span>'}</td></tr>`;
+    }
+    $("score-correct").textContent=correct;$("score-band").textContent=estimateBand(correct);$("review-body").innerHTML=rows;hide($("screen-test"));show($("screen-results"));state.testStarted=false;state.submitting=false;
+  }
+  function estimateBand(correct){const table=[[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[7,3.5],[5,3]];for(const [min,band] of table)if(correct>=min)return band.toFixed(1);return "2.5";}
+
+  $("restart-btn").addEventListener("click",()=>{
+    audioEl.pause();audioEl.currentTime=0;
+    state.answers={};state.currentPart=1;state.notes=[];state.takerId="";state.testStarted=false;state.submitting=false;
+    document.body.className="";$("app").className="";renderNotesPanel();
+    hide($("screen-results"));show($("screen-password"));
+    $("pwd-input").value="";$("id-input").value="";$("pwd-error").textContent="";$("id-error").textContent="";$("audio-error").textContent="";$("audio-gate-overlay").classList.remove("show");
+    const playBtn=$("play-audio-btn");playBtn.disabled=false;playBtn.textContent="▶ Play";$("status-line").textContent="Audio not started";
+  });
+
+  window.addEventListener("beforeunload",e=>{if(state.testStarted){e.preventDefault();e.returnValue="";}});
+})();
+
+function submitTest(){
+      let score = 0;
+      try {
+        for(let i=1;i<=10;i++){const inp=document.getElementById('inp'+i);if(inp&&chkTxt(i,inp.value))score++;}
+        for(let i=11;i<=26;i++){const chosen=getChosen(i);if(chosen===ANS_MCQ['q'+i])score++;}
+        if(typeof GROUPS !== 'undefined'){
+          GROUPS.forEach(g=>{
+            const gr=gradeGroup(g);
+            g.qs.forEach(i=>{if(gr[i]&&gr[i].ok)score++;});
+          });
+        }
+        for(let i=31;i<=40;i++){const inp=document.getElementById('inp'+i);if(inp&&chkTxt(i,inp.value))score++;}
+      } catch(e){}
+
+      const getIeltsBand = (correct) => {
+        if (correct >= 39) return 9.0;
+        if (correct >= 37) return 8.5;
+        if (correct >= 35) return 8.0;
+        if (correct >= 32) return 7.5;
+        if (correct >= 30) return 7.0;
+        if (correct >= 27) return 6.5;
+        if (correct >= 23) return 6.0;
+        if (correct >= 20) return 5.5;
+        if (correct >= 16) return 5.0;
+        if (correct >= 13) return 4.5;
+        return 4.0;
+      };
+      const finalScore = getIeltsBand(score);
+
+      // Clean student confirmation card
+      const p = document.getElementById('rspanel') || document.getElementById('screen-results');
+      if (p) {
+        p.innerHTML = `
+          <div style="padding: 3rem 1.5rem; text-align: center; background: #ffffff; border-radius: 12px; max-width: 500px; margin: 2rem auto; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;">
+            <div style="font-size: 3.5rem; margin-bottom: 1rem;">✅</div>
+            <h2 style="color: #0f172a; margin-bottom: 0.75rem; font-size: 1.6rem; font-weight: 800;">IELTS Listening Test 2 Submitted!</h2>
+            <p style="color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 2rem;">
+              Your answers have been securely recorded and submitted to your teacher.<br><br>
+              Your final score will be published on your candidate dashboard once released by your instructor.
+            </p>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; color: #3b82f6; font-weight: 600; font-size: 0.85rem;">
+              <div style="width: 18px; height: 18px; border: 3px solid #cbd5e1; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+              Syncing portfolio...
+            </div>
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+          </div>
+        `;
+        p.classList.add('show');
+        p.style.display = 'block';
+      }
+
+      // Collect candidate answers
+      const params = new URLSearchParams(window.location.search);
+      const sId = params.get('studentId') || 'STUDENT';
+      const tId = params.get('testId') || '24';
+      
+      const userAnswers = {};
+      for (let i = 1; i <= 40; i++) {
+        const inp = document.getElementById('inp'+i);
+        const sel = document.getElementById('q'+i);
+        if (inp) userAnswers[i] = inp.value;
+        else if (sel && sel.tagName === 'SELECT') userAnswers[i] = sel.value;
+        else userAnswers[i] = getChosen(i) || "";
+      }
+
+      const payload = {
+        studentId: sId,
+        listeningAnswers: 'listening' === 'listening' ? userAnswers : {},
+        readingAnswers: 'listening' === 'reading' ? userAnswers : {},
+        writingAnswers: {},
+        listeningScore: 'listening' === 'listening' ? finalScore : null,
+        readingScore: 'listening' === 'reading' ? finalScore : null
+      };
+
+      fetch('/api/student/submit/' + tId, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log('Synced score:', data);
+        if (window.parent) {
+          window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+        }
+      })
+      .catch(err => console.error('Error submitting test:', err));
+    }
+</script>
+</body>
+</html>
