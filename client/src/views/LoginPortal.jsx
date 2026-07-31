@@ -95,14 +95,12 @@ export default function LoginPortal({ onLoginSuccess, theme, toggleTheme }) {
                 <span style={styles.detailLabel}>Candidate ID:</span>
                 <span style={styles.detailVal}>{tempUser.id}</span>
               </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Date of Birth:</span>
-                <span style={styles.detailVal}>15 October 2002</span>
-              </div>
-              <div style={styles.detailRow}>
-                <span style={styles.detailLabel}>Language Course:</span>
-                <span style={styles.detailVal}>IELTS General Academic Preparation</span>
-              </div>
+              {tempUser.group_name && (
+                <div style={styles.detailRow}>
+                  <span style={styles.detailLabel}>Group:</span>
+                  <span style={styles.detailVal}>{tempUser.group_name}</span>
+                </div>
+              )}
             </div>
             <div style={styles.actionButtons}>
               <button 
