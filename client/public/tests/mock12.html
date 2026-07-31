@@ -1,0 +1,431 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Full Reading Test</title>
+<style>
+  :root{
+    --ielts-red:#d2122e;
+    --border:#c9c9c9;
+    --text:#1a1a1a;
+    --muted:#666;
+    --panel:#f1f1f1;
+    --focus:#2b6fd6;
+    --highlight:#ffe066;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:#fff}
+  button,input,select{font:inherit}
+  #app{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  .hidden{display:none!important}
+
+
+  .gate-screen{height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;padding:20px}
+  .gate-card{width:min(390px,100%);background:#fff;border:1px solid var(--border);border-radius:6px;padding:36px 40px;box-shadow:0 3px 16px rgba(0,0,0,.09)}
+  .gate-brand-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px}
+  .gate-logo{font-size:28px;font-weight:800;color:var(--ielts-red);letter-spacing:1px}
+  .gate-sub{text-align:center;font-size:13px;color:var(--muted);margin-bottom:25px}
+  .gate-card label{display:block;font-size:13px;font-weight:700;margin:0 0 6px}
+  .gate-card input{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:4px;margin-bottom:16px}
+  .gate-card input:focus{outline:2px solid var(--focus);border-color:var(--focus)}
+  .gate-btn{width:100%;padding:11px;border:0;border-radius:4px;background:#111;color:#fff;cursor:pointer}
+  .gate-btn:hover{background:#000}
+  .gate-error{min-height:18px;color:var(--ielts-red);font-size:13px;margin-top:-8px;margin-bottom:8px}
+  .gate-footer{text-align:center;margin-top:17px;font-size:11px;color:#999}
+  .gate-footer a{color:var(--focus);text-decoration:none}
+
+  .topbar{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:9px 20px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
+  .topbar-left{display:flex;align-items:center;gap:13px;min-width:0}
+  .ielts-logo{font-size:20px;font-weight:800;color:var(--ielts-red)}
+  .brand-name{font-size:11px;color:#555;white-space:nowrap}
+  .taker-id-block{font-size:12px;line-height:1.35}
+  .taker-id-block .label{font-weight:700}
+  .timer-status{font-size:13px;font-weight:700;color:#222}
+  .timer-status.low{color:var(--ielts-red)}
+  .topbar-right{display:flex;align-items:center;gap:13px}
+  .icon-btn{border:0;background:none;cursor:pointer;font-size:19px;padding:5px}
+
+  .main-wrap{position:relative;flex:1;display:flex;overflow:hidden}
+  .content-wrap{flex:1;display:flex;overflow:hidden}
+  .passage-pane,.questions-pane{flex:1 1 50%;overflow-y:auto;padding:22px 26px;font-size:14px;line-height:1.7}
+  .passage-pane{border-right:1px solid var(--border)}
+  .passage-title{font-size:17px;font-weight:800;margin-bottom:4px}
+  .passage-sub{font-size:13px;color:var(--muted);margin-bottom:4px}
+  .passage-time{font-size:12px;color:#777;margin-bottom:18px}
+  .passage-para{display:flex;gap:10px;margin-bottom:15px}
+  .para-letter{width:20px;flex-shrink:0;font-weight:800;color:var(--ielts-red)}
+  .para-text{flex:1}
+
+  .part-banner{background:var(--panel);border:1px solid #ddd;padding:12px 15px;margin-bottom:18px;border-radius:3px}
+  .part-banner b{font-size:14px}
+  .part-banner .instr{font-size:13px;margin-top:2px}
+  .q-instructions{font-size:13px;margin:0 0 12px}
+  .q-title{font-weight:800}
+  .section-title{font-size:14px;font-weight:800;margin:18px 0 10px}
+  .question-row{display:flex;align-items:center;gap:11px;margin-bottom:13px;font-size:13px}
+  .question-row .qtext{flex:1}
+  .qnum{display:inline-flex;align-items:center;justify-content:center;min-width:31px;height:24px;border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:800;flex-shrink:0}
+  select.answer-select,input.answer-input{border:1px solid var(--focus);border-radius:3px;background:#fafcff;padding:6px 8px;font-size:13px}
+  select.answer-select{width:160px}
+  input.answer-input{width:165px;text-align:center}
+  .summary-box{border:1px solid #ddd;background:#fafafa;padding:15px 17px;margin:10px 0 18px;font-size:14px;line-height:2.25}
+  .summary-box input{vertical-align:middle;margin:0 4px}
+  .list-box{background:var(--panel);border:1px solid #ddd;padding:12px 15px;margin:10px 0 16px;font-size:12px;line-height:1.75}
+  .list-box b{font-size:13px}
+  .mc-question{margin-bottom:18px;font-size:13px}
+  .mc-question-title{display:flex;gap:9px;align-items:flex-start;margin-bottom:7px}
+  .mc-options label,.checkbox-options label{display:block;margin:7px 0 0 40px;cursor:pointer;line-height:1.45}
+  .mc-options input,.checkbox-options input{margin-right:8px}
+  .group-card{border:1px solid #ddd;border-radius:3px;padding:12px 14px;margin-bottom:19px}
+  .anchor{display:block;height:0;overflow:hidden}
+
+  .notes-panel{width:270px;border-left:1px solid var(--border);background:#f1f1f1;padding:15px;display:none;overflow-y:auto;flex-shrink:0}
+  .notes-panel.open{display:block}
+  .notes-title{font-size:13px;font-weight:800;color:var(--ielts-red);margin-bottom:13px}
+  .notes-empty{font-size:13px;color:#666;text-align:center;margin-top:35px;line-height:1.6}
+  .note-entry{background:#fff;border:1px solid #ccc;border-radius:3px;padding:8px 10px;margin-bottom:9px;font-size:12px;font-style:italic}
+  .selection-menu{position:absolute;z-index:100;background:#fff;border:1px solid #999;box-shadow:0 2px 8px rgba(0,0,0,.2);display:flex;border-radius:3px}
+  .selection-menu button{border:0;background:none;padding:8px 11px;font-size:11px;cursor:pointer}
+  .selection-menu button+button{border-left:1px solid #ddd}
+  mark.hl{background:var(--highlight)}
+
+  .bottombar{height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 18px;border-top:1px solid var(--border);background:#fff;overflow-x:auto;flex-shrink:0}
+  .part-nav-group{display:flex;align-items:center;gap:5px;white-space:nowrap}
+  .part-label{font-size:13px;font-weight:700;cursor:pointer}
+  .part-label.active{color:var(--ielts-red)}
+  .part-count{font-size:12px;color:#888}
+  .qnum-btn{width:23px;height:23px;border:1px solid transparent;border-radius:2px;background:none;font-size:12px;cursor:pointer;padding:0}
+  .qnum-btn.answered{font-weight:800;color:var(--focus)}
+  .submit-check{width:36px;height:36px;border:0;background:#efefef;cursor:pointer;font-size:16px;flex-shrink:0}
+
+  .menu-overlay{position:absolute;inset:0;z-index:60;background:#fff;display:none;flex-direction:column}
+  .menu-overlay.open{display:flex}
+  .menu-header{display:grid;grid-template-columns:95px 1fr 40px;align-items:center;padding:14px 16px;border-bottom:1px solid #eee}
+  .menu-header button{border:0;background:none;cursor:pointer}
+  .menu-back{display:none;justify-self:start}
+  .menu-back.show{display:block}
+  .menu-title{text-align:center;font-weight:700;font-size:15px}
+  .menu-close{justify-self:end;font-size:18px}
+  .menu-body{width:min(440px,100%);margin:0 auto;padding:20px}
+  .menu-item,.option-row{display:flex;align-items:center;justify-content:space-between;border:1px solid #ddd;padding:14px 16px;font-size:14px;cursor:pointer}
+  .menu-item+.menu-item,.option-row+.option-row{border-top:0}
+  .menu-item.danger{background:var(--ielts-red);border-color:var(--ielts-red);color:#fff;font-weight:700;margin-bottom:15px}
+
+  .final-action-btn{background:#fff;color:#111;border:1px solid #111;padding:8px 15px;border-radius:3px;font-size:12px;cursor:pointer}
+  .final-action-btn.primary{background:#111;color:#fff}
+  .transition-body{flex:1;display:flex;align-items:flex-start;justify-content:center;padding-top:16px;font-size:13px;color:#444}
+
+  .results-wrap{height:100%;overflow-y:auto;padding:30px 40px}
+  .results-wrap h1{color:var(--ielts-red);font-size:25px;margin:0 0 4px}
+  .score-summary{display:flex;gap:18px;flex-wrap:wrap;margin:20px 0 27px}
+  .score-box{min-width:130px;text-align:center;border:1px solid #ddd;border-radius:5px;padding:16px 22px}
+  .score-box .num{font-size:30px;font-weight:800;color:var(--ielts-red)}
+  .score-box .lbl{font-size:12px;color:#666;margin-top:4px}
+  .review-table{width:100%;border-collapse:collapse;font-size:13px}
+  .review-table th,.review-table td{border:1px solid #ddd;padding:8px 10px;text-align:left}
+  .review-table th{background:var(--panel)}
+  .ok{color:#148a3b;font-weight:800}.no{color:var(--ielts-red);font-weight:800}
+  .restart-btn{margin-top:22px;padding:10px 21px;border:0;border-radius:3px;background:#111;color:#fff;cursor:pointer}
+
+  body.contrast-wb .topbar,body.contrast-wb .bottombar,body.contrast-wb .content-wrap,body.contrast-wb .passage-pane,body.contrast-wb .questions-pane{background:#000!important;color:#fff!important}
+  body.contrast-wb .part-banner,body.contrast-wb .list-box,body.contrast-wb .summary-box,body.contrast-wb .group-card{background:#171717;border-color:#444}
+  body.contrast-wb input,body.contrast-wb select{background:#111;color:#fff;border-color:#777}
+  body.contrast-yb .topbar,body.contrast-yb .bottombar,body.contrast-yb .content-wrap,body.contrast-yb .passage-pane,body.contrast-yb .questions-pane{background:#000!important;color:#f1d70a!important}
+  body.contrast-yb .part-banner,body.contrast-yb .list-box,body.contrast-yb .summary-box,body.contrast-yb .group-card{background:#171717;border-color:#555}
+  body.contrast-yb input,body.contrast-yb select{background:#111;color:#f1d70a;border-color:#f1d70a}
+  #app.textsize-large .passage-pane,#app.textsize-large .questions-pane{font-size:16px}
+  #app.textsize-extralarge .passage-pane,#app.textsize-extralarge .questions-pane{font-size:19px}
+
+  @media(max-width:900px){
+    .main-wrap,.content-wrap{flex-direction:column}
+    .passage-pane{border-right:0;border-bottom:1px solid var(--border);max-height:42vh}
+    .notes-panel{position:absolute;right:0;top:0;bottom:0;z-index:55}
+    .brand-name{display:none}
+    .topbar{padding:8px 10px}
+    .passage-pane,.questions-pane{padding:18px}
+    .results-wrap{padding:22px 16px}
+  }
+
+
+  /* Requested permanent Telegram banner. The original test styling below is unchanged. */
+  .auth-banner-text{font-size:16px}.auth-banner-link{font-size:14px;padding:6px 11px}.auth-banner-play{width:24px;height:24px;font-size:12px}}
+
+</style>
+</head>
+<body>
+<div id="app">
+  
+  
+
+  
+
+  <section id="screen-test" style="height:100%;display:flex;flex-direction:column">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div><div class="ielts-logo">IELTS</div><div class="brand-name"></div></div>
+        <div class="taker-id-block"><div class="label">Test taker ID</div><div id="taker-id-display"></div><div class="timer-status" id="timer-display">60:00</div></div>
+      </div>
+      <div class="topbar-right"><span title="Connection">📶</span><span title="Notifications">🔔</span><button class="icon-btn" id="hamburger-btn" title="Menu">☰</button><button class="icon-btn" id="notes-toggle-btn" title="Notes">✏️</button></div>
+    </header>
+
+    <div class="main-wrap">
+      <div class="content-wrap" id="content-wrap"><main class="passage-pane" id="passage-pane"></main><aside class="questions-pane" id="questions-pane"></aside></div>
+      <aside class="notes-panel" id="notes-panel"><div class="notes-title">Notes</div><div id="notes-list"></div></aside>
+      <div class="menu-overlay" id="menu-overlay">
+        <div class="menu-header"><button class="menu-back" id="menu-back-btn">‹ Options</button><div class="menu-title" id="menu-title">Options</div><button class="menu-close" id="menu-close-btn">✕</button></div>
+        <div class="menu-body">
+          <div id="menu-root"><div class="menu-item danger" id="menu-submit-btn"><span>🚀 Go to submission page</span><span>›</span></div><div class="menu-item" id="menu-contrast-btn"><span>◐ Contrast</span><span>›</span></div><div class="menu-item" id="menu-textsize-btn"><span>🔍 Text size</span><span>›</span></div></div>
+          <div class="hidden" id="menu-contrast"><div class="option-row" data-contrast="bw"><span><span class="check">✔</span> Black on white</span></div><div class="option-row" data-contrast="wb"><span><span class="check"></span> White on black</span></div><div class="option-row" data-contrast="yb"><span><span class="check"></span> Yellow on black</span></div></div>
+          <div class="hidden" id="menu-textsize"><div class="option-row" data-textsize="regular"><span><span class="check">✔</span> Regular</span></div><div class="option-row" data-textsize="large"><span><span class="check"></span> Large</span></div><div class="option-row" data-textsize="extralarge"><span><span class="check"></span> Extra large</span></div></div>
+        </div>
+      </div>
+    </div>
+    <footer class="bottombar" id="bottombar"></footer>
+  </section>
+
+  <section class="hidden" id="screen-final" style="height:100%;display:flex;flex-direction:column">
+    <header class="topbar"><div class="topbar-left"><div class="ielts-logo">IELTS</div><div class="taker-id-block"><div class="label">Test taker ID</div><div id="taker-id-display-final"></div></div></div><div class="topbar-right"><button class="final-action-btn" id="back-to-test-btn">← Back to test</button><button class="final-action-btn primary" id="final-next-btn">Next ✈</button></div></header>
+    <div class="transition-body">Click next to submit and view your result.</div>
+    <footer class="bottombar"><div class="part-nav-group"><span class="part-label">Passage 1</span><span class="part-count">Questions 1–13</span></div><div class="part-nav-group"><span class="part-label">Passage 2</span><span class="part-count">Questions 14–26</span></div><div class="part-nav-group"><span class="part-label">Passage 3</span><span class="part-count">Questions 27–40</span></div><button class="submit-check" style="background:#111;color:#fff">✔</button></footer>
+  </section>
+
+  <section class="hidden results-wrap" id="screen-results">
+    <h1>Test Results</h1>
+    <p style="font-size:13px;color:#555">Test taker ID: <span id="results-taker-id"></span></p>
+    <div class="score-summary"><div class="score-box"><div class="num" id="score-correct">0</div><div class="lbl">Correct</div></div><div class="score-box"><div class="num">40</div><div class="lbl">Total Questions</div></div><div class="score-box"><div class="num" id="score-band">0.0</div><div class="lbl">Estimated Band</div></div></div>
+    <table class="review-table"><thead><tr><th style="width:60px">Q#</th><th>Your Answer</th><th>Correct Answer</th><th style="width:90px">Result</th></tr></thead><tbody id="review-body"></tbody></table>
+    <button class="restart-btn" id="restart-btn">Restart Test</button>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  
+  const answerKey = {"1":"FALSE","2":"NOT GIVEN","3":"TRUE","4":"NOT GIVEN","5":"FALSE","6":"TRUE","7":"hunting","8":"military","9":"tourism","10":"education","11":"finances","12":"dams","13":"automobiles","14":"C","15":"D","16":"G","17":"D","18":"E","19":"D","20":"C","21":"B","22":"F","23":"scene","24":"separators","25":"host-selling","26":"funnier","27":"NO","28":"YES","29":"NOT GIVEN","30":"NOT GIVEN","31":"YES","32":"D","33":"E","34":"B","35":"C","36":"processes","37":"cross-docking","38":"strategic","39":"demand innovations","40":"management services"};
+
+  const passages = {"1":{"title":"READING PASSAGE 1","sub":"The National Parks of America","time":"You should spend about 20 minutes on Questions 1–13.","paras":[["","America’s national parks are one of the country’s most remarkable and influential initiatives. The concept of the national park originated in America, though it was quickly replicated by similar parks in Canada, Finland, New Zealand, Australia and elsewhere. The first American national park was Yellowstone, created in 1872. Yellowstone comprises some 3,500 square miles of wilderness and today attracts more than four million visitors a year. Since 1872, nearly 60 additional national parks have been established in the USA, incorporating almost every type of natural environment, from mountains to deserts, lakes, rivers and coastlines. They are administered by the National Parks Service (NPS), which also manages significant monuments and historic structures such as the Statue of Liberty, the Gettysburg Museum and Ford’s Theatre, where President Lincoln was assassinated."],["","The creation of the national parks came in response to a growing attachment to the natural world that was developing in American society. In 1832, the painter George Catlin dreamed of creating ‘a nation’s park’ to preserve the grasslands in the state of South Dakota. Catlin failed to see such a park established in his lifetime, but his vision lived on. Four years later the writer Ralph Waldo Emerson published an important essay entitled ‘Nature’ in which he argued that natural landscapes should be protected rather than exploited for agriculture and commerce. The campaigner Frederick Olmsted went further, claiming that every American, not only the wealthy and powerful, had the right to access places of natural beauty. The creation of a public park in the Yosemite Valley was directly the result of his work."],["","The development of the national parks was a process that continued through the late 19th century and the early 20th century. The establishment of the first park at Yellowstone in 1872 was perhaps the defining moment in this process. The Yellowstone national park not only preserved the headwaters of the Mississippi, Colorado and Snake rivers, but also provided a sanctuary for countless endangered species by imposing a ban on hunting in all its forms. Today such an initiative would be commonplace but in these earliest days of the conservation movement, many Americans still regarded it as their right to shoot or trap wild animals."],["","Yellowstone was followed by Sequoia (1890), Mount Rainier (1899), Crater Lake (1902) and Wind Cave (1903), among many other parks. But while the creation of additional parks enjoyed wide popular support, there were frequent disagreements about their purpose. For some, the primary goal was the protection of the natural world, while for others the parks were about providing public access to nature. These two goals were at times contradictory and led to a variety of competing voices and factions. In recognition of the difficulties of running these vast wilderness areas, their management was for many years placed in the hands of the military, rather than the federal or state government."],["","The late 19th century was also a time when railroads were being constructed across America. Increasingly, these ran through even the most remote areas, where many parks were located, making tourism possible in these locations for the very first time. While this was welcomed by many park supporters, others were concerned that visitors should appreciate the parks in particular ways. Nathaniel Langford was instrumental in setting up Yellowstone and saw the park as an ideal opportunity for the education of ordinary citizens in all aspects of the natural world and environmental conservation, which was his number one priority."],["","In the early 20th century, the first really significant development was the setting up of the NPS in 1916. Now for the first time a single body was charged with administering the network and managing the numerous groups and interests that had a stake in it. Stephen Mather was appointed as the first Superintendent of Parks and under his leadership seven new parks were established, including Grand Canyon, Hawaii and Mount McKinley. However, arguably even more important was Mather’s transformation of the hitherto poorly managed finances of the parks."],["","The NPS generally saw the primary role of the parks as being environmental protection. For this reason, most human activities were regulated – farming and forestry were certainly not allowed. However, the controversial decision to permit the construction of dams in national parks was made on the basis that the resulting supplies of water and hydroelectric power would be in the public interest. Certainly, visitor numbers were unaffected as park admissions increased every year. Then in the 1930s the number of visitors expanded dramatically, largely because mass-produced automobiles became affordable, allowing ever more city-dwellers to reach the park network. With this, the national parks assumed a pre-eminent position in the social fabric of America, a legacy that continues to the present day."]]},"2":{"title":"READING PASSAGE 2","sub":"Children’s comprehension of television advertising","time":"You should spend about 20 minutes on Questions 14–26.","paras":[["A","In 1874, long before the advent of television, the English Parliament passed a law to protect children ‘from their own lack of experience and from the wiles of pushing tradesmen and moneylenders’ (James, 1965). The act is one of the earliest governmental policies to address children’s vulnerability to commercial exploitation and was produced before major corporations earned huge profits by marketing products directly to children. Yet the issues underlying this 19th-century policy remain much the same in the 21st century."],["B","Television has long been the predominant medium that advertisers have chosen for marketing products to children. It is estimated that the average child sees more than 40,000 television commercials a year, most of which are 15 to 30 seconds in length (Kunkel, 2001). According to another estimate, children aged 14 years and under make $424 billion in direct purchases and influence $4,190 billion in family purchases, underscoring the high stakes involved (McNeal, 1998). In addition, companies now recognise that brand loyalty built at an early age may reap economic rewards over a child’s lifetime (McNeal, 1987)."],["C","A number of factors have contributed to an unprecedented growth in both the amount and type of advertising directed at children. First and foremost among these are changes in the media environment. In decades past, television programming targeted at children was limited and relegated to time slots unpopular with their parents, such as Saturday mornings (Turow, 1981). Today, the number of channels received in the average US home has escalated with the diffusion of cable television and satellite technologies. In this new multichannel era, there are numerous national programme services devoted exclusively to children. Naturally, these channels deliver significant amounts of child-oriented marketing messages. Although parents may be pleased that their youngsters can now watch children’s programming at any hour of the day, they may not recognise that such viewing opportunities entail much greater exposure to advertising than any previous generation of youth has experienced."],["D","Approximately 80% of all advertising targeted at children falls within four product categories: toys, cereals, candies, and fast-food restaurants (Kunkel et al., 1992). Commercials are highly effective at employing specific features designed to attract children’s attention. For example, they use the strategy of introducing unique sound effects and rapidly moving images (Greer et al., 1982). The other most common persuasive strategy employed in advertising to children is to associate a product with playfulness and happiness, rather than to provide any actual product-related information (Kunkel et al., 1992). For example, a commercial featuring Ronald McDonald dancing, singing and smiling in McDonald’s restaurants without any mention of the actual food products available reflects a playful or happy theme. This strategy is also found frequently with cereal ads, which often include cartoon characters to help children identify the product. In contrast, most commercials fail to mention even the major grain used in each cereal."],["E","Another common feature of advertising to children is the use of product disclosures such as ‘batteries not included’ or ‘each part sold separately’. Studies make clear that young children do not comprehend the intended meaning of these disclaimers. For example, fewer than one in four kindergarten through second-grade children could grasp the meaning of ‘some assembly required’ in a commercial. In contrast, the use of child-friendly language such as ‘you have to put it together’ more than doubled the proportion of children who understood the qualifying message (Liebert et al., 1977). The phrase ‘part of a balanced breakfast’ is also a frequent disclosure included in most cereal ads to combat the concern that sugared cereal holds little nutritional value for children. Research shows that most children below age 7 have no idea what the term ‘balanced breakfast’ means (Palmer & McDowell, 1981). Rather than informing young viewers about the importance of a nutritious breakfast, this common disclaimer actually leaves many children with the misimpression that cereal alone is sufficient for a meal. This pattern of employing creative terminology in advertising content so as to obscure certain information that might be unhelpful to the sponsor is a long-standing practice that often misleads the consumer (Geis, 1982)."],["F","Very young children do not recognise that there are two fundamentally different categories of television content: programmes and commercials. Most children below the age of 4 or 5 exhibit low awareness of the concept of commercials, frequently explaining them as if they were a scene in the programme itself. Once this confusion diminishes, children first recognise the difference between programmes and commercials based on either affective (‘commercials are funnier than TV programmes’) or perceptual (‘commercials are short and programmes are long’) cues (Blatt et al., 1972)."],["G","Although most children’s programmes indicate that a commercial break is coming (for example, by saying ‘We’ll be right back after these messages’), research reveals that these ‘separators’ generally do not help children to recognise advertising content (Palmer & McDowell, 1979). This likely occurs because they are not perceptually distinct from the adjacent programming that surrounds them; in fact, many separators feature characters that appear in the same show that the commercial has just interrupted. When an ad includes one of the characters featured in a programme, this is known as host-selling. This type of advertising makes the task of discriminating between programme and commercial content particularly difficult for young children (Kunkel, 1988) and is thus restricted in the US by the Federal Communications Commission during children’s programmes."],["H","In sum, because young children lack the cognitive skills and abilities of older children and adults, they do not comprehend commercial messages in the same way as more mature audiences, and are therefore uniquely susceptible to advertising influence."]]},"3":{"title":"READING PASSAGE 3","sub":"BUSINESS INNOVATION","time":"You should spend about 20 minutes on Questions 27–40.","paras":[["","As new ‘wonder products’ are getting harder and harder to find, what should companies do to survive in today’s ever more competitive markets?"],["","The Oxford English Dictionary defines innovation as ‘making changes to something established’. Invention, by contrast, is the act of ‘coming upon or finding; discovery’. Revolutionary ‘inventions’ of 20th-century US firms include, for example, the safety razor, the hydraulic brake, and DNA fingerprinting. However, as Adrian Slywotsky of Mercer Management Consulting says, ‘In most industries, truly differentiating new-product breakthroughs are becoming increasingly rare’. And as ‘blockbuster’ novel products become steadily more elusive, big companies would do well to focus instead on making lots of small things better."],["","Unfortunately, big companies often have big problems with innovation. ‘Innovators try to change the status quo’, says Bhaskar Chakravorti of the Monitor Group, ‘which is why markets tend to resist them’. Innovations frequently disrupt the way companies do things (and may have been doing them for years). And it is not just markets that are nervous of innovation. Michael Hammer, co-author of Re-engineering the Corporation, cites the case of a PC-maker that set out to imitate Dell’s famous ‘Build to Order’ system of computer assembly. The company found its attempts were frustrated by both its head of manufacturing, who feared for his job, and its head of marketing, who did not want to upset his existing retail outlets. So the proposal got nowhere, and Dell continued to dominate the business."],["","Clayton Christensen, a Harvard Business School professor, describes how disruptive innovations – simpler, cheaper and more convenient products that seriously upset the status quo – often herald the rapid downfall of thriving, long-standing businesses. This, it is widely recognised, is because most such organisations are designed to grow through a series of sustaining innovations – the sort which simply improve on existing products for existing markets."],["","William Baumol, professor at New York University, argues that large companies have been learning important lessons from the history of innovation. Most have both cut back and redirected their Research and Development spending in recent years. Innovation by big companies is now based less on the discoveries of white-coated scientists, and more on incremental improvements in the processes that constitute daily operations."],["","According to marketing specialist Vijay Vishwanath, companies also need to adjust to the ongoing fragmentation of markets. Once-uniform mass markets are breaking up into countless ‘niches’, in which everything has to be customised for a small group of consumers. Looking for blockbusters in such a world is a daunting task. Another problem, according to Chakravorti, lies in the marketing of innovations. Too many executives are still stuck with the strategies used to sell Kodak’s first camera 120 years ago, when the product was so revolutionary that the company could forget about competition for at least a decade. Today, rival products can be rushed onto the market at speeds which would have been unimaginable in those days."],["","Companies that fail to come up with headline-hitting new products should not despair. ‘There are plenty of other, albeit less glamorous, areas where innovation can take place’, says Erik Brynjolfsson of the MIT Sloan School of Management. He claims that the roots of the USA’s productivity surge originate in ‘a genuine revolution in how American companies are using information technology to reinvent their business processes from top to bottom’."],["","Hammer highlights several instances where firms have added considerably to their shareholder value through what he calls operational innovations – creativity in their business processes. Notable among these is the American retail giant Wal-Mart. While superficially mundane, their pioneering idea of ‘cross-docking’ – shifting merchandise off trucks from suppliers and straight onto trucks heading for stores – has been fundamental to the company’s ability to offer low prices, the platform for its outstanding success."],["","Companies are also being encouraged to embrace strategic innovations, following the example of such firms as Southwest Airlines, a low-cost American regional carrier, whose creative strategies and shrewd timing won it a victory over its ailing competitor US Airways. The Swedish packaging company Tetra Pak also used this style of innovation, by moving away from delivering ready-made containers for customers into providing machinery and supplying dedicated materials for them to make their own packaging. This strips out many costs from the process, and also makes it very difficult for the customer to switch suppliers. Like Southwest Airlines, they achieved success through strategic innovations alone, with little innovation in either the underlying technology or the product sold."],["","In his book How to Grow When Markets Don’t, Slywotsky and his co-author Richard Wise recommend what they call demand innovations. A few far-sighted organisations such as the French industrial gas company Air Liquide have found success not – as in the case of strategic innovations – by meeting existing demand in a new way, but by discovering new forms of demand and adapting to supply the products or services required. Air Liquide had been a leading supplier of industrial gases until the early 1990s, when gas became a commodity and their operational income plunged. Realising the value of the skills they had gained over the decades, the company became a supplier not only of gas, but also of the management services to accompany it. Within a short time their profits rose again."],["","There are certain things that managers can do to make innovations like these happen within their organisations. For example, projects with potential should be rapidly hived off into independent business units, away from the smothering influence of the status quo. The ultimate outcome of any one innovation may still be unpredictable; the process from which it emerges is not."]]}};
+
+  const q = {"p1tf":[[1,"America copied the idea of national parks from other countries."],[2,"Yellowstone is the most frequently visited national park in the USA."],[3,"The NPS is responsible for certain buildings as well as natural landscapes."],[4,"Catlin was criticised by some people for proposing “a nation’s park”."],[5,"Emerson believed that farms and businesses should be allowed to use land freely."],[6,"Olmsted helped establish a park in the Yosemite Valley."]],"p2match":[[14,"a description of recent innovations in TV broadcasting"],[15,"a mention of the main goods and services advertised to children"],[16,"a reference to a current limitation on television advertising aimed at children"],[17,"two techniques used to encourage children to watch TV commercials"],[18,"a type of advertisement that may make children believe the opposite of what is true"]],"researchers":["A Kunkel","B McNeal","C Turow","D Kunkel et al.","E Greer et al.","F Liebert et al.","G Palmer & McDowell","H Geis"],"p2research":[[19,"Advertisements often aim to teach children that a brand is fun rather than telling them about what is being sold."],[20,"Originally children’s programmes were only broadcast when adults rarely watched TV."],[21,"Children have a significant impact on what adults buy."],[22,"Tests showed that children can follow information if simple words are used."]],"p3yn":[[27,"In order to stay in the market, companies today need to concentrate their efforts on finding genuinely original products."],[28,"Disruptive innovations often pose serious threats to even successful, well-established companies."],[29,"A key stage in the development of sustaining innovations involves research into the strengths and weaknesses of competitors’ products."],[30,"Manufacturers today are able to compete with innovations over shorter time periods than in the past."],[31,"It is hard to tell what the long-term result of any innovation might be."]],"people":["A Bhaskar Chakravorti","B Michael Hammer","C William Baumol","D Vijay Vishwanath","E Erik Brynjolfsson"],"p3people":[[32,"The need for companies to cater for ever more specialised sets of customers"],[33,"An explanation for the recent upward trend in the US economy"],[34,"An example of company personnel who resisted innovation"],[35,"A shift in the way many companies are organising their budgets"]]};
+
+  const state = {answers:{},currentPart:1,notes:[],timeLeft:3600,timer:null,takerId:""};
+  const $ = id => document.getElementById(id);
+  const show = el => el.classList.remove("hidden");
+  const hide = el => el.classList.add("hidden");
+  const esc = value => String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[ch]));
+
+  function renderPassage(data){
+    return `<div class="passage-title">${esc(data.title)}</div><div class="passage-sub">${esc(data.sub)}</div><div class="passage-time">${esc(data.time)}</div>`+
+      data.paras.map(([letter,text])=>`<div class="passage-para">${letter?`<span class="para-letter">${esc(letter)}</span>`:""}<span class="para-text">${esc(text)}</span></div>`).join("");
+  }
+  function banner(part,range){return `<div class="part-banner"><b>Reading Passage ${part}</b><div class="instr">Answer questions ${range}.</div></div>`}
+  function selectInput(num,text,options){
+    const current=state.answers[num]||"";
+    return `<div class="question-row" id="q${num}"><span class="qnum">${num}</span><span class="qtext">${esc(text)}</span><select class="answer-select" data-q="${num}"><option value="">--</option>${options.map(o=>`<option value="${esc(o)}" ${current===o?"selected":""}>${esc(o)}</option>`).join("")}</select></div>`;
+  }
+  function textInput(num){return `<input class="answer-input" id="q${num}" data-q="${num}" value="${esc(state.answers[num]||"")}" placeholder="${num}" autocomplete="off">`}
+  function listBox(title,items){return `<div class="list-box"><b>${esc(title)}</b><br>${items.map(esc).join("<br>")}</div>`}
+  function checkboxGroup(start,end,title,items){
+    const selected=new Set(); for(let n=start;n<=end;n++){if(state.answers[n])selected.add(state.answers[n]);}
+    return `<div class="group-card" id="q${start}">${Array.from({length:end-start},(_,i)=>`<span class="anchor" id="q${start+i+1}"></span>`).join("")}<div class="mc-question-title"><span class="qnum">${start}–${end}</span><span>${title}</span></div><div class="checkbox-options">${items.map(item=>{const val=item.charAt(0);return `<label><input type="checkbox" data-group="${start}-${end}" value="${val}" ${selected.has(val)?"checked":""}>${esc(item)}</label>`}).join("")}</div></div>`;
+  }
+  function mc(num,text,items){
+    const current=state.answers[num]||"";
+    return `<div class="mc-question" id="q${num}"><div class="mc-question-title"><span class="qnum">${num}</span><span>${esc(text)}</span></div><div class="mc-options">${items.map(item=>{const val=item.charAt(0);return `<label><input type="radio" name="q${num}" value="${val}" ${current===val?"checked":""}>${esc(item)}</label>`}).join("")}</div></div>`;
+  }
+
+  function renderQ1(){
+    return `${banner(1,"1–13")}
+      <div class="q-instructions"><span class="q-title">Questions 1–6</span><br>Do the following statements agree with the information given in the passage? Write <b>TRUE</b>, <b>FALSE</b>, or <b>NOT GIVEN</b>.</div>
+      ${q.p1tf.map(([n,t])=>selectInput(n,t,["TRUE","FALSE","NOT GIVEN"])).join("")}
+      <div class="q-instructions" style="margin-top:20px"><span class="q-title">Questions 7–13</span><br>Complete the notes below. Write <b>ONE WORD ONLY</b> from the passage for each answer.</div>
+      <div class="section-title">Development of the National Parks</div>
+      <div class="summary-box"><b>Late 19th Century</b><br>
+      • in Yellowstone Park, every type of ${textInput(7)} was prohibited<br>
+      • Yellowstone and other parks were administered by the ${textInput(8)}<br>
+      • the development of a railroad system encouraged new kinds of ${textInput(9)}<br>
+      • Langford believed that public ${textInput(10)} was the most important role of the parks<br><br>
+      <b>Early 20th Century</b><br>
+      • Mather greatly improved the ${textInput(11)} of the parks<br>
+      • the NPS allowed some ${textInput(12)} to be built in national parks<br>
+      • in the 1930s, the popularity of the parks increased with the availability of ${textInput(13)}</div>`;
+  }
+
+  function renderQ2(){
+    const letters=["A","B","C","D","E","F","G","H"];
+    return `${banner(2,"14–26")}
+      <div class="q-instructions"><span class="q-title">Questions 14–18</span><br>Reading Passage 2 has eight paragraphs, A–H. Which paragraph contains the following information? <b>You may use any letter more than once.</b></div>
+      ${q.p2match.map(([n,t])=>selectInput(n,t,letters)).join("")}
+      <div class="q-instructions" style="margin-top:20px"><span class="q-title">Questions 19–22</span><br>Match each statement with the correct researcher, A–H.</div>
+      ${listBox("List of Researchers",q.researchers)}
+      ${q.p2research.map(([n,t])=>selectInput(n,t,letters)).join("")}
+      <div class="q-instructions" style="margin-top:20px"><span class="q-title">Questions 23–26</span><br>Complete the summary below. Choose <b>NO MORE THAN TWO WORDS</b> from the passage for each answer.</div>
+      <div class="section-title">How very young children perceive commercials</div>
+      <div class="summary-box">Children below the age of 4 or 5 do not understand the difference between television programmes and commercials. In fact, these children often mistake an advertisement for a ${textInput(23)} from the programme they are watching. This is despite the fact that children’s TV programmes usually include announcements called ${textInput(24)} to show that there is going to be a commercial break. The problem is made more difficult because of a technique called ${textInput(25)}, whereby a person or cartoon figure from the programme is used to sell a product during the commercial break. From the age of 4 or 5, children begin to realise that commercials are different from TV programmes; for example, they may recognise that advertisements are ${textInput(26)} than actual TV programmes.</div>`;
+  }
+
+  function renderQ3(){
+    const peopleLetters=["A","B","C","D","E"];
+    return `${banner(3,"27–40")}
+      <div class="q-instructions"><span class="q-title">Questions 27–31</span><br>Do the following statements agree with the claims of the writer? Write <b>YES</b>, <b>NO</b>, or <b>NOT GIVEN</b>.</div>
+      ${q.p3yn.map(([n,t])=>selectInput(n,t,["YES","NO","NOT GIVEN"])).join("")}
+      <div class="q-instructions" style="margin-top:20px"><span class="q-title">Questions 32–35</span><br>Match each point with the correct person, A–E.</div>
+      ${listBox("List of People",q.people)}
+      ${q.p3people.map(([n,t])=>selectInput(n,t,peopleLetters)).join("")}
+      <div class="q-instructions" style="margin-top:20px"><span class="q-title">Questions 36–40</span><br>Complete the table below. Choose <b>NO MORE THAN TWO WORDS</b> from the passage for each answer.</div>
+      <div class="section-title">Types of Innovation</div>
+      <div class="summary-box"><b>Operational innovations</b><br>
+      Being innovative in the way existing business ${textInput(36)} are carried out.<br>
+      Example: moving goods by a system known as ${textInput(37)} — Wal-Mart.<br><br>
+      <b>${textInput(38)} innovations</b><br>
+      Developing new approaches to meeting the needs of existing markets. Example: giving customers the means to manufacture products themselves — Tetra Pak.<br><br>
+      <b>${textInput(39)}</b><br>
+      Identifying and meeting new types of customer needs. Example: offering customers ${textInput(40)} to go with the main products — Air Liquide.</div>`;
+  }
+
+  const partData={1:{range:[1,13],render:renderQ1},2:{range:[14,26],render:renderQ2},3:{range:[27,40],render:renderQ3}};
+
+  function renderPart(part){
+    state.currentPart=part;
+    $("passage-pane").innerHTML=renderPassage(passages[part]);
+    $("questions-pane").innerHTML=partData[part].render();
+    attachQuestionListeners();
+    renderBottomBar();
+    $("passage-pane").scrollTop=0;
+    $("questions-pane").scrollTop=0;
+  }
+
+  function attachQuestionListeners(){
+    document.querySelectorAll("#questions-pane [data-q]").forEach(el=>{
+      const eventName=el.tagName==="INPUT"&&el.type==="text"?"input":"change";
+      el.addEventListener(eventName,e=>{state.answers[Number(e.target.dataset.q)]=e.target.value;renderBottomBar();});
+    });
+    document.querySelectorAll("#questions-pane input[type=radio]").forEach(el=>el.addEventListener("change",e=>{state.answers[Number(e.target.name.slice(1))]=e.target.value;renderBottomBar();}));
+    document.querySelectorAll("#questions-pane input[type=checkbox][data-group]").forEach(el=>el.addEventListener("change",handleGroupChange));
+    $("passage-pane").addEventListener("mouseup",handleTextSelection);
+    $("questions-pane").addEventListener("mouseup",handleTextSelection);
+  }
+
+  function handleGroupChange(event){
+    const [start,end]=event.target.dataset.group.split("-").map(Number);
+    const max=end-start+1;
+    const boxes=[...document.querySelectorAll(`input[data-group="${start}-${end}"]`)];
+    let checked=boxes.filter(b=>b.checked);
+    if(checked.length>max){event.target.checked=false;checked=boxes.filter(b=>b.checked);}
+    const values=checked.map(b=>b.value).sort();
+    for(let n=start;n<=end;n++)state.answers[n]=values[n-start]||"";
+    renderBottomBar();
+  }
+
+  function countAnswered(part){
+    const [start,end]=partData[part].range; let count=0;
+    for(let n=start;n<=end;n++)if(String(state.answers[n]||"").trim())count++;
+    return count;
+  }
+
+  function renderBottomBar(){
+    let html="";
+    for(let part=1;part<=3;part++){
+      const [start,end]=partData[part].range;
+      if(part===state.currentPart){
+        html+=`<div class="part-nav-group"><span class="part-label active">Passage ${part}</span>`;
+        for(let n=start;n<=end;n++)html+=`<button class="qnum-btn ${state.answers[n]?"answered":""}" data-jump="${n}">${n}</button>`;
+        html+="</div>";
+      }else html+=`<div class="part-nav-group"><span class="part-label" data-part="${part}">Passage ${part}</span><span class="part-count">${countAnswered(part)} of ${end-start+1}</span></div>`;
+    }
+    html+=`<button class="submit-check" id="submit-check-btn">✔</button>`;
+    $("bottombar").innerHTML=html;
+    document.querySelectorAll("[data-part]").forEach(el=>el.addEventListener("click",()=>renderPart(Number(el.dataset.part))));
+    document.querySelectorAll("[data-jump]").forEach(el=>el.addEventListener("click",()=>{const target=$("q"+el.dataset.jump)||document.querySelector(`[data-q="${el.dataset.jump}"]`);if(target)target.scrollIntoView({behavior:"smooth",block:"center"});}));
+    $("submit-check-btn").addEventListener("click",goToFinal);
+  }
+
+  let selectionMenu=null;
+  function clearSelectionMenu(){if(selectionMenu){selectionMenu.remove();selectionMenu=null;}}
+  function handleTextSelection(){
+    clearSelectionMenu();
+    const selection=window.getSelection();
+    if(!selection||selection.isCollapsed||!selection.toString().trim())return;
+    const range=selection.getRangeAt(0); const rect=range.getBoundingClientRect();
+    const menu=document.createElement("div"); menu.className="selection-menu";
+    menu.style.left=`${Math.max(5,rect.left+window.scrollX)}px`; menu.style.top=`${rect.bottom+window.scrollY+5}px`;
+    menu.innerHTML='<button data-action="note">📝 Note</button><button data-action="highlight">🖊 Highlight</button>';
+    document.body.appendChild(menu); selectionMenu=menu;
+    const text=selection.toString();
+    menu.querySelector('[data-action="note"]').addEventListener("click",()=>{state.notes.push(text);renderNotes();$("notes-panel").classList.add("open");clearSelectionMenu();});
+    menu.querySelector('[data-action="highlight"]').addEventListener("click",()=>{try{const mark=document.createElement("mark");mark.className="hl";range.surroundContents(mark);}catch(_){/* Complex cross-element selection is ignored safely. */}clearSelectionMenu();});
+  }
+  document.addEventListener("mousedown",e=>{if(selectionMenu&&!selectionMenu.contains(e.target))clearSelectionMenu();});
+
+  function renderNotes(){
+    $("notes-list").innerHTML=state.notes.length?state.notes.map(note=>`<div class="note-entry">“${esc(note)}”</div>`).join(""):'<div class="notes-empty">Your private notes will appear here.<br><br>Select text to add a note or highlight it.</div>';
+  }
+  renderNotes();
+
+  function startTimer(){
+    clearInterval(state.timer); updateTimer();
+    state.timer=setInterval(()=>{state.timeLeft=Math.max(0,state.timeLeft-1);updateTimer();if(state.timeLeft===0){clearInterval(state.timer);showResults();}},1000);
+  }
+  function updateTimer(){
+    const min=Math.floor(state.timeLeft/60),sec=state.timeLeft%60;
+    $("timer-display").textContent=`${String(min).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+    $("timer-display").classList.toggle("low",state.timeLeft<=300);
+  }
+  function requestFullscreen(){const el=document.documentElement;const fn=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;if(fn){try{fn.call(el).catch?.(()=>{});}catch(_){}}}
+
+  $("pwd-submit").addEventListener("click",()=>{
+    if($("pwd-input").value.trim()===REQUIRED_PASSWORD){$("pwd-error").textContent="";hide($("screen-password"));show($("screen-id"));$("id-input").focus();}
+    else $("pwd-error").textContent="Incorrect password. Please try again.";
+  });
+  $("pwd-input").addEventListener("keydown",e=>{if(e.key==="Enter")$("pwd-submit").click();});
+  $("id-submit").addEventListener("click",()=>{
+    const id=$("id-input").value.trim();
+    if(!id){$("id-error").textContent="Please enter your Test Taker ID.";return;}
+    state.takerId=id;$("taker-id-display").textContent=id;$("taker-id-display-final").textContent=id;$("results-taker-id").textContent=id;
+    hide($("screen-id"));show($("screen-test"));renderPart(1);startTimer();requestFullscreen();
+  });
+  $("id-input").addEventListener("keydown",e=>{if(e.key==="Enter")$("id-submit").click();});
+  $("notes-toggle-btn").addEventListener("click",()=>$("notes-panel").classList.toggle("open"));
+
+  $("hamburger-btn").addEventListener("click",()=>{$("menu-overlay").classList.add("open");showMenuRoot();});
+  $("menu-close-btn").addEventListener("click",()=>$("menu-overlay").classList.remove("open"));
+  $("menu-back-btn").addEventListener("click",showMenuRoot);
+  $("menu-submit-btn").addEventListener("click",()=>{$("menu-overlay").classList.remove("open");goToFinal();});
+  $("menu-contrast-btn").addEventListener("click",()=>showSubMenu("Contrast","menu-contrast"));
+  $("menu-textsize-btn").addEventListener("click",()=>showSubMenu("Text size","menu-textsize"));
+  function showMenuRoot(){$("menu-title").textContent="Options";$("menu-back-btn").classList.remove("show");show($("menu-root"));hide($("menu-contrast"));hide($("menu-textsize"));}
+  function showSubMenu(title,id){$("menu-title").textContent=title;$("menu-back-btn").classList.add("show");hide($("menu-root"));hide($("menu-contrast"));hide($("menu-textsize"));show($(id));}
+  document.querySelectorAll("[data-contrast]").forEach(row=>row.addEventListener("click",()=>{document.body.classList.remove("contrast-wb","contrast-yb");if(row.dataset.contrast==="wb")document.body.classList.add("contrast-wb");if(row.dataset.contrast==="yb")document.body.classList.add("contrast-yb");document.querySelectorAll("[data-contrast] .check").forEach(x=>x.textContent="");row.querySelector(".check").textContent="✔";}));
+  document.querySelectorAll("[data-textsize]").forEach(row=>row.addEventListener("click",()=>{$("app").classList.remove("textsize-large","textsize-extralarge");if(row.dataset.textsize!=="regular")$("app").classList.add("textsize-"+row.dataset.textsize);document.querySelectorAll("[data-textsize] .check").forEach(x=>x.textContent="");row.querySelector(".check").textContent="✔";}));
+
+  function goToFinal(){hide($("screen-test"));show($("screen-final"));}
+  $("back-to-test-btn").addEventListener("click",()=>{hide($("screen-final"));show($("screen-test"));});
+  $("final-next-btn").addEventListener("click",showResults);
+
+  function normalize(value){return String(value||"").trim().toLowerCase().replace(/[’']/g,"").replace(/[‐‑–—-]+/g," ").replace(/\s+/g," ");}
+  function estimateBand(correct){const table=[[39,9],[37,8.5],[35,8],[33,7.5],[30,7],[27,6.5],[23,6],[19,5.5],[15,5],[13,4.5],[10,4],[8,3.5],[6,3]];for(const [min,band] of table)if(correct>=min)return band.toFixed(1);return"2.5";}
+  function showResults(){
+    clearInterval(state.timer);
+    let correct=0,rows="";
+    for(let n=1;n<=40;n++){
+      const user=state.answers[n]||"",key=answerKey[n],aliases=n===40?["management services","managements services"]:[key],ok=aliases.some(a=>normalize(user)===normalize(a));
+      if(ok)correct++;
+      rows+=`<tr><td>${n}</td><td>${user?esc(user):'<i style="color:#999">(no answer)</i>'}</td><td>${esc(key)}</td><td>${ok?'<span class="ok">✔ Correct</span>':'<span class="no">✘ Incorrect</span>'}</td></tr>`;
+    }
+    $("score-correct").textContent=correct;$("score-band").textContent=estimateBand(correct);$("review-body").innerHTML=rows;
+    hide($("screen-test"));hide($("screen-final"));show($("screen-results"));
+  }
+
+  $("restart-btn").addEventListener("click",()=>{
+    clearInterval(state.timer);state.answers={};state.currentPart=1;state.notes=[];state.timeLeft=3600;state.takerId="";
+    document.body.className="";$("app").className="";renderNotes();
+    $("pwd-input").value="";$("id-input").value="";$("pwd-error").textContent="";$("id-error").textContent="";
+    hide($("screen-results"));show($("screen-password"));
+  });
+})();
+</script>
+</body>
+</html>

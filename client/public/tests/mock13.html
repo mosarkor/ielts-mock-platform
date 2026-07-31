@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Reading Test — Jasurbek</title>
+<style>
+  :root{
+    --ielts-red:#d2122e;
+    --border:#c9c9c9;
+    --text:#1a1a1a;
+    --muted:#6b6b6b;
+    --bg-panel:#f0f0f0;
+    --focus-blue:#2b6fd6;
+    --highlight:#ffe066;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;font-family:Arial, Helvetica, sans-serif;color:var(--text);background:#fff;}
+  #app{height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  .brand-badge{position:relative;width:60px;height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;}
+  .brand-badge .ring{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(from 0deg,#d2122e,#ff8a3d,#ffd23f,#2b6fd6,#d2122e);animation:spin 4s linear infinite;}
+  .brand-badge .photo{position:relative;width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;z-index:2;animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(210,18,46,0.35);}50%{box-shadow:0 0 0 6px rgba(210,18,46,0);}}
+
+  .gate-screen{height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;}
+  .gate-card{background:#fff;border:1px solid var(--border);border-radius:4px;padding:40px 44px;width:380px;box-shadow:0 2px 10px rgba(0,0,0,0.08);text-align:center;}
+  .gate-brand-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;}
+  .gate-logo{font-size:28px;font-weight:800;color:var(--ielts-red);letter-spacing:1px;}
+  .gate-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;font-weight:bold;margin-bottom:6px;}
+  .gate-card input[type=text],.gate-card input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:3px;font-size:15px;margin-bottom:18px;}
+  .gate-card input:focus{outline:2px solid var(--focus-blue);border-color:var(--focus-blue);}
+  .gate-btn{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:3px;font-size:15px;cursor:pointer;}
+  .gate-btn:hover{background:#000;}
+  .gate-error{color:var(--ielts-red);font-size:13px;margin:-10px 0 14px;min-height:16px;text-align:left;}
+  .gate-footer{margin-top:18px;font-size:11px;color:#999;}
+  .gate-footer a{color:var(--focus-blue);text-decoration:none;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff;min-height:76px;}
+  .topbar-left{display:flex;align-items:center;gap:14px;}
+  .ielts-logo{font-size:20px;font-weight:800;color:var(--ielts-red);letter-spacing:0.5px;}
+  .taker-id-block{font-size:12px;line-height:1.3;}
+  .taker-id-block .label{font-weight:bold;font-size:12px;}
+  .timer-status{color:#333;font-size:12px;display:flex;align-items:center;gap:4px;font-weight:bold;}
+  .timer-status.low{color:var(--ielts-red);}
+  .topbar-right{display:flex;align-items:center;gap:18px;font-size:18px;color:#222;}
+  .topbar-right .icon-btn{cursor:pointer;background:none;border:none;font-size:18px;color:#222;padding:4px;display:flex;align-items:center;}
+
+  .main-wrap{flex:1;display:flex;overflow:hidden;position:relative;}
+  .passage-pane{flex:1 1 50%;overflow-y:auto;padding:22px 26px;border-right:1px solid var(--border);font-size:14px;line-height:1.75;}
+  .questions-pane{flex:1 1 50%;overflow-y:auto;padding:22px 26px 90px;}
+  .passage-title{font-size:17px;font-weight:800;margin-bottom:4px;}
+  .passage-sub{font-size:12px;color:var(--muted);margin-bottom:18px;text-transform:none;}
+  .passage-para{margin-bottom:14px;display:flex;gap:10px;}
+  .para-letter{font-weight:bold;color:var(--ielts-red);flex-shrink:0;width:18px;}
+  .para-text{flex:1;}
+
+  .part-banner{background:var(--bg-panel);border:1px solid #ddd;border-radius:2px;padding:12px 16px;margin-bottom:18px;}
+  .part-banner b{font-size:14px;}
+  .part-banner div.instr{font-size:13px;margin-top:2px;}
+  .q-instructions{font-size:13px;margin-bottom:10px;}
+  .q-title{font-weight:bold;font-size:13px;}
+  .section-title{font-weight:bold;margin:18px 0 10px;font-size:14px;}
+
+  input.blank{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 8px;font-size:14px;width:150px;text-align:center;font-family:inherit;}
+  input.blank:focus{outline:none;border-color:var(--focus-blue);box-shadow:0 0 0 1px var(--focus-blue);}
+
+  select.blank-select{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 6px;font-size:13px;font-family:inherit;background:#fafcff;width:170px;}
+  .mc-question{margin-bottom:20px;}
+  .mc-question .qnum{display:inline-block;border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;margin-right:6px;}
+  .mc-opts label{display:block;font-size:13px;margin:6px 0 0 22px;cursor:pointer;}
+  .mc-opts input{margin-right:8px;}
+
+  .tfng-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:13px;}
+  .tfng-row .qtext{flex:1;}
+  .tfng-row select{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 8px;font-size:13px;font-family:inherit;width:170px;}
+  .notes-block{font-size:14px;line-height:2.1;}
+  .notes-row{margin:2px 0;}
+  .help-select-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;}
+  .help-select-row .qnum,.tfng-row .qnum{border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;}
+  .list-box{font-size:12px;background:var(--bg-panel);border:1px solid #ddd;padding:10px 14px;margin:12px 0 16px;line-height:1.7;}
+
+  .flow-box{border:1px solid #333;border-radius:3px;padding:10px 14px;margin:8px 0;font-size:13px;background:#fafafa;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .flow-arrow{text-align:center;font-size:16px;color:#555;margin:2px 0;}
+
+  .selection-menu{position:absolute;background:#fff;border:1px solid #999;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:flex;z-index:50;border-radius:2px;}
+  .selection-menu button{border:none;background:none;padding:8px 12px;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .selection-menu button:hover{background:#f0f0f0;}
+  .selection-menu button + button{border-left:1px solid #ddd;}
+  mark.hl{background:var(--highlight);}
+  .notes-panel{width:260px;border-left:1px solid var(--border);background:#f0f0f0;padding:16px;flex-shrink:0;display:none;overflow-y:auto;}
+  .notes-panel.open{display:block;}
+  .notes-panel-title{font-weight:bold;font-size:13px;margin-bottom:14px;color:var(--ielts-red);}
+  .notes-panel-empty{color:#555;font-size:13px;text-align:center;margin-top:40px;line-height:1.6;}
+  .note-entry{background:#fff;border:1px solid #ccc;border-radius:3px;padding:8px 10px;margin-bottom:10px;font-size:12px;}
+  .note-entry .quoted{font-style:italic;color:#333;margin-bottom:4px;}
+
+  .bottombar{border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;height:52px;flex-shrink:0;background:#fff;font-size:13px;justify-content:space-between;overflow-x:auto;}
+  .part-nav-group{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .part-nav-group .part-label{font-weight:bold;color:#333;white-space:nowrap;cursor:pointer;}
+  .part-nav-group .part-label.active-part{color:var(--ielts-red);}
+  .qnum-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;border:1px solid transparent;color:#333;cursor:pointer;background:none;border-radius:2px;}
+  .qnum-btn.answered{color:var(--focus-blue);font-weight:bold;}
+  .part-count{color:#999;font-size:12px;white-space:nowrap;}
+  .submit-check{width:36px;height:36px;background:#f0f0f0;border:none;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:#333;flex-shrink:0;}
+  .submit-check:hover{background:#e2e2e2;}
+
+  .menu-overlay{position:absolute;inset:0;background:#fff;z-index:40;display:none;flex-direction:column;}
+  .menu-overlay.open{display:flex;}
+  .menu-header{display:grid;grid-template-columns:96px 1fr 40px;align-items:center;padding:14px 16px;border-bottom:1px solid #eee;font-size:15px;font-weight:600;}
+  .menu-header .back-btn{grid-column:1;justify-self:start;background:none;border:none;cursor:pointer;font-size:14px;color:#111;display:none;align-items:center;gap:2px;padding:4px 0;white-space:nowrap;}
+  .menu-header .back-btn.show{display:flex;}
+  .menu-header .title-text{grid-column:2;text-align:center;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .menu-header .close-btn{grid-column:3;justify-self:end;background:none;border:none;cursor:pointer;font-size:18px;}
+  .menu-body{padding:20px;max-width:440px;margin:0 auto;width:100%;}
+  .menu-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid #ddd;cursor:pointer;font-size:14px;}
+  .menu-item + .menu-item{border-top:none;}
+  .menu-item.danger{background:var(--ielts-red);color:#fff;border-color:var(--ielts-red);font-weight:600;}
+  .menu-item .chev{font-size:15px;}
+  .option-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid #ddd;font-size:13px;cursor:pointer;}
+  .option-row + .option-row{border-top:none;}
+  .option-row .check{width:16px;color:#111;display:inline-block;}
+  .swatch{width:60px;height:22px;border:1px solid #999;display:flex;align-items:center;justify-content:center;gap:2px;}
+  .swatch .bar{width:3px;height:12px;}
+  .sw-bw .bar{background:#333;}.sw-bw{background:#eee;}.sw-wb{background:#111;}.sw-wb .bar{background:#eee;}.sw-yb{background:#111;}.sw-yb .bar{background:#e8c400;}
+  .textsize-regular .passage-pane,.textsize-regular .questions-pane{font-size:13px;}
+  .textsize-large .passage-pane,.textsize-large .questions-pane{font-size:16px;}
+  .textsize-extralarge .passage-pane,.textsize-extralarge .questions-pane{font-size:19px;}
+
+  .final-action-btn{background:#fff;color:#111;border:1px solid #111;padding:7px 16px;border-radius:3px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .final-action-btn:hover{background:#f2f2f2;}.final-action-btn.primary{background:#111;color:#fff;}.final-action-btn.primary:hover{background:#000;}
+  .transition-body{flex:1;display:flex;align-items:flex-start;justify-content:center;padding-top:10px;}
+  .results-wrap{padding:30px 40px;overflow-y:auto;height:100%;}
+  .results-wrap h1{color:var(--ielts-red);font-size:24px;margin-bottom:4px;}
+  .score-summary{display:flex;gap:24px;margin:20px 0 28px;flex-wrap:wrap;}
+  .score-box{border:1px solid #ddd;border-radius:4px;padding:16px 24px;text-align:center;min-width:120px;}
+  .score-box .num{font-size:30px;font-weight:800;color:var(--ielts-red);}.score-box .lbl{font-size:12px;color:#666;margin-top:4px;}
+  table.review-table{width:100%;border-collapse:collapse;font-size:13px;} table.review-table th, table.review-table td{border:1px solid #ddd;padding:8px 10px;text-align:left;} table.review-table th{background:var(--bg-panel);}
+  .ok{color:#1a8a3d;font-weight:bold;}.no{color:var(--ielts-red);font-weight:bold;}
+  .restart-btn{margin-top:24px;background:#111;color:#fff;border:none;padding:10px 22px;border-radius:3px;cursor:pointer;font-size:14px;}
+
+  body.contrast-wb .content-wrap,body.contrast-wb .main-wrap,body.contrast-wb .topbar,body.contrast-wb .bottombar,body.contrast-wb .passage-pane,body.contrast-wb .questions-pane{background:#000 !important;color:#fff !important;}
+  body.contrast-wb .part-banner,body.contrast-wb .list-box,body.contrast-wb .flow-box{background:#1a1a1a;border-color:#444;} body.contrast-wb input.blank,body.contrast-wb select{background:#111;color:#fff;border-color:#666;} body.contrast-wb .passage-pane{border-color:#444;}
+  body.contrast-yb .content-wrap,body.contrast-yb .main-wrap,body.contrast-yb .topbar,body.contrast-yb .bottombar,body.contrast-yb .passage-pane,body.contrast-yb .questions-pane{background:#000 !important;color:#f2d70a !important;}
+  body.contrast-yb .part-banner,body.contrast-yb .list-box,body.contrast-yb .flow-box{background:#1a1a1a;border-color:#555;} body.contrast-yb input.blank,body.contrast-yb select{background:#111;color:#f2d70a;border-color:#f2d70a;} body.contrast-yb .passage-pane{border-color:#555;}
+  .hidden{display:none !important;}
+  @media (max-width:900px){.main-wrap{flex-direction:column;}.passage-pane{border-right:none;border-bottom:1px solid var(--border);max-height:42vh;}.notes-panel{position:absolute;right:0;top:0;bottom:0;z-index:45;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="gate-screen" id="screen-password">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram"><span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek"></a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Reading Test Access</div>
+      <label for="pwd-input">Enter Password</label>
+      <input type="password" id="pwd-input" placeholder="Password" autocomplete="off">
+      <div class="gate-error" id="pwd-error"></div>
+      <button class="gate-btn" id="pwd-submit">Continue</button>
+      <div class="gate-footer">Full Reading Test — <a href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener"></a></div>
+    </div>
+  </div>
+
+  <div class="gate-screen hidden" id="screen-id">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram"><span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek"></a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Enter your Test Taker ID</div>
+      <label for="id-input">Test Taker ID</label>
+      <input type="text" id="id-input" placeholder="e.g. 123456789" autocomplete="off">
+      <div class="gate-error" id="id-error"></div>
+      <button class="gate-btn" id="id-submit">Start Test</button>
+      <div class="gate-footer">Full Reading Test — <a href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener">@shohrukhposts</a></div>
+    </div>
+  </div>
+
+  <div class="hidden" id="screen-test" style="height:100%;display:flex;flex-direction:column;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram"><span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek"></a>
+        <div class="ielts-logo">IELTS</div>
+        <div class="taker-id-block"><div><span class="label">Test taker ID</span></div><div id="taker-id-display" style="color:#333;"></div><div class="timer-status" id="timer-display">60:00</div></div>
+      </div>
+      <div class="topbar-right"><span title="Connection">📶</span><span title="Notifications">🔔</span><button class="icon-btn" id="hamburger-btn" title="Menu">☰</button><button class="icon-btn" id="notes-toggle-btn" title="Notes">✏️</button></div>
+    </div>
+    <div class="main-wrap">
+      <div class="content-wrap" id="content-wrap" style="display:flex;flex:1;overflow:hidden;"><div class="passage-pane" id="passage-pane"></div><div class="questions-pane" id="questions-pane"></div></div>
+      <div class="notes-panel" id="notes-panel"><div class="notes-panel-title">Notes</div><div id="notes-list"></div></div>
+      <div class="menu-overlay" id="menu-overlay">
+        <div class="menu-header"><button class="back-btn" id="menu-back-btn">‹ Options</button><span id="menu-header-title" class="title-text">Options</span><button class="close-btn" id="menu-close-btn">✕</button></div>
+        <div class="menu-body">
+          <div id="menu-root-view"><div class="menu-item danger" id="menu-submit-btn" style="margin-bottom:16px;"><span>🚀 Go to submission page</span><span class="chev">›</span></div><div class="menu-item" id="menu-contrast-btn"><span>◐ Contrast</span><span class="chev">›</span></div><div class="menu-item" id="menu-textsize-btn"><span>🔍 Text size</span><span class="chev">›</span></div></div>
+          <div id="menu-contrast-view" class="hidden"><div class="option-row" data-contrast="bw"><span><span class="check">✔</span> Black on white</span><span class="swatch sw-bw"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div><div class="option-row" data-contrast="wb"><span><span class="check"></span> White on black</span><span class="swatch sw-wb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div><div class="option-row" data-contrast="yb"><span><span class="check"></span> Yellow on black</span><span class="swatch sw-yb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div></div>
+          <div id="menu-textsize-view" class="hidden"><div class="option-row" data-textsize="regular"><span><span class="check">✔</span> Regular</span></div><div class="option-row" data-textsize="large"><span><span class="check"></span> Large</span></div><div class="option-row" data-textsize="extralarge"><span><span class="check"></span> Extra large</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bottombar" id="bottombar"></div>
+  </div>
+
+  <div class="hidden" id="screen-final" style="height:100%;display:flex;flex-direction:column;position:relative;">
+    <div class="topbar"><div class="topbar-left"><a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener"><span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek"></a><div class="ielts-logo">IELTS</div><div class="taker-id-block"><div><span class="label">Test taker ID</span></div><div id="taker-id-display-final" style="color:#333;"></div></div></div><div class="topbar-right"><button class="final-action-btn" id="back-to-test-btn">← Back to test</button><button class="final-action-btn primary" id="final-next-btn">Next ✈</button></div></div>
+    <div class="transition-body"><p style="font-size:13px;color:#333;">Click next to continue</p></div>
+    <div class="bottombar"><div class="part-nav-group"><span class="part-label">Passage 1</span><span class="part-count">0 of 13</span></div><div class="part-nav-group"><span class="part-label">Passage 2</span><span class="part-count">0 of 13</span></div><div class="part-nav-group"><span class="part-label">Passage 3</span><span class="part-count">0 of 14</span></div><button class="submit-check" style="background:#111;color:#fff;">✔</button></div>
+  </div>
+
+  <div class="hidden results-wrap" id="screen-results">
+    <h1>Test Results</h1><p style="color:#555;font-size:13px;">Test taker ID: <span id="results-taker-id"></span></p>
+    <div class="score-summary"><div class="score-box"><div class="num" id="score-correct">0</div><div class="lbl">Correct</div></div><div class="score-box"><div class="num" id="score-total">40</div><div class="lbl">Total Questions</div></div><div class="score-box"><div class="num" id="score-band">0.0</div><div class="lbl">Estimated Band</div></div></div>
+    <table class="review-table"><thead><tr><th style="width:60px;">Q#</th><th>Your Answer</th><th>Correct Answer</th><th style="width:70px;">Result</th></tr></thead><tbody id="review-body"></tbody></table>
+    <button class="restart-btn" id="restart-btn">Restart Test</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  
+  const answerKey = {
+  "1": "C",
+  "2": "A",
+  "3": "D",
+  "4": "A",
+  "5": "C",
+  "6": "B",
+  "7": "beaks",
+  "8": "vomited",
+  "9": "hardens",
+  "10": "TRUE",
+  "11": "NOT GIVEN",
+  "12": "FALSE",
+  "13": "NOT GIVEN",
+  "14": "FALSE",
+  "15": "TRUE",
+  "16": "NOT GIVEN",
+  "17": "sludge",
+  "18": "sand",
+  "19": "gravel",
+  "20": "A",
+  "21": "B",
+  "22": "E",
+  "23": "C",
+  "24": "G",
+  "25": "B",
+  "26": "D",
+  "27": "L",
+  "28": "D",
+  "29": "E",
+  "30": "K",
+  "31": "I",
+  "32": "B",
+  "33": "YES",
+  "34": "NO",
+  "35": "NOT GIVEN",
+  "36": "YES",
+  "37": "NO",
+  "38": "C",
+  "39": "D",
+  "40": "B"
+};
+  const passages = {
+  "1": {
+    "title": "READING PASSAGE 1",
+    "sub": "Ambergris — what is it and where does it come from?",
+    "paras": [
+      [
+        "",
+        "In the ancient world, the waxy, grey substance we now refer to as ambergris was highly prized for its medicinal properties and was widely used as a spice, which was believed to be an aphrodisiac when added to food or wine. Ambergris itself is pleasantly aromatic, especially when warmed, and it was also highly valued as a fixing agent in the making of perfume, since it enabled a scent to retain its fragrance for much longer than might otherwise have been possible. Most ambergris was found in the form of lumps floating on the surface of the sea or washed up on the shores of tropical and temperate oceans. At one time, ambergris was worth its weight in gold, but there was much confusion about its origins."
+      ],
+      [
+        "",
+        "Ambergris was known to the Arabs as 'anbar' and was originally called amber in the West in the Middle Ages. This eventually led to further confusion in the popular mind between ambergris and true amber, the mineral known to mineralogists as succinite, which is actually fossilised tree resin, and generally yellow in colour. Both substances were rare and costly, and both were associated with the sea, largely because for Europeans, the most common source of amber was the shores of the Baltic. In Chapter 92 of Moby Dick, the American writer Herman Melville pours scorn on those who believed the two substances to be the same: 'Though the word ambergris is the French compound for grey amber, yet the two substances are quite distinct. For amber, though at times found on the seacoast, is also dug up in some far inland soils, whereas ambergris is never found except upon the sea. Besides, amber is a hard, transparent, brittle, odorless substance, used for mouth-pieces to pipes, for beads and ornaments; but ambergris is soft, waxy, and so highly fragrant that it is largely used in perfumery.'"
+      ],
+      [
+        "",
+        "Moby Dick was published in 1851, by which time the mystery of the origins of ambergris had been resolved by the scientific community. In 1783, the botanist Joseph Banks, who had accompanied Captain James Cook on his voyages of discovery in the Pacific, presented a paper to the Royal Society of London by the German physician Dr. Franz Xavier Schwediawer in which it was conclusively proved that ambergris came from sperm whales. In this, he was confirming an observation made in the 13th century by the great Venetian traveller Marco Polo, who, while on the island of Socotra in the Indian Ocean, had witnessed a sperm whale vomiting up ambergris. But whereas Marco Polo imagined that the whale had swallowed the lump in the depths of the sea, Schwediawer showed that the origin of the material was inside the whale itself."
+      ],
+      [
+        "",
+        "The sperm whale is the largest of the odontocetes, or toothed whales. Males can grow up to 20 meters in length. Melville described the sperm whale as 'the king of whales', and his novel Moby Dick is based on the pursuit of one such creature. Sperm whales are renowned for their ability to dive to great depths, possibly a far 3,000 metres below the surface, and for remaining underwater for periods of two hours or more in pursuit of their favourite prey, the giant squid. It is from the problems the whales have in digesting the beaks of such creatures that ambergris has its origins. The beak is sharp and irritates the lower intestine, which responds by producing a black, foul-smelling liquid. It is not clear to scientists whether this secretion should be considered a normal response by the whale's digestive system or a pathological one, but from time to time large quantities of the liquid are vomited up by the whale. Once outside the whale's body and exposed to air, the substance hardens, acquiring the waxy, greyish and pleasantly aromatic characteristics of ambergris. Often, the beaks of squid are still found embedded in lumps of ambergris, some of which can weigh several hundred kilograms."
+      ],
+      [
+        "",
+        "Melville took some delight in contrasting the origins of ambergris with the high value placed upon it by refined society: 'Who would think, then, that such fine ladies and gentlemen should regale themselves with an essence found in the inglorious bowels of a sick whale!' Sperm whales were ruthlessly pursued by commercial whalers in the 19th and 20th centuries. In 1963-64 alone, almost 30,000 individuals were killed, and only the imposition of a ban on the hunting of sperm whales in 1984 saved the species from extinction. Ambergris was by far the most valuable product to be extracted during the processing of the whales' carcasses, and over 90 per cent of the annual worldwide total was acquired in this way, as a by-product of commercial whaling."
+      ],
+      [
+        "",
+        "However, even before the ban on hunting sperm whales was imposed, the 1972 Marine Mammal Protection Act had prohibited trade in ambergris. Just as petroleum and plastic products were replacing other natural products of whaling, so ambergris was supplanted in the making of perfume by other materials, some natural and some synthetic in origin. Nevertheless, it is possible that, as sperm whale populations recover to their former numbers in the wild, so the sight of lumps of ambergris washed ashore along the tide line will once again become a familiar one to beachcombers the world over."
+      ]
+    ]
+  },
+  "2": {
+    "title": "READING PASSAGE 2",
+    "sub": "Water Treatment 2: Reed Bed",
+    "paras": [
+      [
+        "A",
+        "Nowadays subsurface flow wetlands are a common alternative in Europe for the treatment of wastewater in rural areas. Mainly in the last 10 to 12 years, there has been significant growth in the number and size of the systems in use. Compared to common treatment facilities, wetlands are lower in cost investment, are lesser to maintain, and are ideal for densely populated rural or suburban areas rather than urban areas."
+      ],
+      [
+        "B",
+        "The Common Reed has the ability to transfer oxygen from its leaves, down through its stem and rhizomes and out via its root system. As a result of this action, a very high population of micro-organisms occurs in the root system, with zones of aerobic, anoxic, and anaerobic conditions. Therefore with the waste water moving very slowly and carefully through the mass of reed roots, this liquid can be successfully treated."
+      ],
+      [
+        "C",
+        "A straightforward definition of a reed bed is: if you have dirty water in your pool or pond which is heavily polluted, reed beds will be planted to make the water clean again. This is good for ecology and living organisms and fish in the water. Reed beds have a wide range of qualities and are acceptable for cleaning everything from secondary to tertiary treatment of mild domestic effluent, to rural waste and even heavy industrial contaminants. The reason why they're so effective is often that within the bed's root sector, natural biological, physical and chemical processes interact with one another to degrade or remove a good range of pollutants. Reed beds can be built in a number of variants, but mainly they are of the horizontal flow or vertical (down) flow configuration where water flows through the beds horizontally or vertically."
+      ],
+      [
+        "D",
+        "Horizontal-flow wetlands may be of two types: free-water surface-flow (FWF) or subsurface water-flow (SSF). In the former, the effluent flows freely above the sand/gravel bed in which the reeds etc. are planted; in the latter effluent passes through the sand/gravel bed. In FWF-type wetlands, the effluent is treated by plant stems, leaves and rhizomes. Such FWF wetlands are densely planted and typically have water depths of less than 0.4m. However, dense planting can limit oxygen diffusion into the water. These systems work particularly well for low strength effluents or effluents that have undergone some form of pretreatment and play an invaluable role in tertiary treatment and the polishing of effluents. The horizontal reed flow system uses a long reed bed, where the liquid slowly flows horizontally through. The length of the reed bed is about 100 meters. The downside of the horizontal reed beds is that they use up lots of land space and they do take quite a long time to produce clean water."
+      ],
+      [
+        "E",
+        "A vertical flow reed bed is a sealed, gravel-filled trench with reeds growing in it. The common reed oxygenates the water, which helps to create the right environment for colonies of bacteria to break down unwanted organic matter and pollutants. The reeds also make the bed attractive to wildlife."
+      ],
+      [
+        "F",
+        "In vertical flow (downflow) reed beds, the wastewater is applied on top of the reed bed, flows down through a rhizome zone with sludge as substrate, then the root zone with sand as substrate and followed by a layer of gravel for drainage, and is collected in an under drainage system of large stones. The effluent flows onto the surface of the bed and percolates slowly through the different layers into an outlet pipe, which leads to a horizontal flow bed and is cleaned by millions of bacteria, algae, fungi, and microorganisms that digest the waste, including sewage. There is no standing water so there should be no unpleasant smells."
+      ],
+      [
+        "G",
+        "Vertical flow reed bed systems are much more effective than horizontal flow reed beds not only in reducing biochemical oxygen demand (BOD) and suspended solids (SS) levels but also in reducing ammonia levels and eliminating smells. Usually considerably smaller than horizontal flow beds, but they are capable of handling much stronger effluents which contain heavily polluted matters and have longer lifetime value. A vertical reed bed system works more efficiently than a horizontal reed bed system, but it requires more management, and its reed beds are often operated for a few days then rested, so several beds and a distribution system are needed."
+      ],
+      [
+        "H",
+        "There are several advantages of reed bed systems over traditional forms of water treatment: first, they have low construction and running costs; second, they are easy to manage; third, they have an excellent reduction of biochemical oxygen demand and suspended solids; last, they have a potential for efficient removal of a wide range of pollutants."
+      ],
+      [
+        "I",
+        "Reed beds are natural habitats found in floodplains, waterlogged depressions and estuaries. The natural bed systems are biologically proved, and an environmentally friendly and visually unobtrusive way of treating wastewater and have the extra virtue of frequently being better than mechanical wastewater treatment systems. In the medium to long term reed bed systems are, in most cases, more cost-effective in installment than any other wastewater treatment. They are robust and require little maintenance. They are naturally environmentally sound, protecting groundwater, dams, creeks, rivers, and estuaries."
+      ]
+    ]
+  },
+  "3": {
+    "title": "READING PASSAGE 3",
+    "sub": "The geography of taste buds",
+    "paras": [
+      [
+        "",
+        "Scientific researchers mapping the geography of the human tongue have finally succeeded in locating and identifying the sensors for sour tastes. Scientists have long known that the surface of the tongue is covered with taste buds: onion-shaped bundles of cells that stand guard for the digestive system. Long before our modern world of supermarkets and restaurants, taste buds served as a crucial tool to maintain the daily existence of our ancestors. The bitter flavour of a wild almond told a prehistoric human foraging in African forests that the nut was poisonous, and they should spit it out. A sweet fruit, though, was safe to consume, and full of energy from carbohydrates. The presence of lions and other man-eating predators also added urgency to meal choices. 'If the thing didn't taste good, you might decide it's not worth it to be out in the open and at risk,' says Steve Miller, a taste researcher at the University of Maryland School of Medicine."
+      ],
+      [
+        "",
+        "Much of what we 'taste' in everyday life is actually the work of our nose. The tongue can distinguish only five basic flavour sensations — sweet, sour, bitter, salt and umami, the 'savoury' taste of meat and cheese which indicates protein. Sour taste comes from acidic compounds, and, like bitter taste, it can be a sign to leave decomposing meat or vegetables. Unpleasant tartness in unripe fruits comes from too much citric acid. This is how a tree or shrub keeps hungry diners at bay until its seeds are mature enough to travel — via the diner's digestive system — to a new home. Unlike animals, humans have acquired a taste for tartness. In the case of the Japanese pickle called 'umeboshi', the plums are harvested when still green and sour, before the tree fills them with sugar and turns them into a tantalising snack for birds and animals. Sour cream, yoghurt, lemonade, gorgonzola cheese, the German fermented cabbage 'sauerkraut' and other tart treats are eaten every day by millions of people."
+      ],
+      [
+        "",
+        "Only a decade ago, popular myth held that separate areas of the tongue were responsible for each taste. Referred to as the 'mouth map', the concept probably originated with a German text mistranslated into English at the beginning of the 20th century. As recently as 1996, 'mouth map' diagrams still appeared in university neuroscience textbooks. By the late 1990s, however, scientists had learned enough about molecular biology to turn their attention seriously to taste. They had discovered that thousands of taste buds cover the tongue, each containing 50 to 100 taste cells. Each cell has two poles: one end covered with taste receptors projecting from the tongue's surface, and one end inside the tongue that connects to the brain via nerves. When a person bites into a lemon, acidic molecules from the food bump into acid sensitive taste receptors, activating a taste cell, which sends a 'sour' message to the brain."
+      ],
+      [
+        "",
+        "The details of this process were long a matter of debate. In line with the 'mouth map' concept, some scientists believed that the taste buds in different areas of the tongue were filled with cells of only one type: the tip with sweet-sensing cells, the back with bitter-sensing cells, and so on. Others were not convinced and further suggested the location of cells was not an issue because each cell could sense all five tastes. However, no one had identified any of the taste receptors, so which cells responded to which tastes was unknown."
+      ],
+      [
+        "",
+        "Charles Zanker, professor of biology at the University of California, San Diego, and others set out to solve this problem with a variety of biological techniques, including engineering mutant mice that lacked certain receptors and could not taste certain tastes. They eventually isolated the first taste receptors — those for bitter and sweet. Each taste cell, they found, is covered with receptors for only one taste. A sweet cell, for example, is only turned on by sweet molecules because it only has sweet receptors. This dispelled the notion that all cells could sense all tastes. The scientists also assembled more evidence against the 'mouth map' myth when they found that each taste bud contains a full complement of taste cells. 'There are areas of emphasis,' Miller says, 'but there are not these absolutely divided areas.'"
+      ],
+      [
+        "",
+        "Over time, the researchers identified the receptors for sweet, bitter and umami. But until recently, salt and sour receptors remained elusive. After eight years of this new wave of research into taste, a team led by Hideki Matsunami from Duke University in North Carolina, and Zanker's separate group of Californian scientists, simultaneously published that they had finally found the tongue's tart sensors. This breakthrough has answered some long-standing questions about the tongue's geography. One surprising finding was that the sour-taste receptors on the tongue are also found in the spinal cord, where they probably monitor the acidity of cerebrospinal fluid. Similarly, sweet and bitter taste receptors have been found in the intestinal tract."
+      ],
+      [
+        "",
+        "Taken as a whole, the identification of various key taste receptors illuminates a link between the mouth and the brain. It also provides new targets for research. In the past, artificial flavourings were often chance discoveries, made when chemists accidentally tasted a substance, but now experts hope that knowing the identities of taste receptors will allow a more methodical approach to be taken towards developing these additives. New molecules might even be developed to cling to sour taste receptors and block the unpalatable taste of medicines. The finding may also explain how tongues, like fingerprints, are unique, making some people sensitive and others numb to certain tastes."
+      ]
+    ]
+  }
+};
+  const qdata = {
+  "p1_classify": [
+    [1, "very expensive"],
+    [2, "a food flavouring"],
+    [3, "used as currency"],
+    [4, "sweet-smelling"],
+    [5, "referred to by Herman Melville"],
+    [6, "can be seen through"]
+  ],
+  "p1_flow": [
+    [7, "Ambergris is formed in whales because of problems digesting the", "of giant squid."],
+    [8, "Black liquid is produced and is", "from time to time"],
+    [9, "The liquid", "on contact with the air."]
+  ],
+  "p1_tfng": [
+    [10, "In the 20th century, most of the world's ambergris came from processing dead whales."],
+    [11, "The value of ambergris has increased recently."],
+    [12, "Ambergris remains an important ingredient in perfume."],
+    [13, "New uses have recently been found for ambergris."]
+  ],
+  "p2_tfng": [
+    [14, "The Reed bed system is a conventional method for water treatment in the urban area."],
+    [15, "In the reed roots, there's a series of processes that helps breakdown the pollutants."],
+    [16, "Escherichia coli is the most difficult bacteria to be dismissed."]
+  ],
+  "p2_diagram": [
+    [17, "Wastewater applied on top → flows down through rhizome zone, using", "as substrate"],
+    [18, "→ then the root zone, using", "as substrate"],
+    [19, "→ then a drainage layer of", "→ collected by an under-drainage system of large stones"]
+  ],
+  "adv_dis_labels": [
+    "A It can deal with a more seriously polluted effluent.",
+    "B It requires more beds than one compared to the other.",
+    "C It needs less control and doesn't need to be taken care of all the time.",
+    "D It requires a lot of guidance.",
+    "E It can't work all the time because the pool needs time to rest and recover after a certain period.",
+    "F It's a lot more complicated to build the system.",
+    "G The system is easy to be built which does not need an auxiliary system.",
+    "H It consumes less water."
+  ],
+  "p2_advdis": [
+    [20, "which is the advantage of the down-flow system. However,"],
+    [21, "and"],
+    [22, "are the disadvantages of the down-flow system."],
+    [23, "and"],
+    [24, "are the two benefits of the horizontal flow system. However, it's less effective and efficient."]
+  ],
+  "p2_mc2526": [
+    25,
+    26,
+    "What are the TWO benefits of natural bed systems when compared to conventional systems?",
+    [
+      "Operation does not require electricity or fuel supply.",
+      "They're visually good and environmentally friendly.",
+      "No mechanical systems are involved.",
+      "They're to be set up and used at less cost.",
+      "They do not break down."
+    ]
+  ],
+  "summary_labels": [
+    "A cooking","B sense","C pests","D consumption","E predators","F digestion",
+    "G enemies","H planting","I decay","J sight","K smell","L survival"
+  ],
+  "p3_summary": [
+    [27, "These first evolved as an aid to"],
+    [28, "They acted as a warning that a food was dangerous, or a confirmation that it was good for"],
+    [29, "For early humans, the gathering of food was made difficult by"],
+    [30, "Because our tongues can only taste five different flavours, a lot of what we think we 'taste' is in fact conveyed by"],
+    [31, "Sour and bitter tastes signal that food is in the process of"],
+    [32, "However, over the centuries, people have come to like a sour taste, and in this", "we are different from animals."]
+  ],
+  "p3_yn": [
+    [33, "It is likely that the 'mouth map' myth began from an error of interpretation."],
+    [34, "Scientists were in agreement on the location of bitter-sensing cells."],
+    [35, "The experiment with mice proved that bitter-sensing cells have more receptors than sweet-sensing cells do."],
+    [36, "After a lengthy period of study, two different research teams reported the same finding about taste senses at the same time."],
+    [37, "Scientists failed to find taste receptors in other parts of the body."]
+  ],
+  "p3_mc": [
+    [38, "What does the writer suggest about the 'mouth map' myth?", [
+      "It followed the discovery of taste buds.",
+      "It located taste in one part of the tongue.",
+      "It used to be taught and believed in academic circles.",
+      "It was an idea that originated in England."
+    ]],
+    [39, "The writer refers to Zanker's experiment in order to", [
+      "compare several different methodologies.",
+      "highlight the connection between taste and the brain.",
+      "suggest that the use of animals in research can be misleading.",
+      "show how a popular idea was proved wrong."
+    ]],
+    [40, "What is the main purpose of the writer of Reading Passage 3?", [
+      "to describe a scientific experiment",
+      "to inform readers of a recent scientific discovery",
+      "to narrate how taste affected the lives of ancient humans",
+      "to predict how taste research will develop in the future"
+    ]]
+  ]
+};
+
+  const state = { answers:{}, currentPart:1, notes:[], contrast:"bw", textsize:"regular", takerId:"", testActive:false, timeLeft:60*60, timerInterval:null };
+  const $ = (id) => document.getElementById(id);
+  const show = (el) => el.classList.remove("hidden");
+  const hide = (el) => el.classList.add("hidden");
+  const esc = (s) => String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+
+  function renderPassage(p){
+    return `<div class="passage-title">${esc(p.title)}</div><div class="passage-sub">${esc(p.sub)}</div>` +
+      p.paras.map(([letter,text]) => `<div class="passage-para">${letter?`<span class="para-letter">${esc(letter)}</span>`:""}<span class="para-text">${esc(text)}</span></div>`).join("");
+  }
+  function partBanner(num, range){ return `<div class="part-banner"><b>Reading Passage ${num}</b><div class="instr">Answer questions ${range}.</div></div>`; }
+  function inputBlank(qnum, width){ const val = state.answers[qnum] || ""; return `<input class="blank" data-q="${qnum}" value="${esc(val)}" placeholder="${qnum}" style="${width?('width:'+width+'px;'):''}">`; }
+  function selectRow(qnum, text, options){
+    const val = state.answers[qnum] || "";
+    return `<div class="help-select-row"><span class="qnum">${qnum}</span><span style="flex:1;">${esc(text)}</span><select class="blank-select" data-q="${qnum}"><option value="">--</option>${options.map(o=>`<option value="${esc(o)}" ${val===o?'selected':''}>${esc(o)}</option>`).join("")}</select></div>`;
+  }
+  function ynngRow(qnum, text){ return selectRow(qnum, text, ["YES","NO","NOT GIVEN"]); }
+  function tfngRow(qnum, text){ return selectRow(qnum, text, ["TRUE","FALSE","NOT GIVEN"]); }
+  function mcQuestion(qnum, text, options){
+    const selected = state.answers[qnum];
+    return `<div class="mc-question"><span class="qnum">${qnum}</span> ${esc(text)}<div class="mc-opts">${options.map((opt,i)=>{ const val = String.fromCharCode(65+i); return `<label><input type="radio" name="q${qnum}" value="${val}" ${selected===val?'checked':''}> ${val}) ${esc(opt)}</label>`; }).join("")}</div></div>`;
+  }
+  function listBox(title, labels){ return `<div class="list-box"><b>${esc(title)}</b><br>${labels.map(esc).join("<br>")}</div>`; }
+
+  function renderQ1(){
+    const classifyOpts = ["A","B","C","D"];
+    return `${partBanner(1,"1–13")}
+      <div class="q-instructions"><span class="q-title">Questions 1–6</span><br>According to the information in Reading Passage 1, classify the following facts as referring to:
+      <br><b>A</b> ambergris only &nbsp; <b>B</b> amber only &nbsp; <b>C</b> both ambergris and amber &nbsp; <b>D</b> neither ambergris nor amber</div>
+      ${qdata.p1_classify.map(([q,t]) => selectRow(q,t,classifyOpts)).join("")}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 7–9</span><br>Complete the flow-chart below. Choose <b>NO MORE THAN TWO WORDS</b> from the passage for each answer.</div>
+      <div class="section-title">How ambergris is formed</div>
+      <div class="flow-box">Ambergris is formed in whales because of problems digesting the ${inputBlank(7,130)} of giant squid.</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-box">Black liquid is produced and is ${inputBlank(8,130)} from time to time</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-box">The liquid ${inputBlank(9,130)} on contact with the air.</div>
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 10–13</span><br>Do the following statements agree with the information given in Reading Passage 1? Write <b>TRUE</b>, <b>FALSE</b>, or <b>NOT GIVEN</b>.</div>
+      ${qdata.p1_tfng.map(([q,t]) => tfngRow(q,t)).join("")}`;
+  }
+  function renderQ2(){
+    const advOpts = ["A","B","C","D","E","F","G","H"];
+    return `${partBanner(2,"14–26")}
+      <div class="q-instructions"><span class="q-title">Questions 14–16</span><br>Do the following statements agree with the information given in Reading Passage 2? Write <b>TRUE</b>, <b>FALSE</b>, or <b>NOT GIVEN</b>.</div>
+      ${qdata.p2_tfng.map(([q,t]) => tfngRow(q,t)).join("")}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 17–19</span><br>Complete the diagram below. Choose <b>NO MORE THAN THREE WORDS OR A NUMBER</b> from the passage for each answer.</div>
+      <div class="section-title">How does a vertical flow reed bed work?</div>
+      <div class="flow-box">Wastewater applied on top of the bed</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-box">Flows down through the rhizome zone, using ${inputBlank(17,130)} as substrate</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-box">Then through the root zone, using ${inputBlank(18,130)} as substrate</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-box">Then a drainage layer of ${inputBlank(19,130)}</div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-box">Collected by an under-drainage system of large stones</div>
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 20–24</span><br>Use the information in the passage to match the advantages and disadvantages of the two systems: horizontal flow system and downflow system (listed A–H) below. Write the appropriate letters A–H.</div>
+      ${listBox("List of advantages/disadvantages", qdata.adv_dis_labels)}
+      <div class="notes-block" style="margin-bottom:16px;">
+        <div class="notes-row">${selectInlineWithLabel(20,advOpts)}, which is the advantage of the down-flow system. However, ${selectInlineWithLabel(21,advOpts)} and ${selectInlineWithLabel(22,advOpts)} are the disadvantages of the down-flow system. ${selectInlineWithLabel(23,advOpts)} and ${selectInlineWithLabel(24,advOpts)} are the two benefits of the horizontal flow system. However, it's less effective and efficient.</div>
+      </div>
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 25–26</span><br>Choose <b>TWO</b> correct letters, A–E. What are the TWO benefits of natural bed systems when compared to conventional systems?</div>
+      <div class="mc-question"><span class="qnum">25–26</span>
+        <div class="mc-opts">
+          ${qdata.p2_mc2526[3].map((opt,i)=>{ const val = String.fromCharCode(65+i); const chk25 = state.answers[25]===val; const chk26 = state.answers[26]===val; return `<label><input type="checkbox" data-pair-q25q26="${val}" ${chk25||chk26?'checked':''}> ${val}) ${esc(opt)}</label>`; }).join("")}
+        </div>
+      </div>`;
+  }
+  function renderQ3(){
+    const summaryOpts = qdata.summary_labels.map(l=>l[0]);
+    const ynOpts = null;
+    return `${partBanner(3,"27–40")}
+      <div class="q-instructions"><span class="q-title">Questions 27–32</span><br>Complete the summary using the list of words, A–L, below.</div>
+      ${listBox("Word list", qdata.summary_labels)}
+      <div class="notes-block">
+        <div class="notes-row">For many years it has been understood that the human tongue is covered with taste buds. These first evolved as an aid to ${selectRowInline(27,summaryOpts)}. They acted as a warning that a food was dangerous, or a confirmation that it was good for ${selectRowInline(28,summaryOpts)}. For early humans, the gathering of food was made difficult by ${selectRowInline(29,summaryOpts)}. Because our tongues can only taste five different flavours, a lot of what we think we 'taste' is in fact conveyed by ${selectRowInline(30,summaryOpts)}. Sour and bitter tastes signal that food is in the process of ${selectRowInline(31,summaryOpts)}. However, over the centuries, people have come to like a sour taste, and in this ${selectRowInline(32,summaryOpts)} we are different from animals.</div>
+      </div>
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 33–37</span><br>Do the following statements agree with the claims of the writer in Reading Passage 3? Write <b>YES</b>, <b>NO</b>, or <b>NOT GIVEN</b>.</div>
+      ${qdata.p3_yn.map(([q,t]) => ynngRow(q,t)).join("")}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 38–40</span><br>Choose the correct letter, A, B, C or D.</div>
+      ${qdata.p3_mc.map(([q,t,opts]) => mcQuestion(q,t,opts)).join("")}`;
+  }
+  function selectRowInline(qnum, options){
+    const val = state.answers[qnum] || "";
+    return `<select class="blank-select" data-q="${qnum}" style="width:80px;display:inline-block;"><option value="">--</option>${options.map(o=>`<option value="${esc(o)}" ${val===o?'selected':''}>${esc(o)}</option>`).join("")}</select>`;
+  }
+  function selectInlineWithLabel(qnum, options){
+    const val = state.answers[qnum] || "";
+    return `<span class="qnum" style="margin-right:4px;">${qnum}</span><select class="blank-select" data-q="${qnum}" style="width:60px;display:inline-block;"><option value="">--</option>${options.map(o=>`<option value="${esc(o)}" ${val===o?'selected':''}>${esc(o)}</option>`).join("")}</select>`;
+  }
+
+  const partData = {
+    1:{passage:passages[1], renderQ:renderQ1, range:[1,13]},
+    2:{passage:passages[2], renderQ:renderQ2, range:[14,26]},
+    3:{passage:passages[3], renderQ:renderQ3, range:[27,40]}
+  };
+
+  function renderPart(num){
+    state.currentPart = num;
+    $("passage-pane").innerHTML = renderPassage(partData[num].passage);
+    $("questions-pane").innerHTML = partData[num].renderQ();
+    attachContentListeners();
+    renderBottomBar();
+    $("passage-pane").scrollTop = 0;
+    $("questions-pane").scrollTop = 0;
+  }
+  function attachContentListeners(){
+    document.querySelectorAll("#questions-pane input.blank").forEach(inp => inp.addEventListener("input", e => { state.answers[e.target.dataset.q] = e.target.value; renderBottomBar(); }));
+    document.querySelectorAll("#questions-pane select").forEach(sel => sel.addEventListener("change", e => { state.answers[e.target.dataset.q] = e.target.value; renderBottomBar(); }));
+    document.querySelectorAll("#questions-pane input[type=radio]").forEach(r => r.addEventListener("change", e => { state.answers[e.target.name.replace("q","")] = e.target.value; renderBottomBar(); }));
+    document.querySelectorAll("#questions-pane input[data-pair-q25q26]").forEach(cb => cb.addEventListener("change", e => {
+      const checkboxes = Array.from(document.querySelectorAll("#questions-pane input[data-pair-q25q26]"));
+      let checked = checkboxes.filter(c => c.checked);
+      if (checked.length > 2){ e.target.checked = false; checked = checkboxes.filter(c => c.checked); }
+      state.answers[25] = checked[0] ? checked[0].dataset.pairQ25q26 : "";
+      state.answers[26] = checked[1] ? checked[1].dataset.pairQ25q26 : "";
+      renderBottomBar();
+    }));
+    $("questions-pane").addEventListener("mouseup", handleTextSelection);
+    $("passage-pane").addEventListener("mouseup", handleTextSelection);
+  }
+
+  let activeSelectionMenu = null;
+  function removeSelectionMenu(){ if (activeSelectionMenu){ activeSelectionMenu.remove(); activeSelectionMenu = null; } }
+  function handleTextSelection(e){
+    removeSelectionMenu();
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.toString().trim().length === 0) return;
+    if (!$("passage-pane").contains(sel.anchorNode) && !$("questions-pane").contains(sel.anchorNode)) return;
+    const range = sel.getRangeAt(0); const rect = range.getBoundingClientRect();
+    const menu = document.createElement("div"); menu.className = "selection-menu";
+    menu.style.left = (rect.left + window.scrollX) + "px"; menu.style.top = (rect.bottom + window.scrollY + 4) + "px";
+    menu.innerHTML = `<button data-action="note">📝<span>Note</span></button><button data-action="highlight">🖊<span>Highlight</span></button>`;
+    document.body.appendChild(menu); activeSelectionMenu = menu;
+    const selectedText = sel.toString();
+    menu.querySelector('[data-action="highlight"]').addEventListener("click", () => { try { const mark = document.createElement("mark"); mark.className = "hl"; range.surroundContents(mark); } catch(err){} removeSelectionMenu(); });
+    menu.querySelector('[data-action="note"]').addEventListener("click", () => { state.notes.push(selectedText); renderNotesPanel(); $("notes-panel").classList.add("open"); removeSelectionMenu(); });
+  }
+  document.addEventListener("mousedown", e => { if (activeSelectionMenu && !activeSelectionMenu.contains(e.target)) removeSelectionMenu(); });
+  function renderNotesPanel(){
+    const list = $("notes-list");
+    if (state.notes.length === 0){ list.innerHTML = `<div class="notes-panel-empty">Your private notes will show here<br><br>Select text to highlight or create a note.</div>`; return; }
+    list.innerHTML = state.notes.map(n => `<div class="note-entry"><div class="quoted">"${esc(n)}"</div></div>`).join("");
+  }
+  renderNotesPanel();
+  $("notes-toggle-btn").addEventListener("click", () => $("notes-panel").classList.toggle("open"));
+
+  function countAnswered(part){ const [start,end] = partData[part].range; let c=0; for (let i=start;i<=end;i++){ if (state.answers[i] && String(state.answers[i]).trim()!=="") c++; } return c; }
+  function renderBottomBar(){
+    let html = "";
+    for (let p=1;p<=3;p++){
+      const [start,end] = partData[p].range;
+      if (p === state.currentPart){
+        html += `<div class="part-nav-group"><span class="part-label active-part">Passage ${p}</span>`;
+        for (let q=start;q<=end;q++){ const answered = state.answers[q] && String(state.answers[q]).trim()!==""; html += `<button class="qnum-btn ${answered?'answered':''}" data-jump="${q}">${q}</button>`; }
+        html += `</div>`;
+      } else {
+        html += `<div class="part-nav-group"><span class="part-label" data-partjump="${p}">Passage ${p}</span><span class="part-count">${countAnswered(p)} of ${end-start+1}</span></div>`;
+      }
+    }
+    html += `<button class="submit-check" id="submit-check-btn">✔</button>`;
+    $("bottombar").innerHTML = html;
+    document.querySelectorAll("#bottombar [data-partjump]").forEach(el => el.addEventListener("click", () => renderPart(parseInt(el.dataset.partjump))));
+    document.querySelectorAll("#bottombar [data-jump]").forEach(btn => btn.addEventListener("click", () => { const target = document.querySelector(`#questions-pane [data-q="${btn.dataset.jump}"]`); if (target) target.scrollIntoView({block:"center", behavior:"smooth"}); }));
+    $("submit-check-btn").addEventListener("click", goToFinalScreen);
+  }
+
+  $("pwd-submit").addEventListener("click", () => { const val = $("pwd-input").value.trim(); if (val === REQUIRED_PASSWORD){ hide($("screen-password")); show($("screen-id")); $("id-input").focus(); } else { $("pwd-error").textContent = "Incorrect password. Please try again."; } });
+  $("pwd-input").addEventListener("keydown", e => { if (e.key==="Enter") $("pwd-submit").click(); });
+  $("id-submit").addEventListener("click", () => {
+    const val = $("id-input").value.trim(); if (!val){ $("id-error").textContent = "Please enter your Test Taker ID."; return; }
+    state.takerId = val; $("taker-id-display").textContent = val; $("taker-id-display-final").textContent = val; $("results-taker-id").textContent = val;
+    hide($("screen-id")); show($("screen-test")); renderPart(1); state.testActive = true; enterFullscreen(); startTimer();
+  });
+  $("id-input").addEventListener("keydown", e => { if (e.key==="Enter") $("id-submit").click(); });
+  function enterFullscreen(){ const el = document.documentElement; const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen; if (req) { try { req.call(el); } catch(e){} } }
+
+  function startTimer(){ clearInterval(state.timerInterval); updateTimerDisplay(); state.timerInterval = setInterval(() => { state.timeLeft--; updateTimerDisplay(); if (state.timeLeft <= 0){ clearInterval(state.timerInterval); checkAnswersAndShowResults(); } }, 1000); }
+  function updateTimerDisplay(){ const m = Math.floor(state.timeLeft/60); const s = state.timeLeft%60; const txt = String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0"); $("timer-display").textContent = txt; $("timer-display").classList.toggle("low", state.timeLeft <= 300); }
+
+  $("hamburger-btn").addEventListener("click", () => { $("menu-overlay").classList.add("open"); showMenuRoot(); });
+  $("menu-close-btn").addEventListener("click", () => $("menu-overlay").classList.remove("open"));
+  $("menu-back-btn").addEventListener("click", () => showMenuRoot());
+  function showMenuRoot(){ $("menu-header-title").textContent = "Options"; $("menu-back-btn").classList.remove("show"); $("menu-root-view").classList.remove("hidden"); $("menu-contrast-view").classList.add("hidden"); $("menu-textsize-view").classList.add("hidden"); }
+  $("menu-submit-btn").addEventListener("click", () => { $("menu-overlay").classList.remove("open"); goToFinalScreen(); });
+  $("menu-contrast-btn").addEventListener("click", () => { $("menu-header-title").textContent = "Contrast"; $("menu-back-btn").classList.add("show"); $("menu-root-view").classList.add("hidden"); $("menu-contrast-view").classList.remove("hidden"); });
+  $("menu-textsize-btn").addEventListener("click", () => { $("menu-header-title").textContent = "Text size"; $("menu-back-btn").classList.add("show"); $("menu-root-view").classList.add("hidden"); $("menu-textsize-view").classList.remove("hidden"); });
+  document.querySelectorAll('[data-contrast]').forEach(row => row.addEventListener("click", () => { state.contrast = row.dataset.contrast; document.body.classList.remove("contrast-wb","contrast-yb"); if (state.contrast==="wb") document.body.classList.add("contrast-wb"); if (state.contrast==="yb") document.body.classList.add("contrast-yb"); document.querySelectorAll('[data-contrast] .check').forEach(c=>c.textContent=""); row.querySelector(".check").textContent="✔"; }));
+  document.querySelectorAll('[data-textsize]').forEach(row => row.addEventListener("click", () => { state.textsize = row.dataset.textsize; $("app").classList.remove("textsize-regular","textsize-large","textsize-extralarge"); $("app").classList.add("textsize-"+state.textsize); document.querySelectorAll('[data-textsize] .check').forEach(c=>c.textContent=""); row.querySelector(".check").textContent="✔"; }));
+
+  function goToFinalScreen(){ hide($("screen-test")); show($("screen-final")); }
+  $("final-next-btn").addEventListener("click", checkAnswersAndShowResults);
+  $("back-to-test-btn").addEventListener("click", () => { hide($("screen-final")); show($("screen-test")); });
+
+  function normalize(str){ return String(str||"").trim().toLowerCase().replace(/\s+/g," ").replace(/^the /,""); }
+  function correctDisplay(ans){ return Array.isArray(ans) ? ans.join(" / ") : ans; }
+  function isAnswerCorrect(userAns, correctAns){
+    if (Array.isArray(correctAns)) return correctAns.some(a => normalize(userAns) === normalize(a));
+    return normalize(userAns) === normalize(correctAns);
+  }
+  function checkAnswersAndShowResults(){
+    clearInterval(state.timerInterval); state.testActive = false;
+    let correctCount = 0, rows = "";
+    for (let q=1;q<=40;q++){
+      const userAns = state.answers[q] !== undefined ? state.answers[q] : "";
+      const correctAns = answerKey[q];
+      const isCorrect = isAnswerCorrect(userAns, correctAns);
+      if (isCorrect) correctCount++;
+      rows += `<tr><td>${q}</td><td>${userAns ? esc(userAns) : '<i style="color:#999;">(no answer)</i>'}</td><td>${esc(correctDisplay(correctAns))}</td><td>${isCorrect?'<span class="ok">✔ Correct</span>':'<span class="no">✘ Incorrect</span>'}</td></tr>`;
+    }
+    $("score-correct").textContent = correctCount; $("score-total").textContent = 40; $("score-band").textContent = estimateBand(correctCount); $("review-body").innerHTML = rows;
+    hide($("screen-final")); hide($("screen-test")); show($("screen-results"));
+  }
+  function estimateBand(correct){ const table = [[39,9.0],[37,8.5],[35,8.0],[33,7.5],[30,7.0],[27,6.5],[23,6.0],[19,5.5],[15,5.0],[13,4.5],[10,4.0],[8,3.5],[6,3.0]]; for (const [minC,band] of table){ if (correct>=minC) return band.toFixed(1); } return "2.5"; }
+  $("restart-btn").addEventListener("click", () => { state.answers = {}; state.notes = []; state.currentPart = 1; state.testActive = false; state.timeLeft = 60*60; document.body.className = ""; $("app").className = ""; hide($("screen-results")); show($("screen-password")); $("pwd-input").value=""; $("id-input").value=""; $("pwd-error").textContent=""; $("id-error").textContent=""; });
+})();
+</script>
+</body>
+</html>

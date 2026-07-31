@@ -1,0 +1,815 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Reading Test — Learning, Tasmanian Tiger & Music</title>
+<style>
+  :root{
+    --ielts-red:#d2122e;
+    --border:#c9c9c9;
+    --text:#1a1a1a;
+    --muted:#6b6b6b;
+    --bg-panel:#f0f0f0;
+    --focus-blue:#2b6fd6;
+    --highlight:#ffe066;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;font-family:Arial, Helvetica, sans-serif;color:var(--text);background:#fff;}
+  #app{height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  .brand-badge{position:relative;width:60px;height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;}
+  .brand-badge .ring{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(from 0deg,#d2122e,#ff8a3d,#ffd23f,#2b6fd6,#d2122e);animation:spin 4s linear infinite;}
+  .brand-badge .photo{position:relative;width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;z-index:2;animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(210,18,46,0.35);}50%{box-shadow:0 0 0 6px rgba(210,18,46,0);}}
+
+  .gate-screen{height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;}
+  .gate-card{background:#fff;border:1px solid var(--border);border-radius:4px;padding:40px 44px;width:380px;box-shadow:0 2px 10px rgba(0,0,0,0.08);text-align:center;}
+  .gate-brand-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;}
+  .gate-logo{font-size:28px;font-weight:800;color:var(--ielts-red);letter-spacing:1px;}
+  .gate-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;font-weight:bold;margin-bottom:6px;}
+  .gate-card input[type=text],.gate-card input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:3px;font-size:15px;margin-bottom:18px;}
+  .gate-card input:focus{outline:2px solid var(--focus-blue);border-color:var(--focus-blue);}
+  .gate-btn{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:3px;font-size:15px;cursor:pointer;}
+  .gate-btn:hover{background:#000;}
+  .gate-error{color:var(--ielts-red);font-size:13px;margin:-10px 0 14px;min-height:16px;text-align:left;}
+  .gate-footer{margin-top:18px;font-size:11px;color:#999;}
+  .gate-footer a{color:var(--focus-blue);text-decoration:none;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff;min-height:76px;}
+  .topbar-left{display:flex;align-items:center;gap:14px;}
+  .ielts-logo{font-size:20px;font-weight:800;color:var(--ielts-red);letter-spacing:0.5px;}
+  .taker-id-block{font-size:12px;line-height:1.3;}
+  .taker-id-block .label{font-weight:bold;font-size:12px;}
+  .timer-status{color:#333;font-size:12px;display:flex;align-items:center;gap:4px;font-weight:bold;}
+  .timer-status.low{color:var(--ielts-red);}
+  .topbar-right{display:flex;align-items:center;gap:18px;font-size:18px;color:#222;}
+  .topbar-right .icon-btn{cursor:pointer;background:none;border:none;font-size:18px;color:#222;padding:4px;display:flex;align-items:center;}
+
+  .main-wrap{flex:1;display:flex;overflow:hidden;position:relative;}
+  .passage-pane{flex:1 1 50%;overflow-y:auto;padding:22px 26px;border-right:1px solid var(--border);font-size:14px;line-height:1.75;}
+  .questions-pane{flex:1 1 50%;overflow-y:auto;padding:22px 26px 90px;}
+  .passage-title{font-size:17px;font-weight:800;margin-bottom:4px;}
+  .passage-sub{font-size:12px;color:var(--muted);margin-bottom:18px;text-transform:none;}
+  .passage-para{margin-bottom:14px;display:flex;gap:10px;}
+  .para-letter{font-weight:bold;color:var(--ielts-red);flex-shrink:0;width:18px;}
+  .para-text{flex:1;}
+
+  .part-banner{background:var(--bg-panel);border:1px solid #ddd;border-radius:2px;padding:12px 16px;margin-bottom:18px;}
+  .part-banner b{font-size:14px;}
+  .part-banner div.instr{font-size:13px;margin-top:2px;}
+  .q-instructions{font-size:13px;margin-bottom:10px;}
+  .q-title{font-weight:bold;font-size:13px;}
+  .section-title{font-weight:bold;margin:18px 0 10px;font-size:14px;}
+
+  input.blank{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 8px;font-size:14px;width:150px;text-align:center;font-family:inherit;}
+  input.blank:focus{outline:none;border-color:var(--focus-blue);box-shadow:0 0 0 1px var(--focus-blue);}
+
+  select.blank-select{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 6px;font-size:13px;font-family:inherit;background:#fafcff;width:170px;}
+  .mc-question{margin-bottom:20px;}
+  .mc-question .qnum{display:inline-block;border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;margin-right:6px;}
+  .mc-opts label{display:block;font-size:13px;margin:6px 0 0 22px;cursor:pointer;}
+  .mc-opts input{margin-right:8px;}
+
+  .tfng-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:13px;}
+  .tfng-row .qtext{flex:1;}
+  .tfng-row select{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 8px;font-size:13px;font-family:inherit;width:170px;}
+  .notes-block{font-size:14px;line-height:2.1;}
+  .notes-row{margin:2px 0;}
+  .help-select-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;}
+  .help-select-row .qnum,.tfng-row .qnum{border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;}
+  .list-box{font-size:12px;background:var(--bg-panel);border:1px solid #ddd;padding:10px 14px;margin:12px 0 16px;line-height:1.7;}
+
+  .selection-menu{position:absolute;background:#fff;border:1px solid #999;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:flex;z-index:50;border-radius:2px;}
+  .selection-menu button{border:none;background:none;padding:8px 12px;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .selection-menu button:hover{background:#f0f0f0;}
+  .selection-menu button + button{border-left:1px solid #ddd;}
+  mark.hl{background:var(--highlight);}
+  .notes-panel{width:260px;border-left:1px solid var(--border);background:#f0f0f0;padding:16px;flex-shrink:0;display:none;overflow-y:auto;}
+  .notes-panel.open{display:block;}
+  .notes-panel-title{font-weight:bold;font-size:13px;margin-bottom:14px;color:var(--ielts-red);}
+  .notes-panel-empty{color:#555;font-size:13px;text-align:center;margin-top:40px;line-height:1.6;}
+  .note-entry{background:#fff;border:1px solid #ccc;border-radius:3px;padding:8px 10px;margin-bottom:10px;font-size:12px;}
+  .note-entry .quoted{font-style:italic;color:#333;margin-bottom:4px;}
+
+  .bottombar{border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;height:52px;flex-shrink:0;background:#fff;font-size:13px;justify-content:space-between;overflow-x:auto;}
+  .part-nav-group{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .part-nav-group .part-label{font-weight:bold;color:#333;white-space:nowrap;cursor:pointer;}
+  .part-nav-group .part-label.active-part{color:var(--ielts-red);}
+  .qnum-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;border:1px solid transparent;color:#333;cursor:pointer;background:none;border-radius:2px;}
+  .qnum-btn.answered{color:var(--focus-blue);font-weight:bold;}
+  .part-count{color:#999;font-size:12px;white-space:nowrap;}
+  .submit-check{width:36px;height:36px;background:#f0f0f0;border:none;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:#333;flex-shrink:0;}
+  .submit-check:hover{background:#e2e2e2;}
+
+  .menu-overlay{position:absolute;inset:0;background:#fff;z-index:40;display:none;flex-direction:column;}
+  .menu-overlay.open{display:flex;}
+  .menu-header{display:grid;grid-template-columns:96px 1fr 40px;align-items:center;padding:14px 16px;border-bottom:1px solid #eee;font-size:15px;font-weight:600;}
+  .menu-header .back-btn{grid-column:1;justify-self:start;background:none;border:none;cursor:pointer;font-size:14px;color:#111;display:none;align-items:center;gap:2px;padding:4px 0;white-space:nowrap;}
+  .menu-header .back-btn.show{display:flex;}
+  .menu-header .title-text{grid-column:2;text-align:center;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .menu-header .close-btn{grid-column:3;justify-self:end;background:none;border:none;cursor:pointer;font-size:18px;}
+  .menu-body{padding:20px;max-width:440px;margin:0 auto;width:100%;}
+  .menu-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid #ddd;cursor:pointer;font-size:14px;}
+  .menu-item + .menu-item{border-top:none;}
+  .menu-item.danger{background:var(--ielts-red);color:#fff;border-color:var(--ielts-red);font-weight:600;}
+  .menu-item .chev{font-size:15px;}
+  .option-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid #ddd;font-size:13px;cursor:pointer;}
+  .option-row + .option-row{border-top:none;}
+  .option-row .check{width:16px;color:#111;display:inline-block;}
+  .swatch{width:60px;height:22px;border:1px solid #999;display:flex;align-items:center;justify-content:center;gap:2px;}
+  .swatch .bar{width:3px;height:12px;}
+  .sw-bw .bar{background:#333;}.sw-bw{background:#eee;}.sw-wb{background:#111;}.sw-wb .bar{background:#eee;}.sw-yb{background:#111;}.sw-yb .bar{background:#e8c400;}
+  .textsize-regular .passage-pane,.textsize-regular .questions-pane{font-size:13px;}
+  .textsize-large .passage-pane,.textsize-large .questions-pane{font-size:16px;}
+  .textsize-extralarge .passage-pane,.textsize-extralarge .questions-pane{font-size:19px;}
+
+  .final-action-btn{background:#fff;color:#111;border:1px solid #111;padding:7px 16px;border-radius:3px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .final-action-btn:hover{background:#f2f2f2;}.final-action-btn.primary{background:#111;color:#fff;}.final-action-btn.primary:hover{background:#000;}
+  .transition-body{flex:1;display:flex;align-items:flex-start;justify-content:center;padding-top:10px;}
+  .results-wrap{padding:30px 40px;overflow-y:auto;height:100%;}
+  .results-wrap h1{color:var(--ielts-red);font-size:24px;margin-bottom:4px;}
+  .score-summary{display:flex;gap:24px;margin:20px 0 28px;flex-wrap:wrap;}
+  .score-box{border:1px solid #ddd;border-radius:4px;padding:16px 24px;text-align:center;min-width:120px;}
+  .score-box .num{font-size:30px;font-weight:800;color:var(--ielts-red);}.score-box .lbl{font-size:12px;color:#666;margin-top:4px;}
+  table.review-table{width:100%;border-collapse:collapse;font-size:13px;} table.review-table th, table.review-table td{border:1px solid #ddd;padding:8px 10px;text-align:left;} table.review-table th{background:var(--bg-panel);}
+  .ok{color:#1a8a3d;font-weight:bold;}.no{color:var(--ielts-red);font-weight:bold;}
+  .restart-btn{margin-top:24px;background:#111;color:#fff;border:none;padding:10px 22px;border-radius:3px;cursor:pointer;font-size:14px;}
+
+  body.contrast-wb .content-wrap,body.contrast-wb .main-wrap,body.contrast-wb .topbar,body.contrast-wb .bottombar,body.contrast-wb .passage-pane,body.contrast-wb .questions-pane{background:#000 !important;color:#fff !important;}
+  body.contrast-wb .part-banner,body.contrast-wb .list-box{background:#1a1a1a;border-color:#444;} body.contrast-wb input.blank,body.contrast-wb select{background:#111;color:#fff;border-color:#666;} body.contrast-wb .passage-pane{border-color:#444;}
+  body.contrast-yb .content-wrap,body.contrast-yb .main-wrap,body.contrast-yb .topbar,body.contrast-yb .bottombar,body.contrast-yb .passage-pane,body.contrast-yb .questions-pane{background:#000 !important;color:#f2d70a !important;}
+  body.contrast-yb .part-banner,body.contrast-yb .list-box{background:#1a1a1a;border-color:#555;} body.contrast-yb input.blank,body.contrast-yb select{background:#111;color:#f2d70a;border-color:#f2d70a;} body.contrast-yb .passage-pane{border-color:#555;}
+  .hidden{display:none !important;}
+  @media (max-width:900px){.main-wrap{flex-direction:column;}.passage-pane{border-right:none;border-bottom:1px solid var(--border);max-height:42vh;}.notes-panel{position:absolute;right:0;top:0;bottom:0;z-index:45;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="gate-screen" id="screen-password">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram"><span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek"></a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Reading Test Access</div>
+      <label for="pwd-input">Enter Password</label>
+      <input type="password" id="pwd-input" placeholder="Password" autocomplete="off">
+      <div class="gate-error" id="pwd-error"></div>
+      <button class="gate-btn" id="pwd-submit">Continue</button>
+      <div class="gate-footer">Full IELTS Reading Test — <a href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener"></a></div>
+    </div>
+  </div>
+
+  <div class="gate-screen hidden" id="screen-id">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram"><span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek"></a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Enter your Test Taker ID</div>
+      <label for="id-input">Test Taker ID</label>
+      <input type="text" id="id-input" placeholder="e.g. 123456789" autocomplete="off">
+      <div class="gate-error" id="id-error"></div>
+      <button class="gate-btn" id="id-submit">Start Test</button>
+      <div class="gate-footer">Full IELTS Reading Test — <a href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener">@shohrukhposts</a></div>
+    </div>
+  </div>
+
+  <div class="hidden" id="screen-test" style="height:100%;display:flex;flex-direction:column;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram"><span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek"></a>
+        <div class="ielts-logo">IELTS</div>
+        <div class="taker-id-block"><div><span class="label">Test taker ID</span></div><div id="taker-id-display" style="color:#333;"></div><div class="timer-status" id="timer-display">60:00</div></div>
+      </div>
+      <div class="topbar-right"><span title="Connection">📶</span><span title="Notifications">🔔</span><button class="icon-btn" id="hamburger-btn" title="Menu">☰</button><button class="icon-btn" id="notes-toggle-btn" title="Notes">✏️</button></div>
+    </div>
+    <div class="main-wrap">
+      <div class="content-wrap" id="content-wrap" style="display:flex;flex:1;overflow:hidden;"><div class="passage-pane" id="passage-pane"></div><div class="questions-pane" id="questions-pane"></div></div>
+      <div class="notes-panel" id="notes-panel"><div class="notes-panel-title">Notes</div><div id="notes-list"></div></div>
+      <div class="menu-overlay" id="menu-overlay">
+        <div class="menu-header"><button class="back-btn" id="menu-back-btn">‹ Options</button><span id="menu-header-title" class="title-text">Options</span><button class="close-btn" id="menu-close-btn">✕</button></div>
+        <div class="menu-body">
+          <div id="menu-root-view"><div class="menu-item danger" id="menu-submit-btn" style="margin-bottom:16px;"><span>🚀 Go to submission page</span><span class="chev">›</span></div><div class="menu-item" id="menu-contrast-btn"><span>◐ Contrast</span><span class="chev">›</span></div><div class="menu-item" id="menu-textsize-btn"><span>🔍 Text size</span><span class="chev">›</span></div></div>
+          <div id="menu-contrast-view" class="hidden"><div class="option-row" data-contrast="bw"><span><span class="check">✔</span> Black on white</span><span class="swatch sw-bw"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div><div class="option-row" data-contrast="wb"><span><span class="check"></span> White on black</span><span class="swatch sw-wb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div><div class="option-row" data-contrast="yb"><span><span class="check"></span> Yellow on black</span><span class="swatch sw-yb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div></div>
+          <div id="menu-textsize-view" class="hidden"><div class="option-row" data-textsize="regular"><span><span class="check">✔</span> Regular</span></div><div class="option-row" data-textsize="large"><span><span class="check"></span> Large</span></div><div class="option-row" data-textsize="extralarge"><span><span class="check"></span> Extra large</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bottombar" id="bottombar"></div>
+  </div>
+
+  <div class="hidden" id="screen-final" style="height:100%;display:flex;flex-direction:column;position:relative;">
+    <div class="topbar"><div class="topbar-left"><a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener"><span class="ring"></span><img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek"></a><div class="ielts-logo">IELTS</div><div class="taker-id-block"><div><span class="label">Test taker ID</span></div><div id="taker-id-display-final" style="color:#333;"></div></div></div><div class="topbar-right"><button class="final-action-btn" id="back-to-test-btn">← Back to test</button><button class="final-action-btn primary" id="final-next-btn">Next ✈</button></div></div>
+    <div class="transition-body"><p style="font-size:13px;color:#333;">Click next to continue</p></div>
+    <div class="bottombar"><div class="part-nav-group"><span class="part-label">Passage 1</span><span class="part-count">0 of 13</span></div><div class="part-nav-group"><span class="part-label">Passage 2</span><span class="part-count">0 of 13</span></div><div class="part-nav-group"><span class="part-label">Passage 3</span><span class="part-count">0 of 14</span></div><button class="submit-check" style="background:#111;color:#fff;">✔</button></div>
+  </div>
+
+  <div class="hidden results-wrap" id="screen-results">
+    <h1>Test Results</h1><p style="color:#555;font-size:13px;">Test taker ID: <span id="results-taker-id"></span></p>
+    <div class="score-summary"><div class="score-box"><div class="num" id="score-correct">0</div><div class="lbl">Correct</div></div><div class="score-box"><div class="num" id="score-total">40</div><div class="lbl">Total Questions</div></div><div class="score-box"><div class="num" id="score-band">0.0</div><div class="lbl">Estimated Band</div></div></div>
+    <table class="review-table"><thead><tr><th style="width:60px;">Q#</th><th>Your Answer</th><th>Correct Answer</th><th style="width:70px;">Result</th></tr></thead><tbody id="review-body"></tbody></table>
+    <button class="restart-btn" id="restart-btn">Restart Test</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  
+  const answerKey = {
+  "1": "D",
+  "2": "A",
+  "3": "C",
+  "4": "E",
+  "5": "FALSE",
+  "6": "TRUE",
+  "7": "TRUE",
+  "8": "FALSE",
+  "9": "less",
+  "10": "social",
+  "11": "watched",
+  "12": "observer",
+  "13": "Nutcracker",
+  "14": "black stripes",
+  "15": "12 million",
+  "16": "Australia",
+  "17": "European",
+  "18": "A",
+  "19": "D",
+  "20": "C",
+  "21": "B",
+  "22": "A",
+  "23": "D",
+  "24": "B",
+  "25": "D",
+  "26": "A",
+  "27": "vi",
+  "28": "iv",
+  "29": "ii",
+  "30": "v",
+  "31": "vii",
+  "32": "F",
+  "33": "B",
+  "34": "E",
+  "35": "D",
+  "36": "G",
+  "37": "A",
+  "38": "C",
+  "39": "B",
+  "40": "C"
+};
+  const passages = {
+  "1": {
+    "title": "READING PASSAGE 1",
+    "sub": "Learning By Examples",
+    "paras": [
+      [
+        "A",
+        "Learning theory is rooted in the work of Ivan Pavlov, the famous scientist who discovered and documented the principles governing how animals, humans included, learn. In the 1900s, two basic kinds of learning or conditioning were identified, one of which is famously known as classical conditioning. Classical conditioning happens when an animal learns to associate a neutral stimulus, or signal, with a stimulus that has intrinsic meaning, based on how closely in time the two stimuli are presented. The classic example is a dog’s ability to associate the sound of a bell, something that originally has no meaning to the dog, with the presentation of food, something that has a lot of meaning for the dog, a few moments later. Dogs are able to learn the association between bell and food, and will salivate immediately after hearing the bell once this connection has been made. Years of learning research have led to the creation of a highly precise learning theory that can be used to understand and predict how and under what circumstances almost any animal will learn, including human beings, and eventually help people figure out how to change their behaviours."
+      ],
+      [
+        "B",
+        "Role models are a popular notion for guiding child development, but in recent years very interesting research has been done on learning by example in other animals. If the subject of animal learning is taught mainly in terms of classical or operant conditioning, it places too much emphasis on how we allow animals to learn and not enough on how they are equipped to learn. To teach a course of mine, I have been dipping profitably into a very interesting and accessible compilation of papers on social learning in mammals, including chimps and human children, edited by Heyes and Galef."
+      ],
+      [
+        "C",
+        "The research reported in one paper started with a school field trip to Israel, to a pine forest where many pine cones were discovered stripped to the central core. The investigation began with no weighty theoretical intent, but was directed at finding out what was eating the nutritious pine seeds and how the seeds were being removed from the cones. The culprit proved to be the versatile and athletic black rat, Rattus rattus, and the technique was to bite each cone scale off at its base, in sequence from base to tip, following the spiral growth pattern of the cone."
+      ],
+      [
+        "D",
+        "Urban black rats were found to lack the skill and were unable to learn it even if housed with experienced cone strippers. However, infants of urban mothers cross-fostered to stripper mothers acquired the skill, whereas infants of stripper mothers fostered by an urban mother could not. Clearly, the skill had to be learned from the mother. Further elegant experiments showed that naïve adults could develop the skill if they were provided with cones from which the first complete spiral of scales had been removed, rather like our new photocopier, which you can work out how to use once someone has shown you how to switch it on. In the case of rats, the youngsters take cones away from the mother while she is still feeding on them, allowing them to acquire the complete stripping skill."
+      ],
+      [
+        "E",
+        "A good example of adaptive behaviour, we might conclude, but let us consider the economics. This was determined by measuring the oxygen uptake of a rat stripping a cone in a metabolic chamber to calculate the energetic cost, and comparing it with the benefit of the pine seeds measured by calorimeter. The cost proved to be less than 10 percent of the energetic value of the cone—an acceptable profit margin."
+      ],
+      [
+        "F",
+        "A paper in the 1996 journal Animal Behaviour by Bednekoff and Balda provides a different view of the adaptiveness of social learning. It concerns the seed-caching behaviour of Clark’s nutcracker, Nucifraga columbiana, and the Mexican jay, Aphelocoma ultramarina. The former is a specialist, caching 30,000 or so seeds in scattered locations that it will recover over the months of winter. The Mexican jay will also cache food but is much less dependent upon this than the nutcracker. The two species also differ in their social structure, the nutcracker being rather solitary while the jay forages in social groups."
+      ],
+      [
+        "G",
+        "The experiment was designed to discover not just whether a bird could remember where it had hidden a seed, but also whether it could remember where it had seen another bird hide a seed. The design was slightly comical, with a cacher bird wandering about a room with lots of holes in the floor, hiding food in some of the holes, while watched by an observer bird perched in a cage. Two days later, cachers and observers were tested for their discovery rate against an estimated random performance. In the role of cacher, not only the nutcracker but also the less specialised jay performed above chance. More surprisingly, however, jay observers were as successful as jay cachers, whereas nutcracker observers did no better than chance. It seems that, whereas the nutcracker is highly adapted at remembering where it hid its own seeds, the social-living Mexican jay is more adept at remembering, and so exploiting, the caches of others."
+      ]
+    ]
+  },
+  "2": {
+    "title": "READING PASSAGE 2",
+    "sub": "Tasmanian Tiger",
+    "paras": [
+      [
+        "A",
+        "Although it was called a tiger, it looked like a dog with black stripes on its back, and it was the largest known carnivorous marsupial of modern times. Yet, despite its fame for being one of the most fabled animals in the world, it is one of the least understood of Tasmania’s native animals. The scientific name for the Tasmanian tiger is thylacine, and it is believed to have become extinct in the twentieth century."
+      ],
+      [
+        "B",
+        "Fossils of thylacines dating from almost 12 million years ago have been dug up at various places in Victoria, South Australia and Western Australia. They were widespread in Australia 7,000 years ago, but have probably been extinct on the continent for 2,000 years. This is believed to be because of the introduction of dingoes around 8,000 years ago. Because of disease, thylacine numbers may have been declining in Tasmania at the time of European settlement 200 years ago, but the decline was certainly accelerated by the new arrivals. The last known Tasmanian tiger died in Hobart Zoo in 1936, and the animal is officially classified as extinct. Technically, this means that it has not been officially sighted in the wild or captivity for 50 years. However, there are still unsubstantiated sightings."
+      ],
+      [
+        "C",
+        "Hans Naarding, whose study of animals had taken him around the world, was conducting a survey of a species of endangered migratory bird. What he saw that night is now regarded as the most credible recorded sighting of the thylacine, which many believe has been extinct for more than 70 years."
+      ],
+      [
+        "D",
+        "“I had to work at night,” Naarding takes up the story. “I was in the habit of intermittently shining a spotlight around. The beam fell on an animal in front of the vehicle, less than 10 metres away. Instead of risking movement by grabbing for a camera, I decided to register very carefully what I was seeing. The animal was about the size of a small shepherd dog, a very healthy male in prime condition. What set it apart from a dog, though, was a slightly sloping hindquarter, with a fairly thick tail being a straight continuation of the backline of the animal. It had 12 distinct stripes on its back, continuing onto its rump. I knew perfectly well what I was seeing. As soon as I reached for the camera, it disappeared into the tea-tree undergrowth and scrub.”"
+      ],
+      [
+        "E",
+        "The director of Tasmania’s National Parks at the time, Peter Morrow, decided in his wisdom to keep Naarding’s sighting of the thylacine secret for two years. When the news finally broke, it was accompanied by pandemonium. “I was besieged by television crews, including four or five from Japan, and others from the United Kingdom, Germany, New Zealand and South America,” said Naarding."
+      ],
+      [
+        "F",
+        "Government and private search parties combed the region, but no further sightings were made. The tiger, as always, had escaped to its lair, a place many insist exists only in our imagination. But since then, the thylacine has staged something of a comeback, becoming part of Australian mythology."
+      ],
+      [
+        "G",
+        "There have been more than 4,000 claimed sightings of the beast since it supposedly died out, and the average number of claims reported to authorities each year is now 150. Associate Professor of Zoology at the University of Tasmania Randolph Rose has said he dreams of seeing a thylacine. But Rose, who in his 35 years in Tasmanian academia has fielded countless reports of thylacine sightings, is now convinced that his dream will go unfulfilled."
+      ],
+      [
+        "H",
+        "“The consensus among conservationists is that, usually, any animal with a population base of less than 1,000 is headed for extinction within 60 years,” says Rose. “Sixty years ago, there was only one thylacine that we know of, and that was in Hobart Zoo,” he says."
+      ],
+      [
+        "I",
+        "Dr David Pemberton, curator of zoology at the Tasmanian Museum and Art Gallery, whose PhD thesis was on the thylacine, says that despite scientific thinking that 500 animals are required to sustain a population, the Florida panther is down to a dozen or so animals and, while it does have some inbreeding problems, is still ticking along. “I’ll take a punt and say that, if we manage to find a thylacine in the scrub, it means that there are 50-plus animals out there.”"
+      ],
+      [
+        "J",
+        "After all, animals can be notoriously elusive. The strange fish known as the coelacanth, with its “proto-legs”, was thought to have died out along with the dinosaurs millions of years ago until a specimen was dragged to the surface in a shark net off the south-east coast of South Africa in 1938."
+      ],
+      [
+        "K",
+        "Wildlife biologist Nick Mooney has the unenviable task of investigating all sightings of the tiger, totalling 4,000 since the mid-1980s and averaging about 150 a year. It was Mooney who was first consulted late last month about the authenticity of digital photographic images purportedly taken by a German tourist while on a recent bushwalk in the state. On face value, Mooney says, the account of the sighting and the two photographs submitted as proof amount to one of the most convincing cases for the species’ survival he has seen."
+      ],
+      [
+        "L",
+        "And Mooney has seen it all—the mistakes, the hoaxes, the illusions and the plausible accounts of sightings. Hoaxers aside, most people who report sightings end up believing they have seen a thylacine, and are themselves believable to the point that they could pass a lie-detector test, according to Mooney. Others, having tabled a credible report, then become utterly obsessed, like the Tasmanian who has registered 99 thylacine sightings to date. Mooney has seen individuals bankrupted by the obsession and families destroyed. “It is a blind optimism that something is, rather than a cynicism that something isn’t,” Mooney says. “If something crosses the road, it’s not a case of ‘I wonder what that was?’ Rather, it is a case of ‘That’s a thylacine!’ It is a bit like a gold prospector’s blind faith: ‘It has got to be there.’”"
+      ],
+      [
+        "M",
+        "However, Mooney treats all reports on face value. “I never try to embarrass people or make fools of them. But the fact that I don’t pack the car immediately when they ring can often be taken as ridicule. Obsessive characters get irate that someone in my position is not out there when they think the thylacine is there.”"
+      ],
+      [
+        "N",
+        "But Hans Naarding, whose sighting of a striped animal two decades ago was the highlight of “a life of animal spotting”, remains bemused by the time and money people waste on tiger searches. He says resources would be better applied to saving the Tasmanian devil and helping migratory bird populations that are declining as a result of shrinking wetlands across Australia."
+      ],
+      [
+        "O",
+        "Could the thylacine still be out there? “Sure,” Naarding says. But he also says any discovery of surviving thylacines would be “rather pointless”. “How do you save a species from extinction? What could you do with it? If there are thylacines out there, they are better off right where they are.”"
+      ]
+    ]
+  },
+  "3": {
+    "title": "READING PASSAGE 3",
+    "sub": "Music: Language We All Speak",
+    "paras": [
+      [
+        "A",
+        "Music is one of the human species’ relatively few universal abilities. Without formal training, any individual, from a Stone Age tribesman to a suburban teenager, has the ability to recognise music and, in some fashion, to make it. Why this should be so is a mystery. After all, music is not necessary for getting through the day, and if it aids in reproduction, it does so only in highly indirect ways. Language, by contrast, is also everywhere—but for reasons that are more obvious. With language, you and the members of your tribe can organise a migration across Africa, build reed boats and cross the seas, and communicate at night even when you cannot see each other. Modern culture, in all its technological extravagance, springs directly from the human talent for manipulating symbols and syntax. Scientists have always been intrigued by the connection between music and language. Yet over the years, words and melody have acquired a vastly different status in the laboratory and the seminar room. While language has long been considered essential to unlocking the mechanisms of human intelligence, music is generally treated as an evolutionary frippery—mere “auditory cheesecake”, as the Harvard cognitive scientist Steven Pinker puts it."
+      ],
+      [
+        "B",
+        "But thanks to a decade-long wave of neuroscience research, that tune is changing. A flurry of recent publications suggests that language and music may be equally able to tell us who we are and where we are from—not just emotionally, but biologically. In July, the journal Nature Neuroscience devoted a special issue to the topic. And in an article in the August 6 issue of the Journal of Neuroscience, David Schwartz, Catherine Howe and Dale Purves of Duke University argued that the sounds of music and the sounds of language are intricately connected. To grasp the originality of this idea, it is necessary to realise two things about how music has traditionally been understood. First, musicologists have long emphasised that while each culture stamps a special identity onto its music, music itself has some universal qualities. For example, in virtually all cultures sound is divided into some or all of the 12 intervals that make up the chromatic scale—the scale represented by the keys on a piano. For centuries, observers have attributed this preference for certain combinations of tones to the mathematical properties of sound itself. Some 2,500 years ago, Pythagoras was the first to note a direct relationship between the harmoniousness of a tone combination and the physical dimensions of the object that produced it. For example, a plucked string will always play an octave lower than a similar string half its size, and a fifth lower than a similar string two-thirds its length. This link between simple ratios and harmony has influenced music theory ever since."
+      ],
+      [
+        "C",
+        "This music-is-math idea is often accompanied by the notion that music, formally speaking at least, exists apart from the world in which it was created. Writing in The New York Review of Books, pianist and critic Charles Rosen discussed the long-standing notion that while painting and sculpture reproduce at least some aspects of the natural world, and writing describes thoughts and feelings with which we are all familiar, music is entirely abstracted from the world in which we live. Neither idea is right, according to David Schwartz and his colleagues. Human musical preferences are fundamentally shaped not by elegant algorithms or ratios but by the messy sounds of real life, and of speech in particular—which in turn is shaped by our evolutionary heritage. “The explanation of music, like the explanation of any product of the mind, must be rooted in biology, not in numbers per se,” says Schwartz. Schwartz, Howe and Purves analysed a vast selection of speech sounds from a variety of languages to reveal the underlying patterns common to all utterances. In order to focus only on raw sound, they discarded all theories about speech and meaning and sliced sentences into random bites. Using a database of over 100,000 brief segments of speech, they noted which frequency had the greatest emphasis in each sound. The resulting set of frequencies, they discovered, corresponded closely to the chromatic scale. In short, the building blocks of music are to be found in speech. Far from being abstract, music presents a strange analogue to the patterns created by the sounds of speech. “Music, like the visual arts, is rooted in our experience of the natural world,” says Schwartz. “It emulates our sound environment in the way that visual arts emulate the visual environment.” In music we hear the echo of our basic sound-making instrument—the vocal tract. The explanation for human music is simpler than Pythagoras’s mathematical equations. We like the sounds that are familiar to us; specifically, we like sounds that remind us of ourselves. This brings up some chicken-or-egg evolutionary questions. It may be that music imitates speech directly, the researchers say, in which case it would seem that language evolved first. It is also conceivable that music came first and language is, in effect, an imitation of song—that in everyday speech we hit the musical notes we especially like. Alternatively, it may be that music imitates the general products of the human sound-making system, which just happens to be mostly speech. “We can’t know this,” says Schwartz. “What we do know is that they both come from the same system, and it is this that shapes our preferences.”"
+      ],
+      [
+        "D",
+        "Schwartz’s study also casts light on the long-running question of whether animals understand or appreciate music. Despite the apparent abundance of “music” in the natural world—birdsong, whalesong, wolf howls and synchronised chimpanzee hooting—previous studies have found that many laboratory animals do not show a great affinity for the human variety of music-making. Marc Hauser and Josh McDermott of Harvard argued in the July issue of Nature Neuroscience that animals do not create or perceive music the way we do. The fact that laboratory monkeys can show recognition of human tunes is evidence, they say, of shared general features of the auditory system, not any specific chimpanzee musical ability. As for birds, those most musical beasts, they generally recognise their own tunes—a narrow repertoire—but do not generate novel melodies as we do. There are no avian Mozarts. But what has been played to the animals, Schwartz notes, is human music. If animals evolve preferences for sound as we do—based upon the soundscape in which they live—then their “music” would be fundamentally different from ours. In the same way that our scales derive from human utterances, a cat’s idea of a good tune would derive from yowls and meows. To demonstrate that animals do not appreciate sounds the way we do, we would need evidence that they do not respond to “music” constructed from their own sound environment."
+      ],
+      [
+        "E",
+        "No matter how the connection between language and music is parsed, what is apparent is that our sense of music, even our love for it, is as deeply rooted in our biology and in our brains as language is. This is most obvious with babies, says Sandra Trehub at the University of Toronto, who also published a paper in the Nature Neuroscience special issue. For babies, music and speech are on a continuum. Mothers use musical speech to “regulate infants’ emotional states”, Trehub says. Regardless of what language they speak, the voice all mothers use with babies is the same: “something between speech and song”. This kind of communication “puts the baby in a trance-like state, which may proceed to sleep or extended periods of rapture”. So if the babies of the world could understand the latest research on language and music, they probably would not be very surprised. The upshot, says Trehub, is that music may be even more of a necessity than we realise."
+      ]
+    ]
+  }
+};
+  const qdata = {
+  "p1_para": [
+    [
+      1,
+      "A comparison between rats’ learning and human learning"
+    ],
+    [
+      2,
+      "A reference to the earliest study in animal learning"
+    ],
+    [
+      3,
+      "The discovery of what stripped the pine cones"
+    ],
+    [
+      4,
+      "A description of a cost-effectiveness experiment"
+    ]
+  ],
+  "p1_tfng": [
+    [
+      5,
+      "The field trip to Israel was organised to investigate how black rats learn to strip pine cones."
+    ],
+    [
+      6,
+      "The pine cones were stripped from bottom to top by black rats."
+    ],
+    [
+      7,
+      "It can be learned from other relevant experience how to use a photocopier."
+    ],
+    [
+      8,
+      "Stripping pine cones is an instinct of black rats."
+    ]
+  ],
+  "p1_word_labels": [
+    "A less",
+    "B more",
+    "C solitary",
+    "D social",
+    "E cacher",
+    "F observer",
+    "G remembered",
+    "H watched",
+    "I Jay",
+    "J Nutcracker"
+  ],
+  "p1_summary": [
+    [
+      9,
+      "While the nutcracker is more able to cache seeds, the jay relies",
+      "on caching food and is therefore less specialised in this ability, but more"
+    ],
+    [
+      10,
+      "",
+      ". To study their behaviour of caching and finding caches, an experiment was designed and carried out to test these two birds for their ability to remember where they hid the seeds."
+    ],
+    [
+      11,
+      "In the experiment, the cacher bird hid seeds in the ground while the other bird",
+      "."
+    ],
+    [
+      12,
+      "As a result, the nutcracker and the Mexican jay showed different performance in the role of",
+      "at finding the seeds—the observing"
+    ],
+    [
+      13,
+      "",
+      "did not do as well as its counterpart."
+    ]
+  ],
+  "p2_people_labels": [
+    "A Hans Naarding",
+    "B Randolph Rose",
+    "C David Pemberton",
+    "D Nick Mooney"
+  ],
+  "p2_people": [
+    [
+      18,
+      "His report of seeing a live thylacine in the wild attracted international interest."
+    ],
+    [
+      19,
+      "Many eyewitness reports are not trustworthy."
+    ],
+    [
+      20,
+      "A fixed minimum number of animals is not always required to ensure the survival of a species."
+    ],
+    [
+      21,
+      "There is no hope of finding a surviving Tasmanian tiger."
+    ],
+    [
+      22,
+      "Do not disturb them if there are any Tasmanian tigers still living today."
+    ],
+    [
+      23,
+      "The interpretation of evidence can be affected by people’s beliefs."
+    ]
+  ],
+  "p2_mc": [
+    [
+      24,
+      "Hans Naarding’s sighting resulted in",
+      [
+        "government and organisations’ cooperative efforts to protect the thylacine.",
+        "extensive interest in finding a living thylacine.",
+        "an increase in the number of reports of thylacines worldwide.",
+        "growth in the popularity of the thylacine in literature."
+      ]
+    ],
+    [
+      25,
+      "The example of the coelacanth is used to illustrate that",
+      [
+        "it lived in the same period as dinosaurs.",
+        "dinosaurs evolved legs.",
+        "some animals are difficult to catch in the wild.",
+        "the extinction of certain species can be mistakenly assumed."
+      ]
+    ],
+    [
+      26,
+      "Mooney believes that all sighting reports should be",
+      [
+        "given some credit at face value even if they are untrue.",
+        "acted upon immediately.",
+        "viewed as equally untrustworthy.",
+        "questioned and carefully investigated."
+      ]
+    ]
+  ],
+  "heading_labels": [
+    "i Animals sometimes make music.",
+    "ii Recent research on music",
+    "iii Culture embedded in music",
+    "iv Historical theories review",
+    "v Communication in music with animals",
+    "vi Contrast between music and language",
+    "vii Questions on a biological link between humans and music",
+    "viii Music is good for babies"
+  ],
+  "p3_headings": [
+    [
+      27,
+      "Section A"
+    ],
+    [
+      28,
+      "Section B"
+    ],
+    [
+      29,
+      "Section C"
+    ],
+    [
+      30,
+      "Section D"
+    ],
+    [
+      31,
+      "Section E"
+    ]
+  ],
+  "statement_labels": [
+    "A Music exists outside the world in which it is created.",
+    "B Music has common features although cultural influences affect it.",
+    "C Humans need music.",
+    "D Musical preferences are connected to the disordered sounds around us.",
+    "E The mathematical foundation of music was discovered.",
+    "F Music is not treated as equally important as language.",
+    "G Humans and monkeys share similar traits in perceiving sound."
+  ],
+  "p3_people": [
+    [
+      32,
+      "Steven Pinker"
+    ],
+    [
+      33,
+      "Musicologists"
+    ],
+    [
+      34,
+      "Greek philosopher Pythagoras"
+    ],
+    [
+      35,
+      "Schwartz, Howe and Purves"
+    ],
+    [
+      36,
+      "Marc Hauser and Josh McDermott"
+    ],
+    [
+      37,
+      "Charles Rosen"
+    ],
+    [
+      38,
+      "Sandra Trehub"
+    ]
+  ],
+  "p3_mc": [
+    [
+      39,
+      "Why was the study of animals’ music uncertain?",
+      [
+        "Animals do not have the same auditory system as humans.",
+        "Experiments on animals’ music are limited.",
+        "Tunes are impossible for animals to make up.",
+        "Animals do not have spontaneous ability for the tests."
+      ]
+    ],
+    [
+      40,
+      "What is the main subject of this passage?",
+      [
+        "Language and psychology.",
+        "Music formation.",
+        "The role of music in human society.",
+        "Music experiments involving animals."
+      ]
+    ]
+  ]
+};
+
+  const state = { answers:{}, currentPart:1, notes:[], contrast:"bw", textsize:"regular", takerId:"", testActive:false, timeLeft:60*60, timerInterval:null };
+  const $ = (id) => document.getElementById(id);
+  const show = (el) => el.classList.remove("hidden");
+  const hide = (el) => el.classList.add("hidden");
+  const esc = (s) => String(s).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+
+  function renderPassage(p){
+    return `<div class="passage-title">${esc(p.title)}</div><div class="passage-sub">${esc(p.sub)}</div>` +
+      p.paras.map(([letter,text]) => `<div class="passage-para"><span class="para-letter">${esc(letter)}</span><span class="para-text">${esc(text)}</span></div>`).join("");
+  }
+  function partBanner(num, range){ return `<div class="part-banner"><b>Reading Passage ${num}</b><div class="instr">Answer questions ${range}.</div></div>`; }
+  function inputBlank(qnum, width){ const val = state.answers[qnum] || ""; return `<input class="blank" data-q="${qnum}" value="${esc(val)}" placeholder="${qnum}" style="${width?('width:'+width+'px;'):''}">`; }
+  function inputSelectInline(qnum, options){ const val = state.answers[qnum] || ""; return `<select class="blank-select" data-q="${qnum}" style="width:145px;"><option value="">${qnum}</option>${options.map(o=>`<option value="${esc(o)}" ${val===o?'selected':''}>${esc(o)}</option>`).join("")}</select>`; }
+  function selectRow(qnum, text, options){
+    const val = state.answers[qnum] || "";
+    return `<div class="help-select-row"><span class="qnum">${qnum}</span><span style="flex:1;">${esc(text)}</span><select class="blank-select" data-q="${qnum}"><option value="">--</option>${options.map(o=>`<option value="${esc(o)}" ${val===o?'selected':''}>${esc(o)}</option>`).join("")}</select></div>`;
+  }
+  function ynngRow(qnum, text){ return selectRow(qnum, text, ["YES","NO","NOT GIVEN"]); }
+  function mcQuestion(qnum, text, options){
+    const selected = state.answers[qnum];
+    return `<div class="mc-question"><span class="qnum">${qnum}</span> ${esc(text)}<div class="mc-opts">${options.map((opt,i)=>{ const val = String.fromCharCode(65+i); return `<label><input type="radio" name="q${qnum}" value="${val}" ${selected===val?'checked':''}> ${val}) ${esc(opt)}</label>`; }).join("")}</div></div>`;
+  }
+  function listBox(title, labels){ return `<div class="list-box"><b>${esc(title)}</b><br>${labels.map(esc).join("<br>")}</div>`; }
+
+  function renderQ1(){
+    const paraOpts = ["A","B","C","D","E","F","G"];
+    const wordOpts = ["less","more","solitary","social","cacher","observer","remembered","watched","Jay","Nutcracker"];
+    return `${partBanner(1,"1–13")}
+      <div class="q-instructions"><span class="q-title">Questions 1–4</span><br>Reading Passage 1 has seven paragraphs, A–G. Which paragraph contains the following information? Write the correct letter, A–G.</div>
+      ${qdata.p1_para.map(([q,t]) => selectRow(q,t,paraOpts)).join("")}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 5–8</span><br>Do the following statements agree with the information given in Reading Passage 1? Choose <b>TRUE</b>, <b>FALSE</b>, or <b>NOT GIVEN</b>.</div>
+      ${qdata.p1_tfng.map(([q,t]) => selectRow(q,t,["TRUE","FALSE","NOT GIVEN"])).join("")}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 9–13</span><br>Complete the summary below using words from the box.</div>
+      ${listBox("Word box", qdata.p1_word_labels)}
+      <div class="notes-block">
+        <div class="notes-row">While the nutcracker is more able to cache seeds, the jay relies ${inputSelectInline(9,wordOpts)} on caching food and is therefore less specialised in this ability, but more ${inputSelectInline(10,wordOpts)}.</div>
+        <div class="notes-row">To study their behaviour of caching and finding their caches, an experiment was designed and carried out to test these two birds for their ability to remember where they hid the seeds.</div>
+        <div class="notes-row">In the experiment, the cacher bird hid seeds in the ground while the other ${inputSelectInline(11,wordOpts)}.</div>
+        <div class="notes-row">As a result, the nutcracker and the Mexican jay showed different performance in the role of ${inputSelectInline(12,wordOpts)} at finding the seeds—the observing ${inputSelectInline(13,wordOpts)} did not do as well as its counterpart.</div>
+      </div>`;
+  }
+  function renderQ2(){
+    const peopleOpts = ["A","B","C","D"];
+    return `${partBanner(2,"14–26")}
+      <div class="q-instructions"><span class="q-title">Questions 14–17</span><br>Complete the summary below. Choose <b>NO MORE THAN TWO WORDS</b> from the passage for each answer.</div>
+      <div class="notes-block">
+        <div class="notes-row">The Tasmanian tiger, also called the thylacine, resembles a dog and has ${inputBlank(14,160)} on its fur coat. Many fossils have been found, showing that thylacines existed as early as ${inputBlank(15,150)} years ago. They lived throughout ${inputBlank(16,150)} before disappearing from the mainland. Soon after the ${inputBlank(17,150)} settlers arrived, the size of the thylacine population in Tasmania shrank at a faster rate.</div>
+      </div>
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 18–23</span><br>Match each statement with the correct person, A–D. <i>NB You may use any letter more than once.</i></div>
+      ${listBox("List of people", qdata.p2_people_labels)}
+      ${qdata.p2_people.map(([q,t]) => selectRow(q,t,peopleOpts)).join("")}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 24–26</span><br>Choose the correct letter, A, B, C or D.</div>
+      ${qdata.p2_mc.map(([q,t,opts]) => mcQuestion(q,t,opts)).join("")}`;
+  }
+  function renderQ3(){
+    const headingOpts = ["i","ii","iii","iv","v","vi","vii","viii"];
+    const statementOpts = ["A","B","C","D","E","F","G"];
+    return `${partBanner(3,"27–40")}
+      <div class="q-instructions"><span class="q-title">Questions 27–31</span><br>Reading Passage 3 has five sections, A–E. Choose the correct heading for each section from the list below. Write the correct number, i–viii.</div>
+      ${listBox("List of headings", qdata.heading_labels)}
+      ${qdata.p3_headings.map(([q,t]) => selectRow(q,t,headingOpts)).join("")}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 32–38</span><br>Match each person with the correct statement, A–G.</div>
+      ${listBox("List of statements", qdata.statement_labels)}
+      ${qdata.p3_people.map(([q,t]) => selectRow(q,t,statementOpts)).join("")}
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 39–40</span><br>Choose the correct letter, A, B, C or D.</div>
+      ${qdata.p3_mc.map(([q,t,opts]) => mcQuestion(q,t,opts)).join("")}`;
+  }
+
+  const partData = {
+    1:{passage:passages[1], renderQ:renderQ1, range:[1,13]},
+    2:{passage:passages[2], renderQ:renderQ2, range:[14,26]},
+    3:{passage:passages[3], renderQ:renderQ3, range:[27,40]}
+  };
+
+  function renderPart(num){
+    state.currentPart = num;
+    $("passage-pane").innerHTML = renderPassage(partData[num].passage);
+    $("questions-pane").innerHTML = partData[num].renderQ();
+    attachContentListeners();
+    renderBottomBar();
+    $("passage-pane").scrollTop = 0;
+    $("questions-pane").scrollTop = 0;
+  }
+  function attachContentListeners(){
+    document.querySelectorAll("#questions-pane input.blank").forEach(inp => inp.addEventListener("input", e => { state.answers[e.target.dataset.q] = e.target.value; renderBottomBar(); }));
+    document.querySelectorAll("#questions-pane select").forEach(sel => sel.addEventListener("change", e => { state.answers[e.target.dataset.q] = e.target.value; renderBottomBar(); }));
+    document.querySelectorAll("#questions-pane input[type=radio]").forEach(r => r.addEventListener("change", e => { state.answers[e.target.name.replace("q","")] = e.target.value; renderBottomBar(); }));
+    $("questions-pane").addEventListener("mouseup", handleTextSelection);
+    $("passage-pane").addEventListener("mouseup", handleTextSelection);
+  }
+
+  let activeSelectionMenu = null;
+  function removeSelectionMenu(){ if (activeSelectionMenu){ activeSelectionMenu.remove(); activeSelectionMenu = null; } }
+  function handleTextSelection(e){
+    removeSelectionMenu();
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.toString().trim().length === 0) return;
+    if (!$("passage-pane").contains(sel.anchorNode) && !$("questions-pane").contains(sel.anchorNode)) return;
+    const range = sel.getRangeAt(0); const rect = range.getBoundingClientRect();
+    const menu = document.createElement("div"); menu.className = "selection-menu";
+    menu.style.left = (rect.left + window.scrollX) + "px"; menu.style.top = (rect.bottom + window.scrollY + 4) + "px";
+    menu.innerHTML = `<button data-action="note">📝<span>Note</span></button><button data-action="highlight">🖊<span>Highlight</span></button>`;
+    document.body.appendChild(menu); activeSelectionMenu = menu;
+    const selectedText = sel.toString();
+    menu.querySelector('[data-action="highlight"]').addEventListener("click", () => { try { const mark = document.createElement("mark"); mark.className = "hl"; range.surroundContents(mark); } catch(err){} removeSelectionMenu(); });
+    menu.querySelector('[data-action="note"]').addEventListener("click", () => { state.notes.push(selectedText); renderNotesPanel(); $("notes-panel").classList.add("open"); removeSelectionMenu(); });
+  }
+  document.addEventListener("mousedown", e => { if (activeSelectionMenu && !activeSelectionMenu.contains(e.target)) removeSelectionMenu(); });
+  function renderNotesPanel(){
+    const list = $("notes-list");
+    if (state.notes.length === 0){ list.innerHTML = `<div class="notes-panel-empty">Your private notes will show here<br><br>Select text to highlight or create a note.</div>`; return; }
+    list.innerHTML = state.notes.map(n => `<div class="note-entry"><div class="quoted">"${esc(n)}"</div></div>`).join("");
+  }
+  renderNotesPanel();
+  $("notes-toggle-btn").addEventListener("click", () => $("notes-panel").classList.toggle("open"));
+
+  function countAnswered(part){ const [start,end] = partData[part].range; let c=0; for (let i=start;i<=end;i++){ if (state.answers[i] && String(state.answers[i]).trim()!=="") c++; } return c; }
+  function renderBottomBar(){
+    let html = "";
+    for (let p=1;p<=3;p++){
+      const [start,end] = partData[p].range;
+      if (p === state.currentPart){
+        html += `<div class="part-nav-group"><span class="part-label active-part">Passage ${p}</span>`;
+        for (let q=start;q<=end;q++){ const answered = state.answers[q] && String(state.answers[q]).trim()!==""; html += `<button class="qnum-btn ${answered?'answered':''}" data-jump="${q}">${q}</button>`; }
+        html += `</div>`;
+      } else {
+        html += `<div class="part-nav-group"><span class="part-label" data-partjump="${p}">Passage ${p}</span><span class="part-count">${countAnswered(p)} of ${end-start+1}</span></div>`;
+      }
+    }
+    html += `<button class="submit-check" id="submit-check-btn">✔</button>`;
+    $("bottombar").innerHTML = html;
+    document.querySelectorAll("#bottombar [data-partjump]").forEach(el => el.addEventListener("click", () => renderPart(parseInt(el.dataset.partjump))));
+    document.querySelectorAll("#bottombar [data-jump]").forEach(btn => btn.addEventListener("click", () => { const target = document.querySelector(`#questions-pane [data-q="${btn.dataset.jump}"]`); if (target) target.scrollIntoView({block:"center", behavior:"smooth"}); }));
+    $("submit-check-btn").addEventListener("click", goToFinalScreen);
+  }
+
+  $("pwd-submit").addEventListener("click", () => { const val = $("pwd-input").value.trim(); if (val === REQUIRED_PASSWORD){ hide($("screen-password")); show($("screen-id")); $("id-input").focus(); } else { $("pwd-error").textContent = "Incorrect password. Please try again."; } });
+  $("pwd-input").addEventListener("keydown", e => { if (e.key==="Enter") $("pwd-submit").click(); });
+  $("id-submit").addEventListener("click", () => {
+    const val = $("id-input").value.trim(); if (!val){ $("id-error").textContent = "Please enter your Test Taker ID."; return; }
+    state.takerId = val; $("taker-id-display").textContent = val; $("taker-id-display-final").textContent = val; $("results-taker-id").textContent = val;
+    hide($("screen-id")); show($("screen-test")); renderPart(1); state.testActive = true; enterFullscreen(); startTimer();
+  });
+  $("id-input").addEventListener("keydown", e => { if (e.key==="Enter") $("id-submit").click(); });
+  function enterFullscreen(){ const el = document.documentElement; const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen; if (req) { try { req.call(el); } catch(e){} } }
+
+  function startTimer(){ clearInterval(state.timerInterval); updateTimerDisplay(); state.timerInterval = setInterval(() => { state.timeLeft--; updateTimerDisplay(); if (state.timeLeft <= 0){ clearInterval(state.timerInterval); checkAnswersAndShowResults(); } }, 1000); }
+  function updateTimerDisplay(){ const m = Math.floor(state.timeLeft/60); const s = state.timeLeft%60; const txt = String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0"); $("timer-display").textContent = txt; $("timer-display").classList.toggle("low", state.timeLeft <= 300); }
+
+  $("hamburger-btn").addEventListener("click", () => { $("menu-overlay").classList.add("open"); showMenuRoot(); });
+  $("menu-close-btn").addEventListener("click", () => $("menu-overlay").classList.remove("open"));
+  $("menu-back-btn").addEventListener("click", () => showMenuRoot());
+  function showMenuRoot(){ $("menu-header-title").textContent = "Options"; $("menu-back-btn").classList.remove("show"); $("menu-root-view").classList.remove("hidden"); $("menu-contrast-view").classList.add("hidden"); $("menu-textsize-view").classList.add("hidden"); }
+  $("menu-submit-btn").addEventListener("click", () => { $("menu-overlay").classList.remove("open"); goToFinalScreen(); });
+  $("menu-contrast-btn").addEventListener("click", () => { $("menu-header-title").textContent = "Contrast"; $("menu-back-btn").classList.add("show"); $("menu-root-view").classList.add("hidden"); $("menu-contrast-view").classList.remove("hidden"); });
+  $("menu-textsize-btn").addEventListener("click", () => { $("menu-header-title").textContent = "Text size"; $("menu-back-btn").classList.add("show"); $("menu-root-view").classList.add("hidden"); $("menu-textsize-view").classList.remove("hidden"); });
+  document.querySelectorAll('[data-contrast]').forEach(row => row.addEventListener("click", () => { state.contrast = row.dataset.contrast; document.body.classList.remove("contrast-wb","contrast-yb"); if (state.contrast==="wb") document.body.classList.add("contrast-wb"); if (state.contrast==="yb") document.body.classList.add("contrast-yb"); document.querySelectorAll('[data-contrast] .check').forEach(c=>c.textContent=""); row.querySelector(".check").textContent="✔"; }));
+  document.querySelectorAll('[data-textsize]').forEach(row => row.addEventListener("click", () => { state.textsize = row.dataset.textsize; $("app").classList.remove("textsize-regular","textsize-large","textsize-extralarge"); $("app").classList.add("textsize-"+state.textsize); document.querySelectorAll('[data-textsize] .check').forEach(c=>c.textContent=""); row.querySelector(".check").textContent="✔"; }));
+
+  function goToFinalScreen(){ hide($("screen-test")); show($("screen-final")); }
+  $("final-next-btn").addEventListener("click", checkAnswersAndShowResults);
+  $("back-to-test-btn").addEventListener("click", () => { hide($("screen-final")); show($("screen-test")); });
+
+  function normalize(str){ return String(str||"").trim().toLowerCase().replace(/\s+/g," ").replace(/^the /,""); }
+  function correctDisplay(ans){ return Array.isArray(ans) ? ans.join(" / ") : ans; }
+  function isAnswerCorrect(userAns, correctAns){
+    if (Array.isArray(correctAns)) return correctAns.some(a => normalize(userAns) === normalize(a));
+    return normalize(userAns) === normalize(correctAns);
+  }
+  function checkAnswersAndShowResults(){
+    clearInterval(state.timerInterval); state.testActive = false;
+    let correctCount = 0, rows = "";
+    for (let q=1;q<=40;q++){
+      const userAns = state.answers[q] !== undefined ? state.answers[q] : "";
+      const correctAns = answerKey[q];
+      const isCorrect = isAnswerCorrect(userAns, correctAns);
+      if (isCorrect) correctCount++;
+      rows += `<tr><td>${q}</td><td>${userAns ? esc(userAns) : '<i style="color:#999;">(no answer)</i>'}</td><td>${esc(correctDisplay(correctAns))}</td><td>${isCorrect?'<span class="ok">✔ Correct</span>':'<span class="no">✘ Incorrect</span>'}</td></tr>`;
+    }
+    $("score-correct").textContent = correctCount; $("score-total").textContent = 40; $("score-band").textContent = estimateBand(correctCount); $("review-body").innerHTML = rows;
+    hide($("screen-final")); hide($("screen-test")); show($("screen-results"));
+  }
+  function estimateBand(correct){ const table = [[39,9.0],[37,8.5],[35,8.0],[33,7.5],[30,7.0],[27,6.5],[23,6.0],[19,5.5],[15,5.0],[13,4.5],[10,4.0],[8,3.5],[6,3.0]]; for (const [minC,band] of table){ if (correct>=minC) return band.toFixed(1); } return "2.5"; }
+  $("restart-btn").addEventListener("click", () => { state.answers = {}; state.notes = []; state.currentPart = 1; state.testActive = false; state.timeLeft = 60*60; document.body.className = ""; $("app").className = ""; hide($("screen-results")); show($("screen-password")); $("pwd-input").value=""; $("id-input").value=""; $("pwd-error").textContent=""; $("id-error").textContent=""; });
+})();
+</script>
+</body>
+</html>

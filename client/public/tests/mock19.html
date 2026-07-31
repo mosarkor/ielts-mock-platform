@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Reading Test — Jasurbek</title>
+<style>
+  :root{
+    --ielts-red:#d2122e;
+    --border:#c9c9c9;
+    --text:#1a1a1a;
+    --muted:#6b6b6b;
+    --bg-panel:#f0f0f0;
+    --focus-blue:#2b6fd6;
+    --highlight:#ffe066;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;font-family:Arial, Helvetica, sans-serif;color:var(--text);background:#fff;}
+  #app{height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  .brand-badge{position:relative;width:60px;height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;}
+  .brand-badge .ring{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(from 0deg,#d2122e,#ff8a3d,#ffd23f,#2b6fd6,#d2122e);animation:spin 4s linear infinite;}
+  .brand-badge .photo{position:relative;width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;z-index:2;animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(210,18,46,0.35);}50%{box-shadow:0 0 0 6px rgba(210,18,46,0);}}
+
+  .gate-screen{height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;}
+  .gate-card{background:#fff;border:1px solid var(--border);border-radius:4px;padding:40px 44px;width:380px;box-shadow:0 2px 10px rgba(0,0,0,0.08);text-align:center;}
+  .gate-brand-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;}
+  .gate-logo{font-size:28px;font-weight:800;color:var(--ielts-red);letter-spacing:1px;}
+  .gate-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;font-weight:bold;margin-bottom:6px;}
+  .gate-card input[type=text],.gate-card input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:3px;font-size:15px;margin-bottom:18px;}
+  .gate-card input:focus{outline:2px solid var(--focus-blue);border-color:var(--focus-blue);}
+  .gate-btn{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:3px;font-size:15px;cursor:pointer;}
+  .gate-btn:hover{background:#000;}
+  .gate-error{color:var(--ielts-red);font-size:13px;margin:-10px 0 14px;min-height:16px;text-align:left;}
+  .gate-footer{margin-top:18px;font-size:11px;color:#999;}
+  .gate-footer a{color:var(--focus-blue);text-decoration:none;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff;min-height:76px;}
+  .topbar-left{display:flex;align-items:center;gap:14px;}
+  .ielts-logo{font-size:20px;font-weight:800;color:var(--ielts-red);letter-spacing:0.5px;}
+  .taker-id-block{font-size:12px;line-height:1.3;}
+  .taker-id-block .label{font-weight:bold;font-size:12px;}
+  .timer-status{color:#333;font-size:12px;display:flex;align-items:center;gap:4px;font-weight:bold;}
+  .timer-status.low{color:var(--ielts-red);}
+  .topbar-right{display:flex;align-items:center;gap:18px;font-size:18px;color:#222;}
+  .topbar-right .icon-btn{cursor:pointer;background:none;border:none;font-size:18px;color:#222;padding:4px;display:flex;align-items:center;}
+
+  .main-wrap{flex:1;display:flex;overflow:hidden;position:relative;}
+  .passage-pane{
+    flex:1 1 50%;
+    overflow-y:auto;
+    padding:22px 26px;
+    border-right:1px solid var(--border);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .questions-pane{
+    flex:1 1 50%;
+    overflow-y:auto;
+    padding:22px 26px 90px;
+  }
+  .passage-title{font-size:17px;font-weight:800;margin-bottom:4px;}
+  .passage-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+  .passage-para{margin-bottom:14px;display:flex;gap:10px;}
+  .para-letter{font-weight:bold;color:var(--ielts-red);flex-shrink:0;width:18px;}
+  .para-text{flex:1;}
+
+  .part-banner{background:var(--bg-panel);border:1px solid #ddd;border-radius:2px;padding:12px 16px;margin-bottom:18px;}
+  .part-banner b{font-size:14px;}
+  .part-banner div.instr{font-size:13px;margin-top:2px;}
+  .q-instructions{font-size:13px;margin-bottom:10px;}
+  .q-title{font-weight:bold;font-size:13px;}
+  .section-title{font-weight:bold;margin:18px 0 10px;font-size:14px;}
+
+  input.blank{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 8px;font-size:14px;width:150px;text-align:center;font-family:inherit;}
+  input.blank:focus{outline:none;border-color:var(--focus-blue);box-shadow:0 0 0 1px var(--focus-blue);}
+
+  select.blank-select{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 6px;font-size:13px;font-family:inherit;background:#fafcff;width:150px;}
+
+  .mc-question{margin-bottom:20px;}
+  .mc-question .qnum{display:inline-block;border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;margin-right:6px;}
+  .mc-opts label{display:block;font-size:13px;margin:6px 0 0 22px;cursor:pointer;}
+  .mc-opts input{margin-right:8px;}
+
+  .tfng-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:13px;}
+  .tfng-row .qtext{flex:1;}
+  .tfng-row select{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 8px;font-size:13px;font-family:inherit;width:150px;}
+
+  .notes-block{font-size:14px;line-height:2.1;}
+  .notes-row{margin:2px 0;}
+
+  .help-select-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;}
+  .help-select-row .qnum{border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;}
+
+  /* Highlight/note popover */
+  .selection-menu{position:absolute;background:#fff;border:1px solid #999;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:flex;z-index:50;border-radius:2px;}
+  .selection-menu button{border:none;background:none;padding:8px 12px;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .selection-menu button:hover{background:#f0f0f0;}
+  .selection-menu button + button{border-left:1px solid #ddd;}
+  mark.hl{background:var(--highlight);}
+
+  .notes-panel{width:260px;border-left:1px solid var(--border);background:#f0f0f0;padding:16px;flex-shrink:0;display:none;overflow-y:auto;}
+  .notes-panel.open{display:block;}
+  .notes-panel-title{font-weight:bold;font-size:13px;margin-bottom:14px;color:var(--ielts-red);}
+  .notes-panel-empty{color:#555;font-size:13px;text-align:center;margin-top:40px;line-height:1.6;}
+  .note-entry{background:#fff;border:1px solid #ccc;border-radius:3px;padding:8px 10px;margin-bottom:10px;font-size:12px;}
+  .note-entry .quoted{font-style:italic;color:#333;margin-bottom:4px;}
+
+  .bottombar{border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;height:52px;flex-shrink:0;background:#fff;font-size:13px;justify-content:space-between;overflow-x:auto;}
+  .part-nav-group{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .part-nav-group .part-label{font-weight:bold;color:#333;white-space:nowrap;cursor:pointer;}
+  .part-nav-group .part-label.active-part{color:var(--ielts-red);}
+  .qnum-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;border:1px solid transparent;color:#333;cursor:pointer;background:none;border-radius:2px;}
+  .qnum-btn.answered{color:var(--focus-blue);}
+  .part-count{color:#999;font-size:12px;white-space:nowrap;}
+  .submit-check{width:36px;height:36px;background:#f0f0f0;border:none;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:#333;flex-shrink:0;}
+  .submit-check:hover{background:#e2e2e2;}
+
+  .menu-overlay{position:absolute;inset:0;background:#fff;z-index:40;display:none;flex-direction:column;}
+  .menu-overlay.open{display:flex;}
+  .menu-header{display:grid;grid-template-columns:96px 1fr 40px;align-items:center;padding:14px 16px;border-bottom:1px solid #eee;font-size:15px;font-weight:600;}
+  .menu-header .back-btn{grid-column:1;justify-self:start;background:none;border:none;cursor:pointer;font-size:14px;color:#111;display:none;align-items:center;gap:2px;padding:4px 0;white-space:nowrap;}
+  .menu-header .back-btn.show{display:flex;}
+  .menu-header .title-text{grid-column:2;text-align:center;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .menu-header .close-btn{grid-column:3;justify-self:end;background:none;border:none;cursor:pointer;font-size:18px;}
+  .menu-body{padding:20px;max-width:440px;margin:0 auto;width:100%;}
+  .menu-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid #ddd;cursor:pointer;font-size:14px;}
+  .menu-item + .menu-item{border-top:none;}
+  .menu-item.danger{background:var(--ielts-red);color:#fff;border-color:var(--ielts-red);font-weight:600;}
+  .menu-item .chev{font-size:15px;}
+  .option-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid #ddd;font-size:13px;cursor:pointer;}
+  .option-row + .option-row{border-top:none;}
+  .option-row .check{width:16px;color:#111;display:inline-block;}
+  .swatch{width:60px;height:22px;border:1px solid #999;display:flex;align-items:center;justify-content:center;gap:2px;}
+  .swatch .bar{width:3px;height:12px;}
+  .sw-bw .bar{background:#333;}
+  .sw-bw{background:#eee;}
+  .sw-wb{background:#111;}
+  .sw-wb .bar{background:#eee;}
+  .sw-yb{background:#111;}
+  .sw-yb .bar{background:#e8c400;}
+  .textsize-regular .passage-pane,.textsize-regular .questions-pane{font-size:13px;}
+  .textsize-large .passage-pane,.textsize-large .questions-pane{font-size:16px;}
+  .textsize-extralarge .passage-pane,.textsize-extralarge .questions-pane{font-size:19px;}
+
+  .final-action-btn{background:#fff;color:#111;border:1px solid #111;padding:7px 16px;border-radius:3px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .final-action-btn:hover{background:#f2f2f2;}
+  .final-action-btn.primary{background:#111;color:#fff;}
+  .final-action-btn.primary:hover{background:#000;}
+  .transition-body{flex:1;display:flex;align-items:flex-start;justify-content:center;padding-top:10px;}
+
+  .results-wrap{padding:30px 40px;overflow-y:auto;height:100%;}
+  .results-wrap h1{color:var(--ielts-red);font-size:24px;margin-bottom:4px;}
+  .score-summary{display:flex;gap:24px;margin:20px 0 28px;flex-wrap:wrap;}
+  .score-box{border:1px solid #ddd;border-radius:4px;padding:16px 24px;text-align:center;min-width:120px;}
+  .score-box .num{font-size:30px;font-weight:800;color:var(--ielts-red);}
+  .score-box .lbl{font-size:12px;color:#666;margin-top:4px;}
+  table.review-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.review-table th, table.review-table td{border:1px solid #ddd;padding:8px 10px;text-align:left;}
+  table.review-table th{background:var(--bg-panel);}
+  .ok{color:#1a8a3d;font-weight:bold;}
+  .no{color:var(--ielts-red);font-weight:bold;}
+  .restart-btn{margin-top:24px;background:#111;color:#fff;border:none;padding:10px 22px;border-radius:3px;cursor:pointer;font-size:14px;}
+
+  body.contrast-wb .content-wrap,body.contrast-wb .main-wrap,body.contrast-wb .topbar,body.contrast-wb .bottombar,body.contrast-wb .passage-pane,body.contrast-wb .questions-pane{background:#000 !important;color:#fff !important;}
+  body.contrast-wb .part-banner{background:#1a1a1a;border-color:#444;}
+  body.contrast-wb input.blank,body.contrast-wb select{background:#111;color:#fff;border-color:#666;}
+  body.contrast-wb .passage-pane{border-color:#444;}
+
+  body.contrast-yb .content-wrap,body.contrast-yb .main-wrap,body.contrast-yb .topbar,body.contrast-yb .bottombar,body.contrast-yb .passage-pane,body.contrast-yb .questions-pane{background:#000 !important;color:#f2d70a !important;}
+  body.contrast-yb .part-banner{background:#1a1a1a;border-color:#555;}
+  body.contrast-yb input.blank,body.contrast-yb select{background:#111;color:#f2d70a;border-color:#f2d70a;}
+  body.contrast-yb .passage-pane{border-color:#555;}
+
+  .hidden{display:none !important;}
+
+  @media (max-width:900px){
+    .main-wrap{flex-direction:column;}
+    .passage-pane{border-right:none;border-bottom:1px solid var(--border);max-height:42vh;}
+    .notes-panel{position:absolute;right:0;top:0;bottom:0;z-index:45;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- PASSWORD -->
+  <div class="gate-screen" id="screen-password">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram">
+          <span class="ring"></span>
+          <img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Reading Test Access</div>
+      <label for="pwd-input">Enter Password</label>
+      <input type="password" id="pwd-input" placeholder="Password" autocomplete="off">
+      <div class="gate-error" id="pwd-error"></div>
+      <button class="gate-btn" id="pwd-submit">Continue</button>
+      <div class="gate-footer">Full Reading Test — <a href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener"></a></div>
+    </div>
+  </div>
+
+  <!-- ID -->
+  <div class="gate-screen hidden" id="screen-id">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram">
+          <span class="ring"></span>
+          <img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Enter your Test Taker ID</div>
+      <label for="id-input">Test Taker ID</label>
+      <input type="text" id="id-input" placeholder="e.g. 123456789" autocomplete="off">
+      <div class="gate-error" id="id-error"></div>
+      <button class="gate-btn" id="id-submit">Start Test</button>
+      <div class="gate-footer">Full Reading Test — <a href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener">@shohrukhposts</a></div>
+    </div>
+  </div>
+
+  <!-- TEST -->
+  <div class="hidden" id="screen-test" style="height:100%;display:flex;flex-direction:column;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram">
+          <span class="ring"></span>
+          <img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="ielts-logo">IELTS</div>
+        <div class="taker-id-block">
+          <div><span class="label">Test taker ID</span></div>
+          <div id="taker-id-display" style="color:#333;"></div>
+          <div class="timer-status" id="timer-display">60:00</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span title="Connection">📶</span>
+        <span title="Notifications">🔔</span>
+        <button class="icon-btn" id="hamburger-btn" title="Menu">☰</button>
+        <button class="icon-btn" id="notes-toggle-btn" title="Notes">✏️</button>
+      </div>
+    </div>
+
+    <div class="main-wrap">
+      <div class="content-wrap" id="content-wrap" style="display:flex;flex:1;overflow:hidden;">
+        <div class="passage-pane" id="passage-pane"></div>
+        <div class="questions-pane" id="questions-pane"></div>
+      </div>
+
+      <div class="notes-panel" id="notes-panel">
+        <div class="notes-panel-title">Notes</div>
+        <div id="notes-list"></div>
+      </div>
+
+      <div class="menu-overlay" id="menu-overlay">
+        <div class="menu-header">
+          <button class="back-btn" id="menu-back-btn">‹ Options</button>
+          <span id="menu-header-title" class="title-text">Options</span>
+          <button class="close-btn" id="menu-close-btn">✕</button>
+        </div>
+        <div class="menu-body">
+          <div id="menu-root-view">
+            <div class="menu-item danger" id="menu-submit-btn" style="margin-bottom:16px;"><span>🚀 Go to submission page</span><span class="chev">›</span></div>
+            <div class="menu-item" id="menu-contrast-btn"><span>◐ Contrast</span><span class="chev">›</span></div>
+            <div class="menu-item" id="menu-textsize-btn"><span>🔍 Text size</span><span class="chev">›</span></div>
+          </div>
+          <div id="menu-contrast-view" class="hidden">
+            <div class="option-row" data-contrast="bw"><span><span class="check">✔</span> Black on white</span><span class="swatch sw-bw"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+            <div class="option-row" data-contrast="wb"><span><span class="check"></span> White on black</span><span class="swatch sw-wb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+            <div class="option-row" data-contrast="yb"><span><span class="check"></span> Yellow on black</span><span class="swatch sw-yb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+          </div>
+          <div id="menu-textsize-view" class="hidden">
+            <div class="option-row" data-textsize="regular"><span><span class="check">✔</span> Regular</span></div>
+            <div class="option-row" data-textsize="large"><span><span class="check"></span> Large</span></div>
+            <div class="option-row" data-textsize="extralarge"><span><span class="check"></span> Extra large</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottombar" id="bottombar"></div>
+  </div>
+
+  <!-- FINAL -->
+  <div class="hidden" id="screen-final" style="height:100%;display:flex;flex-direction:column;position:relative;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener">
+          <span class="ring"></span>
+          <img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="ielts-logo">IELTS</div>
+        <div class="taker-id-block">
+          <div><span class="label">Test taker ID</span></div>
+          <div id="taker-id-display-final" style="color:#333;"></div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="final-action-btn" id="back-to-test-btn">← Back to test</button>
+        <button class="final-action-btn primary" id="final-next-btn">Next ✈</button>
+      </div>
+    </div>
+    <div class="transition-body"><p style="font-size:13px;color:#333;">Click next to continue</p></div>
+    <div class="bottombar">
+      <div class="part-nav-group"><span class="part-label">Passage 1</span><span class="part-count">0 of 13</span></div>
+      <div class="part-nav-group"><span class="part-label">Passage 2</span><span class="part-count">0 of 13</span></div>
+      <div class="part-nav-group"><span class="part-label">Passage 3</span><span class="part-count">0 of 14</span></div>
+      <button class="submit-check" style="background:#111;color:#fff;">✔</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="hidden results-wrap" id="screen-results">
+    <h1>Test Results</h1>
+    <p style="color:#555;font-size:13px;">Test taker ID: <span id="results-taker-id"></span></p>
+    <div class="score-summary">
+      <div class="score-box"><div class="num" id="score-correct">0</div><div class="lbl">Correct</div></div>
+      <div class="score-box"><div class="num" id="score-total">40</div><div class="lbl">Total Questions</div></div>
+      <div class="score-box"><div class="num" id="score-band">0.0</div><div class="lbl">Estimated Band</div></div>
+    </div>
+    <table class="review-table">
+      <thead><tr><th style="width:60px;">Q#</th><th>Your Answer</th><th>Correct Answer</th><th style="width:70px;">Result</th></tr></thead>
+      <tbody id="review-body"></tbody>
+    </table>
+    <button class="restart-btn" id="restart-btn">Restart Test</button>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  
+
+  // ---------------- ANSWER KEY ----------------
+  const answerKey = {
+    1:"A",2:"E",3:"G",4:"C",5:"ancient Rome",6:"Persia",7:"Mallorca",8:"Japan",9:"Australia",10:"Bahrain",
+    11:"TRUE",12:"NOT GIVEN",13:"TRUE",
+    14:"B",15:"G",16:"A",17:"H",18:"D",19:"C",20:"C",
+    21:"TRUE",22:"FALSE",23:"FALSE",24:"TRUE",25:"NOT GIVEN",26:"FALSE",
+    27:"v",28:"ii",29:"vi",30:"iii",31:"vii",32:"iv",33:"viii",
+    34:"thunderstorms",35:"Condensation",36:"heat",37:"eye",38:"land",
+    39:"B",40:"C"
+  };
+
+  const state = { answers:{}, currentPart:1, notes:[], contrast:"bw", textsize:"regular", takerId:"", testActive:false, timeLeft:60*60, timerInterval:null };
+
+  const $ = (id) => document.getElementById(id);
+  const show = (el) => el.classList.remove("hidden");
+  const hide = (el) => el.classList.add("hidden");
+
+  // ---------------- PASSAGE TEXTS ----------------
+  const passage1 = {
+    title:"READING PASSAGE 1",
+    sub:"The Pearl",
+    paras:[
+      ["A","The pearl has always had a special status in the rich and powerful all through history. For instance, women from ancient Rome went to bed with pearls on them, so that they could remind themselves how wealthy they were after waking up. Pearls used to have more commercial value than diamonds until jewellers learnt to cut gems. In the eastern countries like Persia, ground pearl powders could be used as a medicine to cure anything including heart diseases and epilepsy."],
+      ["B","Pearls can generally be divided into three categories: natural, cultured and imitation. When an irritant (such as a grain of sand) gets inside a certain type of oyster, mussel, or clam, the mollusc will secrete a fluid as a means of defence to coat the irritant. Gradually, layers are accumulated around the irritant until a lustrous natural pearl is formed."],
+      ["C","A cultured pearl undergoes the same process. There is only one difference between cultured pearls and natural ones: in cultured pearls, the irritant is a bead called 'mother of pearl' and is placed in the oyster through surgical implantation. This results in much larger cores in cultivated pearls than those in natural pearls. As long as there are enough layers of nacre (the secreted fluid covering the irritant) to create a gorgeous, gem-quality pearl, the size of the nucleus wouldn't make a difference to beauty or durability."],
+      ["D","Pearls can come from both salt and freshwater sources. Typically, pearls from salt water usually have high quality, although several freshwater pearls are considered high in quality, too. In addition, freshwater pearls often have irregular shapes, with a puffed rice appearance. Nevertheless, it is the individual merits that determine the pearl's value more than the sources of pearls. Saltwater pearl oysters are usually cultivated in protected lagoons or volcanic atolls, while most freshwater cultured pearls sold today come from China. There are a number of options for producing cultured pearls: use fresh water or sea water shells, transplant the graft into the mantle or into the gonad, add a spherical bead or do it nonbeaded."],
+      ["E","No matter which method is used to get pearls, the process usually takes several years. Mussels must reach a mature age, which may take up almost three years, and then be transplanted an irritant. When the irritant is put in place, it takes approximately another three years for a pearl to reach its full size. Sometimes, the irritant may be rejected. As a result, the pearl may be seriously deformed, or the oyster may directly die from such numerous complications as diseases. At the end of a 5- to 10-year circle, only half of the oysters may have made it through. Among the pearls that are actually produced in the end, only about 5% of them will be high-quality enough for the jewellery makers."],
+      ["F","Imitation pearls are of another different story. The Island of Mallorca in Spain is renowned for its imitation pearl industry. In most cases, a bead is dipped into a solution made from fish scales. But this coating is quite thin and often wears off. One way to distinguish the imitation pearls is to have a bite on it. Fake pearls glide through your teeth, while the layers of nacre on the real pearls feel gritty."],
+      ["G","Several factors are taken into account to evaluate a pearl: size, shape, colour, the quality of surface and lustre. Generally, the three types of pearls come in such order (with the value decreasing): natural pearls, cultured pearls and imitation pearls (which basically are worthless). For jewellers, one way to tell whether a pearl is natural or cultured is to send it to a gem lab and perform an X-ray on it. High-quality natural pearls are extremely rare. Japan's Akoya pearls are one of the glossiest pearls out there, while the south sea water of Australia is a cradle to bigger pearls."],
+      ["H","Historically, the pearls with the highest quality around the globe are found in the Persian Gulf, particularly around Bahrain. These pearls have to be hand-harvested by divers with no advanced equipment. Unfortunately, when the large reserve of oil was discovered in the early 1930s, Persian Gulf's natural pearl industry came to a sudden end because the contaminated water destroyed the once pristine pearls. In the present days, India probably has the largest stock of natural pearls. However, it is quite an irony that a large part of India's stock of natural pearls are originally from Bahrain."]
+    ]
+  };
+
+  const passage2 = {
+    title:"READING PASSAGE 2",
+    sub:"How deserts are formed?",
+    paras:[
+      ["A","A desert refers to a barren section of land, mainly in arid and semi-arid areas, where there is almost no precipitation, and the environment is hostile for any creature to inhabit. Deserts have been classified in a number of ways, generally combining total precipitation, how many days the rainfall occurs, temperature, humidity, and sometimes additional factors. In some places, deserts have clear boundaries marked by rivers, mountains or other landforms, while in other places, there are no clear-cut borders between desert and other landscape features."],
+      ["B","In arid areas where there is not any covering of vegetation protecting the land, sand and dust storms will frequently take place. This phenomenon often occurs along the desert margins instead of within the deserts, where there are already no finer materials left. When a steady wind starts to blow, fine particles on the open ground will begin vibrating. As the wind picks up, some of the particles are lifted into the air. When they fall onto the ground, they hit other particles which will then be jerked into the air in their turn, initiating a chain reaction."],
+      ["C","There has been a tremendous deal of publicity on how severe desertification can be, but the academic circle has never agreed on the causes of desertification. A common misunderstanding is that a shortage of precipitation causes the desertification—even the land in some barren areas will soon recover after the rain falls. In fact, more often than not, human activities are responsible for desertification. It might be true that the explosion in world population, especially in developing countries, is the primary cause of soil degradation and desertification. Since the population has become denser, the cultivation of crops has gone into progressively drier areas. It's especially possible for these regions to go through periods of severe drought, which explains why crop failures are common. The raising of most crops requires the natural vegetation cover to be removed first; when crop failures occur, extensive tracts of land are devoid of a plant cover and thus susceptible to wind and water erosion. All through the 1990s, dryland areas went through a population growth of 18.5 per cent, mostly in severely impoverished developing countries."],
+      ["D","Livestock farming in semi-arid areas accelerates the erosion of soil and becomes one of the reasons for advancing desertification. In such areas where the vegetation is dominated by grasses, the breeding of livestock is a major economic activity. Grasses are necessary for anchoring barren topsoil in a dryland area. When a specific field is used to graze an excessive herd, it will experience a loss in vegetation coverage, and the soil will be trampled as well as be pulverised, leaving the topsoil exposed to destructive erosion elements such as winds and unexpected thunderstorms. For centuries, nomads have grazed their flocks and herds to any place where pasture can be found, and oases have offered chances for a more settled way of living. For some nomads, wherever they move to, the desert follows."],
+      ["E","Trees are of great importance when it comes to maintaining topsoil and slowing down the wind speed. In many Asian countries, firewood is the chief fuel used for cooking and heating, which has caused uncontrolled clear-cutting of forests in dryland ecosystems. When too many trees are cut down, windstorms and dust storms tend to occur."],
+      ["F","What's worse, even political conflicts and wars can also contribute to desertification. To escape from the invading enemies, the refugees will move altogether into some of the most vulnerable ecosystems on the planet. They bring along their cultivation traditions, which might not be the right kind of practice for their new settlement."],
+      ["G","In the 20th century, one of the states of America had a large section of farmland that had turned into desert. Since then, actions have been enforced so that such a phenomenon of desertification will not happen again. To avoid the reoccurring of desertification, people shall find other livelihoods which do not rely on traditional land uses, are not as demanding on local land and natural resources, but can still generate viable income. Such livelihoods include but are not limited to dryland aquaculture for the raising of fish, crustaceans and industrial compounds derived from microalgae, greenhouse agriculture, and activities that are related to tourism. Another way to prevent the reoccurring of desertification is bringing about economic prospects in the city centres of drylands and places outside drylands. Changing the general economic and institutional structures that generate new chances for people to support themselves would alleviate the current pressures accompanying the desertification processes."],
+      ["H","In nowadays society, new technologies are serving as a method to resolve the problems brought by desertification. Satellites have been utilised to investigate the influence that people and livestock have on our planet Earth. Nevertheless, it doesn't mean that alternative technologies are not needed to help with the problems and process of desertification."]
+    ]
+  };
+
+  const passage3 = {
+    title:"READING PASSAGE 3",
+    sub:"Can Hurricanes be Moderated or Diverted?",
+    paras:[
+      ["A","Each year, massive swirling storms bringing along winds greater than 74 miles per hour wipe across tropical oceans and land on shorelines—usually devastating vast swaths of territory. When these roiling tempests strike densely inhabited territories, they have the power to kill thousands and cause property damage worth billions of dollars. Besides, absolutely nothing stands in their way. But can we ever find a way to control these formidable forces of nature?"],
+      ["B","To see why hurricanes and other severe tropical storms may be susceptible to human intervention, a researcher must first learn about their nature and origins. Hurricanes grow in the form of thunderstorm clusters above the tropical seas. Oceans in low-latitude areas never stop giving out heat and moisture to the atmosphere, which brings about warm, wet air above the sea surface. When this kind of air rises, the water vapour in it condenses to form clouds and precipitation. Condensation gives out heat in the process the solar heat is used to evaporate the water at the ocean surface. This so-called latent heat of condensation makes the air more buoyant, leading to it ascending higher while reinforcing itself in the feedback process. At last, the tropical depression starts to form and grow stronger, creating the familiar eye — the calm centre hub that a hurricane spins around. When reaching the land, the hurricane no longer has a continuous supply of warm water, which causes it to swiftly weaken."],
+      ["C","Our current studies are inspired by my past intuition when I was learning about chaos theory 30 years ago. The reason why long-range forecasting is complicated is that the atmosphere is highly sensitive to small influences and tiny mistakes can compound fast in the weather-forecasting models. However, this sensitivity also made me realise a possibility: if we intentionally applied some slight inputs to a hurricane, we might create a strong influence that could affect the storms, either by steering them away from densely populated areas or by slowing them down. Back then, I was not able to test my ideas, but thanks to the advancement of computer simulation and remote-sensing technologies over the last 10 years, I can now renew my enthusiasm in large-scale weather control."],
+      ["D","To find out whether the sensitivity of the atmospheric system could be exploited to adjust such robust atmospheric phenomena as hurricanes, our research team ran simulation experiments on computers for a hurricane named Iniki that occurred in 1992. The current forecasting technologies were far from perfect, so it took us by surprise that our first simulation turned out to be an immediate success. With the goal of altering the path of Iniki in mind, we first picked the spot where we wanted the storm to stop after six hours. Then we used this target to generate artificial observations and put these into the computer model."],
+      ["E","The most significant alteration turned out to be the initial temperatures and winds. Usually, the temperature changes across the grid were only tenths of a degree, but the most noteworthy change, which was an increase of almost two degrees Celsius, took place in the lowest model layer to the west of the storm centre. The calculations produced wind-speed changes of two or three miles per hour. However, in several spots, the rates shifted by as much as 20 mph due to minor redirections of the winds close to the storm's centre. In terms of structure, the initial and altered versions of Hurricane Iniki seemed almost the same, but the changes in critical variables were so substantial that the latter one went off the track to the west during the first six hours of the simulation and then travelled due north, leaving Kauai untouched."],
+      ["F","Future earth-orbiting solar power stations, equipped with large mirrors to focus the sun's rays and panels of photovoltaic cells to gather and send energy to the Earth, might be adapted to beam microwaves which turn to be absorbed by water vapour molecules inside or around the storm. The microwaves would cause the water molecules to vibrate and heat up the surrounding air, which then leads to the hurricane slowing down or moving in a preferred direction."],
+      ["G","Simulations of hurricanes conducted on a computer have implied that by changing the precipitation, evaporation and air temperature, we could make a difference to a storm's route or abate its winds. Intervention could be in many different forms: exquisitely targeted clouds bearing silver iodide or other rainfall-inducing elements might deprive a hurricane of the water it needs to grow and multiply from its formidable eyewall, which is the essential characteristic of a severe tropical storm."]
+    ]
+  };
+
+  function renderPassage(p){
+    return `
+      <div class="passage-title">${p.title}</div>
+      <div class="passage-sub">${p.sub}</div>
+      ${p.paras.map(([letter,text]) => `
+        <div class="passage-para"><span class="para-letter">${letter}</span><span class="para-text">${text}</span></div>
+      `).join("")}
+    `;
+  }
+
+  // ---------------- QUESTIONS ----------------
+  function inputBlank(qnum, width){
+    const val = state.answers[qnum] || "";
+    return `<input class="blank" data-q="${qnum}" value="${val}" placeholder="${qnum}" style="${width?('width:'+width+'px;'):''}">`;
+  }
+
+  function mcQuestion(qnum, text, options){
+    const selected = state.answers[qnum];
+    return `<div class="mc-question"><span class="qnum">${qnum}</span> ${text}
+      <div class="mc-opts">${options.map((opt,i)=>{
+        const val = String.fromCharCode(97+i);
+        return `<label><input type="radio" name="q${qnum}" value="${val}" ${selected===val?'checked':''}> ${val.toUpperCase()}) ${opt}</label>`;
+      }).join("")}</div></div>`;
+  }
+
+  function paraSelect(qnum, letters){
+    const val = state.answers[qnum] || "";
+    return `<select class="blank-select" data-q="${qnum}">
+      <option value="">--</option>
+      ${letters.map(l => `<option value="${l}" ${val===l?'selected':''}>${l}</option>`).join("")}
+    </select>`;
+  }
+
+  function tfngSelect(qnum, text){
+    const val = state.answers[qnum] || "";
+    const opts = ["TRUE","FALSE","NOT GIVEN"];
+    return `<div class="tfng-row"><span class="qnum" style="margin-right:0;">${qnum}</span><span class="qtext">${text}</span>
+      <select data-q="${qnum}"><option value="">--</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join("")}</select></div>`;
+  }
+
+  function headingSelect(qnum, label){
+    const val = state.answers[qnum] || "";
+    const romans = ["i","ii","iii","iv","v","vi","vii","viii"];
+    return `<div class="tfng-row"><span class="qnum" style="margin-right:0;">${qnum}</span><span class="qtext">${label}</span>
+      <select data-q="${qnum}"><option value="">--</option>${romans.map(r=>`<option value="${r}" ${val===r?'selected':''}>${r}</option>`).join("")}</select></div>`;
+  }
+
+  // ------ SECTION 1 questions ------
+  function renderQ1(){
+    const paraLetters = ["A","B","C","D","E","F","G","H"];
+    return `
+      ${partBanner(1,"1–13")}
+      <div class="q-instructions"><span class="q-title">Questions 1–4</span><br>
+      Reading Passage 1 has eight paragraphs, A–H. Which paragraph contains the following information? Write the correct letter, A–H.</div>
+      ${headingRow(1,"ancient stories around pearls and its customers",paraLetters)}
+      ${headingRow(2,"difficulties in cultivating process",paraLetters)}
+      ${headingRow(3,"factors which decide the value of natural pearls",paraLetters)}
+      ${headingRow(4,"a growth mechanism that distinguishes cultured pearls from natural ones",paraLetters)}
+
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 5–10</span><br>
+      Complete the summary below. Choose <b>NO MORE THAN TWO WORDS</b> from the passage for each answer.</div>
+      <div class="notes-block">
+        <div class="notes-row">In history, pearls have had great importance within the men of wealth and power, which were treated as gems for women in ${inputBlank(5,150)}. Also, pearls were even used as a medicine for people in ${inputBlank(6,150)}. There are essentially three types of pearls: natural, cultured and imitation. Most freshwater cultured pearls sold today come from China while ${inputBlank(7,150)} Island is famous for its imitation pearl industry. Good-quality natural pearls are exceedingly unusual. ${inputBlank(8,150)} often manufactures some of the glitteriest pearls while ${inputBlank(9,150)} produces larger size ones due to the favourable environment along the coastline. In the past, ${inputBlank(10,150)} in Persian Gulf produced the world's best pearls. Nowadays, the major remaining suppliers of natural pearls belong to India.</div>
+      </div>
+
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 11–13</span><br>
+      Do the following statements agree with the information given in Reading Passage 1? Write TRUE, FALSE, or NOT GIVEN.</div>
+      ${tfngSelect(11,"Generally speaking, the centre of cultured pearl is significantly larger than that of a natural pearl.")}
+      ${tfngSelect(12,"Sometimes, fake pearls can be more expensive.")}
+      ${tfngSelect(13,"The size of the pearls produced in Japan is usually smaller than those in Australia.")}
+    `;
+  }
+
+  function headingRow(qnum, text, letters){
+    return `<div class="help-select-row"><span class="qnum">${qnum}</span><span style="flex:1;">${text}</span>${paraSelect(qnum, letters)}</div>`;
+  }
+
+  // ------ SECTION 2 questions ------
+  function renderQ2(){
+    const paraLetters = ["A","B","C","D","E","F","G","H"];
+    return `
+      ${partBanner(2,"14–26")}
+      <div class="q-instructions"><span class="q-title">Questions 14–20</span><br>
+      Reading Passage 2 has eight paragraphs, A–H. Which paragraph contains the following information? Write the correct letter, A–H. <i>NB You may use any letter more than once.</i></div>
+      ${headingRow(14,"a reference to the irregular movement of particles",paraLetters)}
+      ${headingRow(15,"mention of a productive land turning into a desert in the 20th century",paraLetters)}
+      ${headingRow(16,"types of deserts",paraLetters)}
+      ${headingRow(17,"mention of technical methods used to tackle the problems of deserts",paraLetters)}
+      ${headingRow(18,"the influence of migration on desertification",paraLetters)}
+      ${headingRow(19,"lack of agreement among the scientists about the causes of desertification",paraLetters)}
+      ${headingRow(20,"a description of the fatal effects of farming practice",paraLetters)}
+
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 21–26</span><br>
+      Do the following statements agree with the information given in Reading Passage 2? Write TRUE, FALSE, or NOT GIVEN.</div>
+      ${tfngSelect(21,"It is difficult to ascertain where the deserts end in some areas.")}
+      ${tfngSelect(22,"Media is uninterested in the problems of desertification.")}
+      ${tfngSelect(23,"The most common cause of desertification is the lack of rainfall.")}
+      ${tfngSelect(24,"Farming animals in semi-arid areas will increase soil erosion.")}
+      ${tfngSelect(25,"People in Asian countries no longer use firewood as the chief fuel.")}
+      ${tfngSelect(26,"Technology studying the relationship of people, livestock and desertification has not yet been invented.")}
+    `;
+  }
+
+  // ------ SECTION 3 questions ------
+  function renderQ3(){
+    const headingLabels = [
+      [27,"Paragraph A"],[28,"Paragraph B"],[29,"Paragraph C"],[30,"Paragraph D"],
+      [31,"Paragraph E"],[32,"Paragraph F"],[33,"Paragraph G"]
+    ];
+    return `
+      ${partBanner(3,"27–40")}
+      <div class="q-instructions"><span class="q-title">Questions 27–33</span><br>
+      Reading Passage 3 has seven paragraphs, A–G. Choose the correct heading for each paragraph from the list below.</div>
+      <div style="font-size:12px;background:var(--bg-panel);border:1px solid #ddd;padding:10px 14px;margin-bottom:14px;">
+        <b>List of Headings</b><br>
+        i Hurricanes in history &nbsp;|&nbsp; ii How hurricanes form &nbsp;|&nbsp; iii How a laboratory exercise re-routes a hurricane<br>
+        iv Exciting ways to utilise future technologies &nbsp;|&nbsp; v Are hurricanes unbeatable? &nbsp;|&nbsp; vi Re-visit earlier ideas<br>
+        vii How lives might have been saved &nbsp;|&nbsp; viii A range of low-tech methods
+      </div>
+      ${headingLabels.map(([q,label]) => headingSelect(q,label)).join("")}
+
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 34–38</span><br>
+      Complete the summary below. Choose <b>ONE WORD ONLY</b> from the passage for each answer.</div>
+      <div class="notes-block">
+        <div class="notes-row">Hurricanes originate as groups of ${inputBlank(34,150)} over the tropical oceans. Low-latitude seas continuously provide heat and moisture to the atmosphere, producing warm, humid air above the sea surface. When this air rises, the water vapour in it condenses to form clouds and precipitation. ${inputBlank(35,150)} releases heat—the solar heat it took to evaporate the water at the ocean surface. This so-called latent ${inputBlank(36,150)} of condensation makes the air more buoyant, causing it to ascend still higher in a self-reinforcing feedback process. Eventually, the tropical depression begins to organise and strengthen, forming the familiar ${inputBlank(37,150)} — the calm central hub around which a hurricane spins. On passing over ${inputBlank(38,150)}, the hurricane's sustaining source of warm water is cut off, which leads to the storm's rapid weakening.</div>
+      </div>
+
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 39–40</span><br>
+      Choose the correct letter, A, B, C or D.</div>
+      ${mcQuestion(39,"What encouraged the writer to restart researching hurricane control?",["the huge damage hurricanes trigger","the developments in computer technologies","the requirement of some local people","the chaos theory learnt as a student"])}
+      ${mcQuestion(40,"What was the writer's reaction after their first experiment?",["surprised that their intervention had not achieved a lot","ecstatic with the achievement the first experiment had","surprised that their intervention had the intended effect","regretful about the impending success"])}
+    `;
+  }
+
+  function partBanner(num, range){
+    return `<div class="part-banner"><b>Reading Passage ${num}</b><div class="instr">Answer questions ${range}.</div></div>`;
+  }
+
+  const partData = {
+    1:{passage:passage1, renderQ:renderQ1, range:[1,13]},
+    2:{passage:passage2, renderQ:renderQ2, range:[14,26]},
+    3:{passage:passage3, renderQ:renderQ3, range:[27,40]}
+  };
+
+  function renderPart(num){
+    state.currentPart = num;
+    $("passage-pane").innerHTML = renderPassage(partData[num].passage);
+    $("questions-pane").innerHTML = partData[num].renderQ();
+    attachContentListeners();
+    renderBottomBar();
+    $("passage-pane").scrollTop = 0;
+    $("questions-pane").scrollTop = 0;
+  }
+
+  function attachContentListeners(){
+    document.querySelectorAll("#questions-pane input.blank").forEach(inp => {
+      inp.addEventListener("input", (e) => { state.answers[e.target.dataset.q] = e.target.value; renderBottomBar(); });
+    });
+    document.querySelectorAll("#questions-pane select").forEach(sel => {
+      sel.addEventListener("change", (e) => { state.answers[e.target.dataset.q] = e.target.value; renderBottomBar(); });
+    });
+    document.querySelectorAll("#questions-pane input[type=radio]").forEach(r => {
+      r.addEventListener("change", (e) => { state.answers[e.target.name.replace("q","")] = e.target.value; renderBottomBar(); });
+    });
+    $("questions-pane").addEventListener("mouseup", handleTextSelection);
+    $("passage-pane").addEventListener("mouseup", handleTextSelection);
+  }
+
+  // ---------------- NOTE / HIGHLIGHT ----------------
+  let activeSelectionMenu = null;
+  function removeSelectionMenu(){ if (activeSelectionMenu){ activeSelectionMenu.remove(); activeSelectionMenu = null; } }
+  function handleTextSelection(e){
+    removeSelectionMenu();
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.toString().trim().length === 0) return;
+    if (!$("passage-pane").contains(sel.anchorNode) && !$("questions-pane").contains(sel.anchorNode)) return;
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const menu = document.createElement("div");
+    menu.className = "selection-menu";
+    menu.style.left = (rect.left + window.scrollX) + "px";
+    menu.style.top = (rect.bottom + window.scrollY + 4) + "px";
+    menu.innerHTML = `<button data-action="note">📝<span>Note</span></button><button data-action="highlight">🖊<span>Highlight</span></button>`;
+    document.body.appendChild(menu);
+    activeSelectionMenu = menu;
+    const selectedText = sel.toString();
+    menu.querySelector('[data-action="highlight"]').addEventListener("click", () => {
+      try { const mark = document.createElement("mark"); mark.className = "hl"; range.surroundContents(mark); } catch(err){}
+      removeSelectionMenu();
+    });
+    menu.querySelector('[data-action="note"]').addEventListener("click", () => {
+      state.notes.push(selectedText); renderNotesPanel(); show($("notes-panel")); removeSelectionMenu();
+    });
+  }
+  document.addEventListener("mousedown", (e) => { if (activeSelectionMenu && !activeSelectionMenu.contains(e.target)) removeSelectionMenu(); });
+
+  function renderNotesPanel(){
+    const list = $("notes-list");
+    if (state.notes.length === 0){ list.innerHTML = `<div class="notes-panel-empty">Your private notes will show here<br><br>Select text to highlight or create a note.</div>`; return; }
+    list.innerHTML = state.notes.map(n => `<div class="note-entry"><div class="quoted">"${n}"</div></div>`).join("");
+  }
+  renderNotesPanel();
+  $("notes-toggle-btn").addEventListener("click", () => { $("notes-panel").classList.toggle("open"); });
+
+  // ---------------- BOTTOM BAR ----------------
+  function countAnswered(part){
+    const [start,end] = partData[part].range;
+    let c=0; for (let i=start;i<=end;i++){ if (state.answers[i] && String(state.answers[i]).trim()!=="") c++; }
+    return c;
+  }
+  function renderBottomBar(){
+    let html = "";
+    for (let p=1;p<=3;p++){
+      const [start,end] = partData[p].range;
+      if (p === state.currentPart){
+        html += `<div class="part-nav-group"><span class="part-label active-part">Passage ${p}</span>`;
+        for (let q=start;q<=end;q++){
+          const answered = state.answers[q] && String(state.answers[q]).trim()!=="";
+          html += `<button class="qnum-btn ${answered?'answered':''}" data-jump="${q}">${q}</button>`;
+        }
+        html += `</div>`;
+      } else {
+        html += `<div class="part-nav-group"><span class="part-label" data-partjump="${p}">Passage ${p}</span><span class="part-count">${countAnswered(p)} of ${end-start+1}</span></div>`;
+      }
+    }
+    html += `<button class="submit-check" id="submit-check-btn">✔</button>`;
+    $("bottombar").innerHTML = html;
+    document.querySelectorAll("#bottombar [data-partjump]").forEach(el => el.addEventListener("click", () => renderPart(parseInt(el.dataset.partjump))));
+    $("submit-check-btn").addEventListener("click", goToFinalScreen);
+  }
+
+  // ---------------- PASSWORD / ID ----------------
+  $("pwd-submit").addEventListener("click", () => {
+    const val = $("pwd-input").value.trim();
+    if (val === REQUIRED_PASSWORD){ hide($("screen-password")); show($("screen-id")); $("id-input").focus(); }
+    else { $("pwd-error").textContent = "Incorrect password. Please try again."; }
+  });
+  $("pwd-input").addEventListener("keydown", (e) => { if (e.key==="Enter") $("pwd-submit").click(); });
+
+  $("id-submit").addEventListener("click", () => {
+    const val = $("id-input").value.trim();
+    if (!val){ $("id-error").textContent = "Please enter your Test Taker ID."; return; }
+    state.takerId = val;
+    $("taker-id-display").textContent = val;
+    $("taker-id-display-final").textContent = val;
+    $("results-taker-id").textContent = val;
+    hide($("screen-id")); show($("screen-test"));
+    renderPart(1);
+    state.testActive = true;
+    enterFullscreen();
+    startTimer();
+  });
+  $("id-input").addEventListener("keydown", (e) => { if (e.key==="Enter") $("id-submit").click(); });
+
+  function enterFullscreen(){
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (req) { try { req.call(el); } catch(e){} }
+  }
+
+  // ---------------- TIMER (60 minutes) ----------------
+  function startTimer(){
+    clearInterval(state.timerInterval);
+    updateTimerDisplay();
+    state.timerInterval = setInterval(() => {
+      state.timeLeft--;
+      updateTimerDisplay();
+      if (state.timeLeft <= 0){
+        clearInterval(state.timerInterval);
+        checkAnswersAndShowResults();
+      }
+    }, 1000);
+  }
+  function updateTimerDisplay(){
+    const m = Math.floor(state.timeLeft/60);
+    const s = state.timeLeft%60;
+    const txt = String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+    $("timer-display").textContent = txt;
+    $("timer-display").classList.toggle("low", state.timeLeft <= 300);
+  }
+
+  // ---------------- AUTO-SUBMIT ON LEAVING WINDOW ----------------
+  let autoSubmitted = false;
+  function autoSubmitIfActive(){
+    if (state.testActive && !autoSubmitted){
+      autoSubmitted = true; state.testActive = false;
+      checkAnswersAndShowResults();
+    }
+  }
+  window.addEventListener("blur", autoSubmitIfActive);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) autoSubmitIfActive(); });
+
+  // ---------------- HAMBURGER MENU ----------------
+  $("hamburger-btn").addEventListener("click", () => { $("menu-overlay").classList.add("open"); showMenuRoot(); });
+  $("menu-close-btn").addEventListener("click", () => $("menu-overlay").classList.remove("open"));
+  $("menu-back-btn").addEventListener("click", () => showMenuRoot());
+  function showMenuRoot(){
+    $("menu-header-title").textContent = "Options";
+    $("menu-back-btn").classList.remove("show");
+    $("menu-root-view").classList.remove("hidden");
+    $("menu-contrast-view").classList.add("hidden");
+    $("menu-textsize-view").classList.add("hidden");
+  }
+  $("menu-submit-btn").addEventListener("click", () => { $("menu-overlay").classList.remove("open"); goToFinalScreen(); });
+  $("menu-contrast-btn").addEventListener("click", () => {
+    $("menu-header-title").textContent = "Contrast";
+    $("menu-back-btn").classList.add("show");
+    $("menu-root-view").classList.add("hidden");
+    $("menu-contrast-view").classList.remove("hidden");
+  });
+  $("menu-textsize-btn").addEventListener("click", () => {
+    $("menu-header-title").textContent = "Text size";
+    $("menu-back-btn").classList.add("show");
+    $("menu-root-view").classList.add("hidden");
+    $("menu-textsize-view").classList.remove("hidden");
+  });
+  document.querySelectorAll('[data-contrast]').forEach(row => {
+    row.addEventListener("click", () => {
+      state.contrast = row.dataset.contrast;
+      document.body.classList.remove("contrast-wb","contrast-yb");
+      if (state.contrast==="wb") document.body.classList.add("contrast-wb");
+      if (state.contrast==="yb") document.body.classList.add("contrast-yb");
+      document.querySelectorAll('[data-contrast] .check').forEach(c=>c.textContent="");
+      row.querySelector(".check").textContent="✔";
+    });
+  });
+  document.querySelectorAll('[data-textsize]').forEach(row => {
+    row.addEventListener("click", () => {
+      state.textsize = row.dataset.textsize;
+      $("app").classList.remove("textsize-regular","textsize-large","textsize-extralarge");
+      $("app").classList.add("textsize-"+state.textsize);
+      document.querySelectorAll('[data-textsize] .check').forEach(c=>c.textContent="");
+      row.querySelector(".check").textContent="✔";
+    });
+  });
+
+  // ---------------- FINAL / RESULTS ----------------
+  function goToFinalScreen(){ hide($("screen-test")); show($("screen-final")); }
+  $("final-next-btn").addEventListener("click", checkAnswersAndShowResults);
+  $("back-to-test-btn").addEventListener("click", () => { hide($("screen-final")); show($("screen-test")); });
+
+  function normalize(str){ return String(str||"").trim().toLowerCase().replace(/\s+/g," ").replace(/^the /,""); }
+
+  function checkAnswersAndShowResults(){
+    clearInterval(state.timerInterval);
+    let correctCount = 0, rows = "";
+    for (let q=1;q<=40;q++){
+      const userAns = state.answers[q] !== undefined ? state.answers[q] : "";
+      const correctAns = answerKey[q];
+      const isCorrect = normalize(userAns) === normalize(correctAns);
+      if (isCorrect) correctCount++;
+      rows += `<tr><td>${q}</td><td>${userAns || '<i style="color:#999;">(no answer)</i>'}</td><td>${correctAns}</td><td>${isCorrect?'<span class="ok">✔ Correct</span>':'<span class="no">✘ Incorrect</span>'}</td></tr>`;
+    }
+    $("score-correct").textContent = correctCount;
+    $("score-total").textContent = 40;
+    $("score-band").textContent = estimateBand(correctCount);
+    $("review-body").innerHTML = rows;
+    hide($("screen-final")); hide($("screen-test")); show($("screen-results"));
+  }
+
+  function estimateBand(correct){
+    const table = [[39,9.0],[37,8.5],[35,8.0],[33,7.5],[30,7.0],[27,6.5],[23,6.0],[19,5.5],[15,5.0],[13,4.5],[10,4.0],[8,3.5],[6,3.0]];
+    for (const [minC,band] of table){ if (correct>=minC) return band.toFixed(1); }
+    return "2.5";
+  }
+
+  $("restart-btn").addEventListener("click", () => {
+    state.answers = {}; state.notes = []; state.currentPart = 1;
+    state.testActive = false; autoSubmitted = false; state.timeLeft = 60*60;
+    document.body.className = ""; $("app").className = "";
+    hide($("screen-results"));
+    show($("screen-password"));
+    $("pwd-input").value=""; $("id-input").value="";
+    $("pwd-error").textContent=""; $("id-error").textContent="";
+  });
+
+})();
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Reading Test — Jasurbek</title>
+<style>
+  :root{
+    --ielts-red:#d2122e;
+    --border:#c9c9c9;
+    --text:#1a1a1a;
+    --muted:#6b6b6b;
+    --bg-panel:#f0f0f0;
+    --focus-blue:#2b6fd6;
+    --highlight:#ffe066;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;font-family:Arial, Helvetica, sans-serif;color:var(--text);background:#fff;}
+  #app{height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+  .brand-badge{position:relative;width:60px;height:60px;flex-shrink:0;display:flex;align-items:center;justify-content:center;text-decoration:none;cursor:pointer;}
+  .brand-badge .ring{position:absolute;inset:-4px;border-radius:50%;background:conic-gradient(from 0deg,#d2122e,#ff8a3d,#ffd23f,#2b6fd6,#d2122e);animation:spin 4s linear infinite;}
+  .brand-badge .photo{position:relative;width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #fff;z-index:2;animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(210,18,46,0.35);}50%{box-shadow:0 0 0 6px rgba(210,18,46,0);}}
+
+  .gate-screen{height:100%;display:flex;align-items:center;justify-content:center;background:#f5f5f5;}
+  .gate-card{background:#fff;border:1px solid var(--border);border-radius:4px;padding:40px 44px;width:380px;box-shadow:0 2px 10px rgba(0,0,0,0.08);text-align:center;}
+  .gate-brand-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;}
+  .gate-logo{font-size:28px;font-weight:800;color:var(--ielts-red);letter-spacing:1px;}
+  .gate-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
+  .gate-card label{display:block;text-align:left;font-size:13px;font-weight:bold;margin-bottom:6px;}
+  .gate-card input[type=text],.gate-card input[type=password]{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:3px;font-size:15px;margin-bottom:18px;}
+  .gate-card input:focus{outline:2px solid var(--focus-blue);border-color:var(--focus-blue);}
+  .gate-btn{width:100%;padding:11px;background:#111;color:#fff;border:none;border-radius:3px;font-size:15px;cursor:pointer;}
+  .gate-btn:hover{background:#000;}
+  .gate-error{color:var(--ielts-red);font-size:13px;margin:-10px 0 14px;min-height:16px;text-align:left;}
+  .gate-footer{margin-top:18px;font-size:11px;color:#999;}
+  .gate-footer a{color:var(--focus-blue);text-decoration:none;}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:#fff;min-height:76px;}
+  .topbar-left{display:flex;align-items:center;gap:14px;}
+  .ielts-logo{font-size:20px;font-weight:800;color:var(--ielts-red);letter-spacing:0.5px;}
+  .taker-id-block{font-size:12px;line-height:1.3;}
+  .taker-id-block .label{font-weight:bold;font-size:12px;}
+  .timer-status{color:#333;font-size:12px;display:flex;align-items:center;gap:4px;font-weight:bold;}
+  .timer-status.low{color:var(--ielts-red);}
+  .topbar-right{display:flex;align-items:center;gap:18px;font-size:18px;color:#222;}
+  .topbar-right .icon-btn{cursor:pointer;background:none;border:none;font-size:18px;color:#222;padding:4px;display:flex;align-items:center;}
+
+  .main-wrap{flex:1;display:flex;overflow:hidden;position:relative;}
+  .passage-pane{
+    flex:1 1 50%;
+    overflow-y:auto;
+    padding:22px 26px;
+    border-right:1px solid var(--border);
+    font-size:14px;
+    line-height:1.75;
+  }
+  .questions-pane{
+    flex:1 1 50%;
+    overflow-y:auto;
+    padding:22px 26px 90px;
+  }
+  .passage-title{font-size:17px;font-weight:800;margin-bottom:4px;}
+  .passage-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+  .passage-para{margin-bottom:14px;display:flex;gap:10px;}
+  .para-letter{font-weight:bold;color:var(--ielts-red);flex-shrink:0;width:18px;}
+  .para-text{flex:1;}
+
+  .part-banner{background:var(--bg-panel);border:1px solid #ddd;border-radius:2px;padding:12px 16px;margin-bottom:18px;}
+  .part-banner b{font-size:14px;}
+  .part-banner div.instr{font-size:13px;margin-top:2px;}
+  .q-instructions{font-size:13px;margin-bottom:10px;}
+  .q-title{font-weight:bold;font-size:13px;}
+  .section-title{font-weight:bold;margin:18px 0 10px;font-size:14px;}
+
+  input.blank{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 8px;font-size:14px;width:150px;text-align:center;font-family:inherit;}
+  input.blank:focus{outline:none;border-color:var(--focus-blue);box-shadow:0 0 0 1px var(--focus-blue);}
+
+  select.blank-select{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 6px;font-size:13px;font-family:inherit;background:#fafcff;width:150px;}
+
+  .mc-question{margin-bottom:20px;}
+  .mc-question .qnum{display:inline-block;border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;margin-right:6px;}
+  .mc-opts label{display:block;font-size:13px;margin:6px 0 0 22px;cursor:pointer;}
+  .mc-opts input{margin-right:8px;}
+
+  .tfng-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:13px;}
+  .tfng-row .qtext{flex:1;}
+  .tfng-row select{border:1px solid var(--focus-blue);border-radius:2px;padding:5px 8px;font-size:13px;font-family:inherit;width:150px;}
+
+  .notes-block{font-size:14px;line-height:2.1;}
+  .notes-row{margin:2px 0;}
+
+  .help-select-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:13px;}
+  .help-select-row .qnum{border:1px solid #333;padding:1px 7px;font-size:12px;font-weight:bold;}
+
+  /* Highlight/note popover */
+  .selection-menu{position:absolute;background:#fff;border:1px solid #999;box-shadow:0 2px 8px rgba(0,0,0,0.2);display:flex;z-index:50;border-radius:2px;}
+  .selection-menu button{border:none;background:none;padding:8px 12px;font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .selection-menu button:hover{background:#f0f0f0;}
+  .selection-menu button + button{border-left:1px solid #ddd;}
+  mark.hl{background:var(--highlight);}
+
+  .notes-panel{width:260px;border-left:1px solid var(--border);background:#f0f0f0;padding:16px;flex-shrink:0;display:none;overflow-y:auto;}
+  .notes-panel.open{display:block;}
+  .notes-panel-title{font-weight:bold;font-size:13px;margin-bottom:14px;color:var(--ielts-red);}
+  .notes-panel-empty{color:#555;font-size:13px;text-align:center;margin-top:40px;line-height:1.6;}
+  .note-entry{background:#fff;border:1px solid #ccc;border-radius:3px;padding:8px 10px;margin-bottom:10px;font-size:12px;}
+  .note-entry .quoted{font-style:italic;color:#333;margin-bottom:4px;}
+
+  .bottombar{border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;height:52px;flex-shrink:0;background:#fff;font-size:13px;justify-content:space-between;overflow-x:auto;}
+  .part-nav-group{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .part-nav-group .part-label{font-weight:bold;color:#333;white-space:nowrap;cursor:pointer;}
+  .part-nav-group .part-label.active-part{color:var(--ielts-red);}
+  .qnum-btn{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;border:1px solid transparent;color:#333;cursor:pointer;background:none;border-radius:2px;}
+  .qnum-btn.answered{color:var(--focus-blue);}
+  .part-count{color:#999;font-size:12px;white-space:nowrap;}
+  .submit-check{width:36px;height:36px;background:#f0f0f0;border:none;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;color:#333;flex-shrink:0;}
+  .submit-check:hover{background:#e2e2e2;}
+
+  .menu-overlay{position:absolute;inset:0;background:#fff;z-index:40;display:none;flex-direction:column;}
+  .menu-overlay.open{display:flex;}
+  .menu-header{display:grid;grid-template-columns:96px 1fr 40px;align-items:center;padding:14px 16px;border-bottom:1px solid #eee;font-size:15px;font-weight:600;}
+  .menu-header .back-btn{grid-column:1;justify-self:start;background:none;border:none;cursor:pointer;font-size:14px;color:#111;display:none;align-items:center;gap:2px;padding:4px 0;white-space:nowrap;}
+  .menu-header .back-btn.show{display:flex;}
+  .menu-header .title-text{grid-column:2;text-align:center;font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .menu-header .close-btn{grid-column:3;justify-self:end;background:none;border:none;cursor:pointer;font-size:18px;}
+  .menu-body{padding:20px;max-width:440px;margin:0 auto;width:100%;}
+  .menu-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid #ddd;cursor:pointer;font-size:14px;}
+  .menu-item + .menu-item{border-top:none;}
+  .menu-item.danger{background:var(--ielts-red);color:#fff;border-color:var(--ielts-red);font-weight:600;}
+  .menu-item .chev{font-size:15px;}
+  .option-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid #ddd;font-size:13px;cursor:pointer;}
+  .option-row + .option-row{border-top:none;}
+  .option-row .check{width:16px;color:#111;display:inline-block;}
+  .swatch{width:60px;height:22px;border:1px solid #999;display:flex;align-items:center;justify-content:center;gap:2px;}
+  .swatch .bar{width:3px;height:12px;}
+  .sw-bw .bar{background:#333;}
+  .sw-bw{background:#eee;}
+  .sw-wb{background:#111;}
+  .sw-wb .bar{background:#eee;}
+  .sw-yb{background:#111;}
+  .sw-yb .bar{background:#e8c400;}
+  .textsize-regular .passage-pane,.textsize-regular .questions-pane{font-size:13px;}
+  .textsize-large .passage-pane,.textsize-large .questions-pane{font-size:16px;}
+  .textsize-extralarge .passage-pane,.textsize-extralarge .questions-pane{font-size:19px;}
+
+  .final-action-btn{background:#fff;color:#111;border:1px solid #111;padding:7px 16px;border-radius:3px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .final-action-btn:hover{background:#f2f2f2;}
+  .final-action-btn.primary{background:#111;color:#fff;}
+  .final-action-btn.primary:hover{background:#000;}
+  .transition-body{flex:1;display:flex;align-items:flex-start;justify-content:center;padding-top:10px;}
+
+  .results-wrap{padding:30px 40px;overflow-y:auto;height:100%;}
+  .results-wrap h1{color:var(--ielts-red);font-size:24px;margin-bottom:4px;}
+  .score-summary{display:flex;gap:24px;margin:20px 0 28px;flex-wrap:wrap;}
+  .score-box{border:1px solid #ddd;border-radius:4px;padding:16px 24px;text-align:center;min-width:120px;}
+  .score-box .num{font-size:30px;font-weight:800;color:var(--ielts-red);}
+  .score-box .lbl{font-size:12px;color:#666;margin-top:4px;}
+  table.review-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.review-table th, table.review-table td{border:1px solid #ddd;padding:8px 10px;text-align:left;}
+  table.review-table th{background:var(--bg-panel);}
+  .ok{color:#1a8a3d;font-weight:bold;}
+  .no{color:var(--ielts-red);font-weight:bold;}
+  .restart-btn{margin-top:24px;background:#111;color:#fff;border:none;padding:10px 22px;border-radius:3px;cursor:pointer;font-size:14px;}
+
+  body.contrast-wb .content-wrap,body.contrast-wb .main-wrap,body.contrast-wb .topbar,body.contrast-wb .bottombar,body.contrast-wb .passage-pane,body.contrast-wb .questions-pane{background:#000 !important;color:#fff !important;}
+  body.contrast-wb .part-banner{background:#1a1a1a;border-color:#444;}
+  body.contrast-wb input.blank,body.contrast-wb select{background:#111;color:#fff;border-color:#666;}
+  body.contrast-wb .passage-pane{border-color:#444;}
+
+  body.contrast-yb .content-wrap,body.contrast-yb .main-wrap,body.contrast-yb .topbar,body.contrast-yb .bottombar,body.contrast-yb .passage-pane,body.contrast-yb .questions-pane{background:#000 !important;color:#f2d70a !important;}
+  body.contrast-yb .part-banner{background:#1a1a1a;border-color:#555;}
+  body.contrast-yb input.blank,body.contrast-yb select{background:#111;color:#f2d70a;border-color:#f2d70a;}
+  body.contrast-yb .passage-pane{border-color:#555;}
+
+  .hidden{display:none !important;}
+
+  @media (max-width:900px){
+    .main-wrap{flex-direction:column;}
+    .passage-pane{border-right:none;border-bottom:1px solid var(--border);max-height:42vh;}
+    .notes-panel{position:absolute;right:0;top:0;bottom:0;z-index:45;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- PASSWORD -->
+  <div class="gate-screen" id="screen-password">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram">
+          <span class="ring"></span>
+          <img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Reading Test Access</div>
+      <label for="pwd-input">Enter Password</label>
+      <input type="password" id="pwd-input" placeholder="Password" autocomplete="off">
+      <div class="gate-error" id="pwd-error"></div>
+      <button class="gate-btn" id="pwd-submit">Continue</button>
+      <div class="gate-footer">Full Reading Test — <a href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener"></a></div>
+    </div>
+  </div>
+
+  <!-- ID -->
+  <div class="gate-screen hidden" id="screen-id">
+    <div class="gate-card">
+      <div class="gate-brand-row">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram">
+          <span class="ring"></span>
+          <img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="gate-logo">IELTS</div>
+      </div>
+      <div class="gate-sub">Enter your Test Taker ID</div>
+      <label for="id-input">Test Taker ID</label>
+      <input type="text" id="id-input" placeholder="e.g. 123456789" autocomplete="off">
+      <div class="gate-error" id="id-error"></div>
+      <button class="gate-btn" id="id-submit">Start Test</button>
+      <div class="gate-footer">Full Reading Test — <a href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener">@shohrukhposts</a></div>
+    </div>
+  </div>
+
+  <!-- TEST -->
+  <div class="hidden" id="screen-test" style="height:100%;display:flex;flex-direction:column;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener" title="Jasurbek's blog — Telegram">
+          <span class="ring"></span>
+          <img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="ielts-logo">IELTS</div>
+        <div class="taker-id-block">
+          <div><span class="label">Test taker ID</span></div>
+          <div id="taker-id-display" style="color:#333;"></div>
+          <div class="timer-status" id="timer-display">60:00</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span title="Connection">📶</span>
+        <span title="Notifications">🔔</span>
+        <button class="icon-btn" id="hamburger-btn" title="Menu">☰</button>
+        <button class="icon-btn" id="notes-toggle-btn" title="Notes">✏️</button>
+      </div>
+    </div>
+
+    <div class="main-wrap">
+      <div class="content-wrap" id="content-wrap" style="display:flex;flex:1;overflow:hidden;">
+        <div class="passage-pane" id="passage-pane"></div>
+        <div class="questions-pane" id="questions-pane"></div>
+      </div>
+
+      <div class="notes-panel" id="notes-panel">
+        <div class="notes-panel-title">Notes</div>
+        <div id="notes-list"></div>
+      </div>
+
+      <div class="menu-overlay" id="menu-overlay">
+        <div class="menu-header">
+          <button class="back-btn" id="menu-back-btn">‹ Options</button>
+          <span id="menu-header-title" class="title-text">Options</span>
+          <button class="close-btn" id="menu-close-btn">✕</button>
+        </div>
+        <div class="menu-body">
+          <div id="menu-root-view">
+            <div class="menu-item danger" id="menu-submit-btn" style="margin-bottom:16px;"><span>🚀 Go to submission page</span><span class="chev">›</span></div>
+            <div class="menu-item" id="menu-contrast-btn"><span>◐ Contrast</span><span class="chev">›</span></div>
+            <div class="menu-item" id="menu-textsize-btn"><span>🔍 Text size</span><span class="chev">›</span></div>
+          </div>
+          <div id="menu-contrast-view" class="hidden">
+            <div class="option-row" data-contrast="bw"><span><span class="check">✔</span> Black on white</span><span class="swatch sw-bw"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+            <div class="option-row" data-contrast="wb"><span><span class="check"></span> White on black</span><span class="swatch sw-wb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+            <div class="option-row" data-contrast="yb"><span><span class="check"></span> Yellow on black</span><span class="swatch sw-yb"><span class="bar"></span><span class="bar"></span><span class="bar"></span></span></div>
+          </div>
+          <div id="menu-textsize-view" class="hidden">
+            <div class="option-row" data-textsize="regular"><span><span class="check">✔</span> Regular</span></div>
+            <div class="option-row" data-textsize="large"><span><span class="check"></span> Large</span></div>
+            <div class="option-row" data-textsize="extralarge"><span><span class="check"></span> Extra large</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottombar" id="bottombar"></div>
+  </div>
+
+  <!-- FINAL -->
+  <div class="hidden" id="screen-final" style="height:100%;display:flex;flex-direction:column;position:relative;">
+    <div class="topbar">
+      <div class="topbar-left">
+        <a class="brand-badge" href="https://t.me/+1meJNfCKsg85ODQ6" target="_blank" rel="noopener">
+          <span class="ring"></span>
+          <img class="photo" src="https://i.ibb.co/XfQJVFnW/photo-2026-01-19-20-15-29-2.jpg" alt="Jasurbek">
+        </a>
+        <div class="ielts-logo">IELTS</div>
+        <div class="taker-id-block">
+          <div><span class="label">Test taker ID</span></div>
+          <div id="taker-id-display-final" style="color:#333;"></div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="final-action-btn" id="back-to-test-btn">← Back to test</button>
+        <button class="final-action-btn primary" id="final-next-btn">Next ✈</button>
+      </div>
+    </div>
+    <div class="transition-body"><p style="font-size:13px;color:#333;">Click next to continue</p></div>
+    <div class="bottombar">
+      <div class="part-nav-group"><span class="part-label">Passage 1</span><span class="part-count">0 of 13</span></div>
+      <div class="part-nav-group"><span class="part-label">Passage 2</span><span class="part-count">0 of 13</span></div>
+      <div class="part-nav-group"><span class="part-label">Passage 3</span><span class="part-count">0 of 14</span></div>
+      <button class="submit-check" style="background:#111;color:#fff;">✔</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="hidden results-wrap" id="screen-results">
+    <h1>Test Results</h1>
+    <p style="color:#555;font-size:13px;">Test taker ID: <span id="results-taker-id"></span></p>
+    <div class="score-summary">
+      <div class="score-box"><div class="num" id="score-correct">0</div><div class="lbl">Correct</div></div>
+      <div class="score-box"><div class="num" id="score-total">40</div><div class="lbl">Total Questions</div></div>
+      <div class="score-box"><div class="num" id="score-band">0.0</div><div class="lbl">Estimated Band</div></div>
+    </div>
+    <table class="review-table">
+      <thead><tr><th style="width:60px;">Q#</th><th>Your Answer</th><th>Correct Answer</th><th style="width:70px;">Result</th></tr></thead>
+      <tbody id="review-body"></tbody>
+    </table>
+    <button class="restart-btn" id="restart-btn">Restart Test</button>
+  </div>
+
+</div>
+
+<script>
+(() => {
+  
+
+  // ---------------- ANSWER KEY ----------------
+  const answerKey = {
+    1:"A",2:"E",3:"G",4:"C",5:"ancient Rome",6:"Persia",7:"Mallorca",8:"Japan",9:"Australia",10:"Bahrain",
+    11:"TRUE",12:"NOT GIVEN",13:"TRUE",
+    14:"B",15:"G",16:"A",17:"H",18:"D",19:"C",20:"C",
+    21:"TRUE",22:"FALSE",23:"FALSE",24:"TRUE",25:"NOT GIVEN",26:"FALSE",
+    27:"v",28:"ii",29:"vi",30:"iii",31:"vii",32:"iv",33:"viii",
+    34:"thunderstorms",35:"Condensation",36:"heat",37:"eye",38:"land",
+    39:"B",40:"C"
+  };
+
+  const state = { answers:{}, currentPart:1, notes:[], contrast:"bw", textsize:"regular", takerId:"", testActive:false, timeLeft:60*60, timerInterval:null };
+
+  const $ = (id) => document.getElementById(id);
+  const show = (el) => el.classList.remove("hidden");
+  const hide = (el) => el.classList.add("hidden");
+
+  // ---------------- PASSAGE TEXTS ----------------
+  const passage1 = {
+    title:"READING PASSAGE 1",
+    sub:"The Pearl",
+    paras:[
+      ["A","The pearl has always had a special status in the rich and powerful all through history. For instance, women from ancient Rome went to bed with pearls on them, so that they could remind themselves how wealthy they were after waking up. Pearls used to have more commercial value than diamonds until jewellers learnt to cut gems. In the eastern countries like Persia, ground pearl powders could be used as a medicine to cure anything including heart diseases and epilepsy."],
+      ["B","Pearls can generally be divided into three categories: natural, cultured and imitation. When an irritant (such as a grain of sand) gets inside a certain type of oyster, mussel, or clam, the mollusc will secrete a fluid as a means of defence to coat the irritant. Gradually, layers are accumulated around the irritant until a lustrous natural pearl is formed."],
+      ["C","A cultured pearl undergoes the same process. There is only one difference between cultured pearls and natural ones: in cultured pearls, the irritant is a bead called 'mother of pearl' and is placed in the oyster through surgical implantation. This results in much larger cores in cultivated pearls than those in natural pearls. As long as there are enough layers of nacre (the secreted fluid covering the irritant) to create a gorgeous, gem-quality pearl, the size of the nucleus wouldn't make a difference to beauty or durability."],
+      ["D","Pearls can come from both salt and freshwater sources. Typically, pearls from salt water usually have high quality, although several freshwater pearls are considered high in quality, too. In addition, freshwater pearls often have irregular shapes, with a puffed rice appearance. Nevertheless, it is the individual merits that determine the pearl's value more than the sources of pearls. Saltwater pearl oysters are usually cultivated in protected lagoons or volcanic atolls, while most freshwater cultured pearls sold today come from China. There are a number of options for producing cultured pearls: use fresh water or sea water shells, transplant the graft into the mantle or into the gonad, add a spherical bead or do it nonbeaded."],
+      ["E","No matter which method is used to get pearls, the process usually takes several years. Mussels must reach a mature age, which may take up almost three years, and then be transplanted an irritant. When the irritant is put in place, it takes approximately another three years for a pearl to reach its full size. Sometimes, the irritant may be rejected. As a result, the pearl may be seriously deformed, or the oyster may directly die from such numerous complications as diseases. At the end of a 5- to 10-year circle, only half of the oysters may have made it through. Among the pearls that are actually produced in the end, only about 5% of them will be high-quality enough for the jewellery makers."],
+      ["F","Imitation pearls are of another different story. The Island of Mallorca in Spain is renowned for its imitation pearl industry. In most cases, a bead is dipped into a solution made from fish scales. But this coating is quite thin and often wears off. One way to distinguish the imitation pearls is to have a bite on it. Fake pearls glide through your teeth, while the layers of nacre on the real pearls feel gritty."],
+      ["G","Several factors are taken into account to evaluate a pearl: size, shape, colour, the quality of surface and lustre. Generally, the three types of pearls come in such order (with the value decreasing): natural pearls, cultured pearls and imitation pearls (which basically are worthless). For jewellers, one way to tell whether a pearl is natural or cultured is to send it to a gem lab and perform an X-ray on it. High-quality natural pearls are extremely rare. Japan's Akoya pearls are one of the glossiest pearls out there, while the south sea water of Australia is a cradle to bigger pearls."],
+      ["H","Historically, the pearls with the highest quality around the globe are found in the Persian Gulf, particularly around Bahrain. These pearls have to be hand-harvested by divers with no advanced equipment. Unfortunately, when the large reserve of oil was discovered in the early 1930s, Persian Gulf's natural pearl industry came to a sudden end because the contaminated water destroyed the once pristine pearls. In the present days, India probably has the largest stock of natural pearls. However, it is quite an irony that a large part of India's stock of natural pearls are originally from Bahrain."]
+    ]
+  };
+
+  const passage2 = {
+    title:"READING PASSAGE 2",
+    sub:"How deserts are formed?",
+    paras:[
+      ["A","A desert refers to a barren section of land, mainly in arid and semi-arid areas, where there is almost no precipitation, and the environment is hostile for any creature to inhabit. Deserts have been classified in a number of ways, generally combining total precipitation, how many days the rainfall occurs, temperature, humidity, and sometimes additional factors. In some places, deserts have clear boundaries marked by rivers, mountains or other landforms, while in other places, there are no clear-cut borders between desert and other landscape features."],
+      ["B","In arid areas where there is not any covering of vegetation protecting the land, sand and dust storms will frequently take place. This phenomenon often occurs along the desert margins instead of within the deserts, where there are already no finer materials left. When a steady wind starts to blow, fine particles on the open ground will begin vibrating. As the wind picks up, some of the particles are lifted into the air. When they fall onto the ground, they hit other particles which will then be jerked into the air in their turn, initiating a chain reaction."],
+      ["C","There has been a tremendous deal of publicity on how severe desertification can be, but the academic circle has never agreed on the causes of desertification. A common misunderstanding is that a shortage of precipitation causes the desertification—even the land in some barren areas will soon recover after the rain falls. In fact, more often than not, human activities are responsible for desertification. It might be true that the explosion in world population, especially in developing countries, is the primary cause of soil degradation and desertification. Since the population has become denser, the cultivation of crops has gone into progressively drier areas. It's especially possible for these regions to go through periods of severe drought, which explains why crop failures are common. The raising of most crops requires the natural vegetation cover to be removed first; when crop failures occur, extensive tracts of land are devoid of a plant cover and thus susceptible to wind and water erosion. All through the 1990s, dryland areas went through a population growth of 18.5 per cent, mostly in severely impoverished developing countries."],
+      ["D","Livestock farming in semi-arid areas accelerates the erosion of soil and becomes one of the reasons for advancing desertification. In such areas where the vegetation is dominated by grasses, the breeding of livestock is a major economic activity. Grasses are necessary for anchoring barren topsoil in a dryland area. When a specific field is used to graze an excessive herd, it will experience a loss in vegetation coverage, and the soil will be trampled as well as be pulverised, leaving the topsoil exposed to destructive erosion elements such as winds and unexpected thunderstorms. For centuries, nomads have grazed their flocks and herds to any place where pasture can be found, and oases have offered chances for a more settled way of living. For some nomads, wherever they move to, the desert follows."],
+      ["E","Trees are of great importance when it comes to maintaining topsoil and slowing down the wind speed. In many Asian countries, firewood is the chief fuel used for cooking and heating, which has caused uncontrolled clear-cutting of forests in dryland ecosystems. When too many trees are cut down, windstorms and dust storms tend to occur."],
+      ["F","What's worse, even political conflicts and wars can also contribute to desertification. To escape from the invading enemies, the refugees will move altogether into some of the most vulnerable ecosystems on the planet. They bring along their cultivation traditions, which might not be the right kind of practice for their new settlement."],
+      ["G","In the 20th century, one of the states of America had a large section of farmland that had turned into desert. Since then, actions have been enforced so that such a phenomenon of desertification will not happen again. To avoid the reoccurring of desertification, people shall find other livelihoods which do not rely on traditional land uses, are not as demanding on local land and natural resources, but can still generate viable income. Such livelihoods include but are not limited to dryland aquaculture for the raising of fish, crustaceans and industrial compounds derived from microalgae, greenhouse agriculture, and activities that are related to tourism. Another way to prevent the reoccurring of desertification is bringing about economic prospects in the city centres of drylands and places outside drylands. Changing the general economic and institutional structures that generate new chances for people to support themselves would alleviate the current pressures accompanying the desertification processes."],
+      ["H","In nowadays society, new technologies are serving as a method to resolve the problems brought by desertification. Satellites have been utilised to investigate the influence that people and livestock have on our planet Earth. Nevertheless, it doesn't mean that alternative technologies are not needed to help with the problems and process of desertification."]
+    ]
+  };
+
+  const passage3 = {
+    title:"READING PASSAGE 3",
+    sub:"Can Hurricanes be Moderated or Diverted?",
+    paras:[
+      ["A","Each year, massive swirling storms bringing along winds greater than 74 miles per hour wipe across tropical oceans and land on shorelines—usually devastating vast swaths of territory. When these roiling tempests strike densely inhabited territories, they have the power to kill thousands and cause property damage worth billions of dollars. Besides, absolutely nothing stands in their way. But can we ever find a way to control these formidable forces of nature?"],
+      ["B","To see why hurricanes and other severe tropical storms may be susceptible to human intervention, a researcher must first learn about their nature and origins. Hurricanes grow in the form of thunderstorm clusters above the tropical seas. Oceans in low-latitude areas never stop giving out heat and moisture to the atmosphere, which brings about warm, wet air above the sea surface. When this kind of air rises, the water vapour in it condenses to form clouds and precipitation. Condensation gives out heat in the process the solar heat is used to evaporate the water at the ocean surface. This so-called latent heat of condensation makes the air more buoyant, leading to it ascending higher while reinforcing itself in the feedback process. At last, the tropical depression starts to form and grow stronger, creating the familiar eye — the calm centre hub that a hurricane spins around. When reaching the land, the hurricane no longer has a continuous supply of warm water, which causes it to swiftly weaken."],
+      ["C","Our current studies are inspired by my past intuition when I was learning about chaos theory 30 years ago. The reason why long-range forecasting is complicated is that the atmosphere is highly sensitive to small influences and tiny mistakes can compound fast in the weather-forecasting models. However, this sensitivity also made me realise a possibility: if we intentionally applied some slight inputs to a hurricane, we might create a strong influence that could affect the storms, either by steering them away from densely populated areas or by slowing them down. Back then, I was not able to test my ideas, but thanks to the advancement of computer simulation and remote-sensing technologies over the last 10 years, I can now renew my enthusiasm in large-scale weather control."],
+      ["D","To find out whether the sensitivity of the atmospheric system could be exploited to adjust such robust atmospheric phenomena as hurricanes, our research team ran simulation experiments on computers for a hurricane named Iniki that occurred in 1992. The current forecasting technologies were far from perfect, so it took us by surprise that our first simulation turned out to be an immediate success. With the goal of altering the path of Iniki in mind, we first picked the spot where we wanted the storm to stop after six hours. Then we used this target to generate artificial observations and put these into the computer model."],
+      ["E","The most significant alteration turned out to be the initial temperatures and winds. Usually, the temperature changes across the grid were only tenths of a degree, but the most noteworthy change, which was an increase of almost two degrees Celsius, took place in the lowest model layer to the west of the storm centre. The calculations produced wind-speed changes of two or three miles per hour. However, in several spots, the rates shifted by as much as 20 mph due to minor redirections of the winds close to the storm's centre. In terms of structure, the initial and altered versions of Hurricane Iniki seemed almost the same, but the changes in critical variables were so substantial that the latter one went off the track to the west during the first six hours of the simulation and then travelled due north, leaving Kauai untouched."],
+      ["F","Future earth-orbiting solar power stations, equipped with large mirrors to focus the sun's rays and panels of photovoltaic cells to gather and send energy to the Earth, might be adapted to beam microwaves which turn to be absorbed by water vapour molecules inside or around the storm. The microwaves would cause the water molecules to vibrate and heat up the surrounding air, which then leads to the hurricane slowing down or moving in a preferred direction."],
+      ["G","Simulations of hurricanes conducted on a computer have implied that by changing the precipitation, evaporation and air temperature, we could make a difference to a storm's route or abate its winds. Intervention could be in many different forms: exquisitely targeted clouds bearing silver iodide or other rainfall-inducing elements might deprive a hurricane of the water it needs to grow and multiply from its formidable eyewall, which is the essential characteristic of a severe tropical storm."]
+    ]
+  };
+
+  function renderPassage(p){
+    return `
+      <div class="passage-title">${p.title}</div>
+      <div class="passage-sub">${p.sub}</div>
+      ${p.paras.map(([letter,text]) => `
+        <div class="passage-para"><span class="para-letter">${letter}</span><span class="para-text">${text}</span></div>
+      `).join("")}
+    `;
+  }
+
+  // ---------------- QUESTIONS ----------------
+  function inputBlank(qnum, width){
+    const val = state.answers[qnum] || "";
+    return `<input class="blank" data-q="${qnum}" value="${val}" placeholder="${qnum}" style="${width?('width:'+width+'px;'):''}">`;
+  }
+
+  function mcQuestion(qnum, text, options){
+    const selected = state.answers[qnum];
+    return `<div class="mc-question"><span class="qnum">${qnum}</span> ${text}
+      <div class="mc-opts">${options.map((opt,i)=>{
+        const val = String.fromCharCode(97+i);
+        return `<label><input type="radio" name="q${qnum}" value="${val}" ${selected===val?'checked':''}> ${val.toUpperCase()}) ${opt}</label>`;
+      }).join("")}</div></div>`;
+  }
+
+  function paraSelect(qnum, letters){
+    const val = state.answers[qnum] || "";
+    return `<select class="blank-select" data-q="${qnum}">
+      <option value="">--</option>
+      ${letters.map(l => `<option value="${l}" ${val===l?'selected':''}>${l}</option>`).join("")}
+    </select>`;
+  }
+
+  function tfngSelect(qnum, text){
+    const val = state.answers[qnum] || "";
+    const opts = ["TRUE","FALSE","NOT GIVEN"];
+    return `<div class="tfng-row"><span class="qnum" style="margin-right:0;">${qnum}</span><span class="qtext">${text}</span>
+      <select data-q="${qnum}"><option value="">--</option>${opts.map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join("")}</select></div>`;
+  }
+
+  function headingSelect(qnum, label){
+    const val = state.answers[qnum] || "";
+    const romans = ["i","ii","iii","iv","v","vi","vii","viii"];
+    return `<div class="tfng-row"><span class="qnum" style="margin-right:0;">${qnum}</span><span class="qtext">${label}</span>
+      <select data-q="${qnum}"><option value="">--</option>${romans.map(r=>`<option value="${r}" ${val===r?'selected':''}>${r}</option>`).join("")}</select></div>`;
+  }
+
+  // ------ SECTION 1 questions ------
+  function renderQ1(){
+    const paraLetters = ["A","B","C","D","E","F","G","H"];
+    return `
+      ${partBanner(1,"1–13")}
+      <div class="q-instructions"><span class="q-title">Questions 1–4</span><br>
+      Reading Passage 1 has eight paragraphs, A–H. Which paragraph contains the following information? Write the correct letter, A–H.</div>
+      ${headingRow(1,"ancient stories around pearls and its customers",paraLetters)}
+      ${headingRow(2,"difficulties in cultivating process",paraLetters)}
+      ${headingRow(3,"factors which decide the value of natural pearls",paraLetters)}
+      ${headingRow(4,"a growth mechanism that distinguishes cultured pearls from natural ones",paraLetters)}
+
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 5–10</span><br>
+      Complete the summary below. Choose <b>NO MORE THAN TWO WORDS</b> from the passage for each answer.</div>
+      <div class="notes-block">
+        <div class="notes-row">In history, pearls have had great importance within the men of wealth and power, which were treated as gems for women in ${inputBlank(5,150)}. Also, pearls were even used as a medicine for people in ${inputBlank(6,150)}. There are essentially three types of pearls: natural, cultured and imitation. Most freshwater cultured pearls sold today come from China while ${inputBlank(7,150)} Island is famous for its imitation pearl industry. Good-quality natural pearls are exceedingly unusual. ${inputBlank(8,150)} often manufactures some of the glitteriest pearls while ${inputBlank(9,150)} produces larger size ones due to the favourable environment along the coastline. In the past, ${inputBlank(10,150)} in Persian Gulf produced the world's best pearls. Nowadays, the major remaining suppliers of natural pearls belong to India.</div>
+      </div>
+
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 11–13</span><br>
+      Do the following statements agree with the information given in Reading Passage 1? Write TRUE, FALSE, or NOT GIVEN.</div>
+      ${tfngSelect(11,"Generally speaking, the centre of cultured pearl is significantly larger than that of a natural pearl.")}
+      ${tfngSelect(12,"Sometimes, fake pearls can be more expensive.")}
+      ${tfngSelect(13,"The size of the pearls produced in Japan is usually smaller than those in Australia.")}
+    `;
+  }
+
+  function headingRow(qnum, text, letters){
+    return `<div class="help-select-row"><span class="qnum">${qnum}</span><span style="flex:1;">${text}</span>${paraSelect(qnum, letters)}</div>`;
+  }
+
+  // ------ SECTION 2 questions ------
+  function renderQ2(){
+    const paraLetters = ["A","B","C","D","E","F","G","H"];
+    return `
+      ${partBanner(2,"14–26")}
+      <div class="q-instructions"><span class="q-title">Questions 14–20</span><br>
+      Reading Passage 2 has eight paragraphs, A–H. Which paragraph contains the following information? Write the correct letter, A–H. <i>NB You may use any letter more than once.</i></div>
+      ${headingRow(14,"a reference to the irregular movement of particles",paraLetters)}
+      ${headingRow(15,"mention of a productive land turning into a desert in the 20th century",paraLetters)}
+      ${headingRow(16,"types of deserts",paraLetters)}
+      ${headingRow(17,"mention of technical methods used to tackle the problems of deserts",paraLetters)}
+      ${headingRow(18,"the influence of migration on desertification",paraLetters)}
+      ${headingRow(19,"lack of agreement among the scientists about the causes of desertification",paraLetters)}
+      ${headingRow(20,"a description of the fatal effects of farming practice",paraLetters)}
+
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 21–26</span><br>
+      Do the following statements agree with the information given in Reading Passage 2? Write TRUE, FALSE, or NOT GIVEN.</div>
+      ${tfngSelect(21,"It is difficult to ascertain where the deserts end in some areas.")}
+      ${tfngSelect(22,"Media is uninterested in the problems of desertification.")}
+      ${tfngSelect(23,"The most common cause of desertification is the lack of rainfall.")}
+      ${tfngSelect(24,"Farming animals in semi-arid areas will increase soil erosion.")}
+      ${tfngSelect(25,"People in Asian countries no longer use firewood as the chief fuel.")}
+      ${tfngSelect(26,"Technology studying the relationship of people, livestock and desertification has not yet been invented.")}
+    `;
+  }
+
+  // ------ SECTION 3 questions ------
+  function renderQ3(){
+    const headingLabels = [
+      [27,"Paragraph A"],[28,"Paragraph B"],[29,"Paragraph C"],[30,"Paragraph D"],
+      [31,"Paragraph E"],[32,"Paragraph F"],[33,"Paragraph G"]
+    ];
+    return `
+      ${partBanner(3,"27–40")}
+      <div class="q-instructions"><span class="q-title">Questions 27–33</span><br>
+      Reading Passage 3 has seven paragraphs, A–G. Choose the correct heading for each paragraph from the list below.</div>
+      <div style="font-size:12px;background:var(--bg-panel);border:1px solid #ddd;padding:10px 14px;margin-bottom:14px;">
+        <b>List of Headings</b><br>
+        i Hurricanes in history &nbsp;|&nbsp; ii How hurricanes form &nbsp;|&nbsp; iii How a laboratory exercise re-routes a hurricane<br>
+        iv Exciting ways to utilise future technologies &nbsp;|&nbsp; v Are hurricanes unbeatable? &nbsp;|&nbsp; vi Re-visit earlier ideas<br>
+        vii How lives might have been saved &nbsp;|&nbsp; viii A range of low-tech methods
+      </div>
+      ${headingLabels.map(([q,label]) => headingSelect(q,label)).join("")}
+
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 34–38</span><br>
+      Complete the summary below. Choose <b>ONE WORD ONLY</b> from the passage for each answer.</div>
+      <div class="notes-block">
+        <div class="notes-row">Hurricanes originate as groups of ${inputBlank(34,150)} over the tropical oceans. Low-latitude seas continuously provide heat and moisture to the atmosphere, producing warm, humid air above the sea surface. When this air rises, the water vapour in it condenses to form clouds and precipitation. ${inputBlank(35,150)} releases heat—the solar heat it took to evaporate the water at the ocean surface. This so-called latent ${inputBlank(36,150)} of condensation makes the air more buoyant, causing it to ascend still higher in a self-reinforcing feedback process. Eventually, the tropical depression begins to organise and strengthen, forming the familiar ${inputBlank(37,150)} — the calm central hub around which a hurricane spins. On passing over ${inputBlank(38,150)}, the hurricane's sustaining source of warm water is cut off, which leads to the storm's rapid weakening.</div>
+      </div>
+
+      <div class="q-instructions" style="margin-top:20px;"><span class="q-title">Questions 39–40</span><br>
+      Choose the correct letter, A, B, C or D.</div>
+      ${mcQuestion(39,"What encouraged the writer to restart researching hurricane control?",["the huge damage hurricanes trigger","the developments in computer technologies","the requirement of some local people","the chaos theory learnt as a student"])}
+      ${mcQuestion(40,"What was the writer's reaction after their first experiment?",["surprised that their intervention had not achieved a lot","ecstatic with the achievement the first experiment had","surprised that their intervention had the intended effect","regretful about the impending success"])}
+    `;
+  }
+
+  function partBanner(num, range){
+    return `<div class="part-banner"><b>Reading Passage ${num}</b><div class="instr">Answer questions ${range}.</div></div>`;
+  }
+
+  const partData = {
+    1:{passage:passage1, renderQ:renderQ1, range:[1,13]},
+    2:{passage:passage2, renderQ:renderQ2, range:[14,26]},
+    3:{passage:passage3, renderQ:renderQ3, range:[27,40]}
+  };
+
+  function renderPart(num){
+    state.currentPart = num;
+    $("passage-pane").innerHTML = renderPassage(partData[num].passage);
+    $("questions-pane").innerHTML = partData[num].renderQ();
+    attachContentListeners();
+    renderBottomBar();
+    $("passage-pane").scrollTop = 0;
+    $("questions-pane").scrollTop = 0;
+  }
+
+  function attachContentListeners(){
+    document.querySelectorAll("#questions-pane input.blank").forEach(inp => {
+      inp.addEventListener("input", (e) => { state.answers[e.target.dataset.q] = e.target.value; renderBottomBar(); });
+    });
+    document.querySelectorAll("#questions-pane select").forEach(sel => {
+      sel.addEventListener("change", (e) => { state.answers[e.target.dataset.q] = e.target.value; renderBottomBar(); });
+    });
+    document.querySelectorAll("#questions-pane input[type=radio]").forEach(r => {
+      r.addEventListener("change", (e) => { state.answers[e.target.name.replace("q","")] = e.target.value; renderBottomBar(); });
+    });
+    $("questions-pane").addEventListener("mouseup", handleTextSelection);
+    $("passage-pane").addEventListener("mouseup", handleTextSelection);
+  }
+
+  // ---------------- NOTE / HIGHLIGHT ----------------
+  let activeSelectionMenu = null;
+  function removeSelectionMenu(){ if (activeSelectionMenu){ activeSelectionMenu.remove(); activeSelectionMenu = null; } }
+  function handleTextSelection(e){
+    removeSelectionMenu();
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || sel.toString().trim().length === 0) return;
+    if (!$("passage-pane").contains(sel.anchorNode) && !$("questions-pane").contains(sel.anchorNode)) return;
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const menu = document.createElement("div");
+    menu.className = "selection-menu";
+    menu.style.left = (rect.left + window.scrollX) + "px";
+    menu.style.top = (rect.bottom + window.scrollY + 4) + "px";
+    menu.innerHTML = `<button data-action="note">📝<span>Note</span></button><button data-action="highlight">🖊<span>Highlight</span></button>`;
+    document.body.appendChild(menu);
+    activeSelectionMenu = menu;
+    const selectedText = sel.toString();
+    menu.querySelector('[data-action="highlight"]').addEventListener("click", () => {
+      try { const mark = document.createElement("mark"); mark.className = "hl"; range.surroundContents(mark); } catch(err){}
+      removeSelectionMenu();
+    });
+    menu.querySelector('[data-action="note"]').addEventListener("click", () => {
+      state.notes.push(selectedText); renderNotesPanel(); show($("notes-panel")); removeSelectionMenu();
+    });
+  }
+  document.addEventListener("mousedown", (e) => { if (activeSelectionMenu && !activeSelectionMenu.contains(e.target)) removeSelectionMenu(); });
+
+  function renderNotesPanel(){
+    const list = $("notes-list");
+    if (state.notes.length === 0){ list.innerHTML = `<div class="notes-panel-empty">Your private notes will show here<br><br>Select text to highlight or create a note.</div>`; return; }
+    list.innerHTML = state.notes.map(n => `<div class="note-entry"><div class="quoted">"${n}"</div></div>`).join("");
+  }
+  renderNotesPanel();
+  $("notes-toggle-btn").addEventListener("click", () => { $("notes-panel").classList.toggle("open"); });
+
+  // ---------------- BOTTOM BAR ----------------
+  function countAnswered(part){
+    const [start,end] = partData[part].range;
+    let c=0; for (let i=start;i<=end;i++){ if (state.answers[i] && String(state.answers[i]).trim()!=="") c++; }
+    return c;
+  }
+  function renderBottomBar(){
+    let html = "";
+    for (let p=1;p<=3;p++){
+      const [start,end] = partData[p].range;
+      if (p === state.currentPart){
+        html += `<div class="part-nav-group"><span class="part-label active-part">Passage ${p}</span>`;
+        for (let q=start;q<=end;q++){
+          const answered = state.answers[q] && String(state.answers[q]).trim()!=="";
+          html += `<button class="qnum-btn ${answered?'answered':''}" data-jump="${q}">${q}</button>`;
+        }
+        html += `</div>`;
+      } else {
+        html += `<div class="part-nav-group"><span class="part-label" data-partjump="${p}">Passage ${p}</span><span class="part-count">${countAnswered(p)} of ${end-start+1}</span></div>`;
+      }
+    }
+    html += `<button class="submit-check" id="submit-check-btn">✔</button>`;
+    $("bottombar").innerHTML = html;
+    document.querySelectorAll("#bottombar [data-partjump]").forEach(el => el.addEventListener("click", () => renderPart(parseInt(el.dataset.partjump))));
+    $("submit-check-btn").addEventListener("click", goToFinalScreen);
+  }
+
+  // ---------------- PASSWORD / ID ----------------
+  $("pwd-submit").addEventListener("click", () => {
+    const val = $("pwd-input").value.trim();
+    if (val === REQUIRED_PASSWORD){ hide($("screen-password")); show($("screen-id")); $("id-input").focus(); }
+    else { $("pwd-error").textContent = "Incorrect password. Please try again."; }
+  });
+  $("pwd-input").addEventListener("keydown", (e) => { if (e.key==="Enter") $("pwd-submit").click(); });
+
+  $("id-submit").addEventListener("click", () => {
+    const val = $("id-input").value.trim();
+    if (!val){ $("id-error").textContent = "Please enter your Test Taker ID."; return; }
+    state.takerId = val;
+    $("taker-id-display").textContent = val;
+    $("taker-id-display-final").textContent = val;
+    $("results-taker-id").textContent = val;
+    hide($("screen-id")); show($("screen-test"));
+    renderPart(1);
+    state.testActive = true;
+    enterFullscreen();
+    startTimer();
+  });
+  $("id-input").addEventListener("keydown", (e) => { if (e.key==="Enter") $("id-submit").click(); });
+
+  function enterFullscreen(){
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if (req) { try { req.call(el); } catch(e){} }
+  }
+
+  // ---------------- TIMER (60 minutes) ----------------
+  function startTimer(){
+    clearInterval(state.timerInterval);
+    updateTimerDisplay();
+    state.timerInterval = setInterval(() => {
+      state.timeLeft--;
+      updateTimerDisplay();
+      if (state.timeLeft <= 0){
+        clearInterval(state.timerInterval);
+        checkAnswersAndShowResults();
+      }
+    }, 1000);
+  }
+  function updateTimerDisplay(){
+    const m = Math.floor(state.timeLeft/60);
+    const s = state.timeLeft%60;
+    const txt = String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+    $("timer-display").textContent = txt;
+    $("timer-display").classList.toggle("low", state.timeLeft <= 300);
+  }
+
+  // ---------------- AUTO-SUBMIT ON LEAVING WINDOW ----------------
+  let autoSubmitted = false;
+  function autoSubmitIfActive(){
+    if (state.testActive && !autoSubmitted){
+      autoSubmitted = true; state.testActive = false;
+      checkAnswersAndShowResults();
+    }
+  }
+  window.addEventListener("blur", autoSubmitIfActive);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) autoSubmitIfActive(); });
+
+  // ---------------- HAMBURGER MENU ----------------
+  $("hamburger-btn").addEventListener("click", () => { $("menu-overlay").classList.add("open"); showMenuRoot(); });
+  $("menu-close-btn").addEventListener("click", () => $("menu-overlay").classList.remove("open"));
+  $("menu-back-btn").addEventListener("click", () => showMenuRoot());
+  function showMenuRoot(){
+    $("menu-header-title").textContent = "Options";
+    $("menu-back-btn").classList.remove("show");
+    $("menu-root-view").classList.remove("hidden");
+    $("menu-contrast-view").classList.add("hidden");
+    $("menu-textsize-view").classList.add("hidden");
+  }
+  $("menu-submit-btn").addEventListener("click", () => { $("menu-overlay").classList.remove("open"); goToFinalScreen(); });
+  $("menu-contrast-btn").addEventListener("click", () => {
+    $("menu-header-title").textContent = "Contrast";
+    $("menu-back-btn").classList.add("show");
+    $("menu-root-view").classList.add("hidden");
+    $("menu-contrast-view").classList.remove("hidden");
+  });
+  $("menu-textsize-btn").addEventListener("click", () => {
+    $("menu-header-title").textContent = "Text size";
+    $("menu-back-btn").classList.add("show");
+    $("menu-root-view").classList.add("hidden");
+    $("menu-textsize-view").classList.remove("hidden");
+  });
+  document.querySelectorAll('[data-contrast]').forEach(row => {
+    row.addEventListener("click", () => {
+      state.contrast = row.dataset.contrast;
+      document.body.classList.remove("contrast-wb","contrast-yb");
+      if (state.contrast==="wb") document.body.classList.add("contrast-wb");
+      if (state.contrast==="yb") document.body.classList.add("contrast-yb");
+      document.querySelectorAll('[data-contrast] .check').forEach(c=>c.textContent="");
+      row.querySelector(".check").textContent="✔";
+    });
+  });
+  document.querySelectorAll('[data-textsize]').forEach(row => {
+    row.addEventListener("click", () => {
+      state.textsize = row.dataset.textsize;
+      $("app").classList.remove("textsize-regular","textsize-large","textsize-extralarge");
+      $("app").classList.add("textsize-"+state.textsize);
+      document.querySelectorAll('[data-textsize] .check').forEach(c=>c.textContent="");
+      row.querySelector(".check").textContent="✔";
+    });
+  });
+
+  // ---------------- FINAL / RESULTS ----------------
+  function goToFinalScreen(){ hide($("screen-test")); show($("screen-final")); }
+  $("final-next-btn").addEventListener("click", checkAnswersAndShowResults);
+  $("back-to-test-btn").addEventListener("click", () => { hide($("screen-final")); show($("screen-test")); });
+
+  function normalize(str){ return String(str||"").trim().toLowerCase().replace(/\s+/g," ").replace(/^the /,""); }
+
+  function checkAnswersAndShowResults(){
+    clearInterval(state.timerInterval);
+    let correctCount = 0, rows = "";
+    for (let q=1;q<=40;q++){
+      const userAns = state.answers[q] !== undefined ? state.answers[q] : "";
+      const correctAns = answerKey[q];
+      const isCorrect = normalize(userAns) === normalize(correctAns);
+      if (isCorrect) correctCount++;
+      rows += `<tr><td>${q}</td><td>${userAns || '<i style="color:#999;">(no answer)</i>'}</td><td>${correctAns}</td><td>${isCorrect?'<span class="ok">✔ Correct</span>':'<span class="no">✘ Incorrect</span>'}</td></tr>`;
+    }
+    $("score-correct").textContent = correctCount;
+    $("score-total").textContent = 40;
+    $("score-band").textContent = estimateBand(correctCount);
+    $("review-body").innerHTML = rows;
+    hide($("screen-final")); hide($("screen-test")); show($("screen-results"));
+  }
+
+  function estimateBand(correct){
+    const table = [[39,9.0],[37,8.5],[35,8.0],[33,7.5],[30,7.0],[27,6.5],[23,6.0],[19,5.5],[15,5.0],[13,4.5],[10,4.0],[8,3.5],[6,3.0]];
+    for (const [minC,band] of table){ if (correct>=minC) return band.toFixed(1); }
+    return "2.5";
+  }
+
+  $("restart-btn").addEventListener("click", () => {
+    state.answers = {}; state.notes = []; state.currentPart = 1;
+    state.testActive = false; autoSubmitted = false; state.timeLeft = 60*60;
+    document.body.className = ""; $("app").className = "";
+    hide($("screen-results"));
+    show($("screen-password"));
+    $("pwd-input").value=""; $("id-input").value="";
+    $("pwd-error").textContent=""; $("id-error").textContent="";
+  });
+
+})();
+</script>
+</body>
+</html>
