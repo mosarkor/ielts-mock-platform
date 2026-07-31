@@ -1285,8 +1285,8 @@ app.use(express.static(distPath));
 
 // Fallback to React router for all other client requests
 app.get('*', (req, res, next) => {
-  // If requesting api or public tests, let it go through
-  if (req.url.startsWith('/api') || req.url.startsWith('/tests')) {
+  // If requesting api, public tests, or uploads, let it go through
+  if (req.url.startsWith('/api') || req.url.startsWith('/tests') || req.url.startsWith('/uploads')) {
     return next();
   }
   res.sendFile(path.join(distPath, 'index.html'));
