@@ -512,24 +512,19 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
             </div>
 
             <div style={styles.grid}>
-            {/* Left Column: Assigned Tests */}
+            {/* Left Column: Categorized Assigned Tests */}
             <div style={styles.leftCol}>
-              <h3 style={styles.sectionTitle}>📝 Assigned Mock Tests</h3>
-              {assignments.length === 0 ? (
-                <div className="card" style={styles.emptyCard}>
-                  <p>🎉 No pending tests assigned. Well done!</p>
-                </div>
-              ) : (
-                assignments.map((asg) => (
-                  <div className="card" style={styles.assignmentCard} key={asg.assignment_id}>
+              {(() => {
+                const fullMocks = assignments.filter(a => !a.title.toLowerCase().includes('reading') && !a.title.toLowerCase().includes('listening'));
+                const readingTests = assignments.filter(a => a.title.toLowerCase().includes('reading'));
+                const listeningTests = assignments.filter(a => a.title.toLowerCase().includes('listening'));
+
+                const renderTestCard = (asg, badgeText, badgeColor) => (
+                  <div className="card" style={{ ...styles.assignmentCard, marginBottom: '0.75rem' }} key={asg.assignment_id}>
                     <div>
                       <h4 style={styles.testTitle}>{asg.title}</h4>
                       <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem', flexWrap: 'wrap' }}>
-                        {asg.title.toLowerCase().includes('reading') ? (
-                          <span style={{ ...styles.statusLabel, backgroundColor: '#10b981' }}>📖 Reading Test</span>
-                        ) : (
-                          <span style={{ ...styles.statusLabel, backgroundColor: '#6366f1' }}>📝 Full Mock Test</span>
-                        )}
+                        <span style={{ ...styles.statusLabel, backgroundColor: badgeColor }}>{badgeText}</span>
                         <span style={{
                           ...styles.statusLabel,
                           backgroundColor: asg.status === 'started' ? '#f59e0b' : '#3b82f6'
@@ -547,38 +542,93 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                       {asg.status === 'started' ? 'Resume Test 🚀' : 'Take Exam ✍️'}
                     </button>
                   </div>
-                ))
-              )}
+                );
 
-              {/* Speaking Assignments */}
-              {speakingAssignments.length > 0 && (
-                <>
-                  <h3 style={{ ...styles.sectionTitle, marginTop: '2rem' }}>🎙️ Speaking Tests</h3>
-                  {speakingAssignments.map(sa => (
-                    <div className="card" style={styles.assignmentCard} key={sa.id}>
-                      <div>
-                        <h4 style={styles.testTitle}>{sa.title}</h4>
-                        <span style={{ ...styles.statusLabel, backgroundColor: sa.status === 'submitted' ? '#10b981' : '#6366f1' }}>
-                          {sa.status === 'submitted' ? 'Submitted' : 'Assigned'}
-                        </span>
-                        <p style={styles.dateLabel}>Assigned: {new Date(sa.assigned_at).toLocaleDateString()}</p>
+                return (
+                  <div>
+                    {/* SECTION 1: Full IELTS Mock Tests */}
+                    <div style={{ marginBottom: '2rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🏆</span>
+                        <h3 style={{ ...styles.sectionTitle, margin: 0 }}>Full IELTS Mock Tests (All 4 Skills)</h3>
                       </div>
-                      {sa.status !== 'submitted' && onStartSpeaking && (
-                        <button
-                          onClick={() => onStartSpeaking(sa)}
-                          className="btn btn-success"
-                          style={styles.actionBtn}
-                        >
-                          Start Speaking 🎙️
-                        </button>
-                      )}
-                      {sa.status === 'submitted' && (
-                        <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: '600' }}>✅ Awaiting result</span>
+                      {fullMocks.length === 0 ? (
+                        <div className="card" style={styles.emptyCard}>
+                          <p style={{ margin: 0, fontSize: '0.85rem' }}>No full mock tests assigned.</p>
+                        </div>
+                      ) : (
+                        fullMocks.map(asg => renderTestCard(asg, '📝 Full Mock Test', '#6366f1'))
                       )}
                     </div>
-                  ))}
-                </>
-              )}
+
+                    {/* SECTION 2: Reading Practice Tests */}
+                    <div style={{ marginBottom: '2rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>📖</span>
+                        <h3 style={{ ...styles.sectionTitle, margin: 0 }}>Reading Practice Tests ({readingTests.length})</h3>
+                      </div>
+                      {readingTests.length === 0 ? (
+                        <div className="card" style={styles.emptyCard}>
+                          <p style={{ margin: 0, fontSize: '0.85rem' }}>No reading practice tests assigned.</p>
+                        </div>
+                      ) : (
+                        readingTests.map(asg => renderTestCard(asg, '📖 Reading Test Only', '#10b981'))
+                      )}
+                    </div>
+
+                    {/* SECTION 3: Listening Practice Tests */}
+                    {listeningTests.length > 0 && (
+                      <div style={{ marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                          <span style={{ fontSize: '1.2rem' }}>🎧</span>
+                          <h3 style={{ ...styles.sectionTitle, margin: 0 }}>Listening Practice Tests ({listeningTests.length})</h3>
+                        </div>
+                        {listeningTests.map(asg => renderTestCard(asg, '🎧 Listening Test Only', '#3b82f6'))}
+                      </div>
+                    )}
+
+                    {/* SECTION 4: AI Speaking Tests */}
+                    <div style={{ marginBottom: '2rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🎙️</span>
+                        <h3 style={{ ...styles.sectionTitle, margin: 0 }}>AI Speaking Tests ({speakingAssignments.length})</h3>
+                      </div>
+                      {speakingAssignments.length === 0 ? (
+                        <div className="card" style={styles.emptyCard}>
+                          <p style={{ margin: 0, fontSize: '0.85rem' }}>No speaking tests assigned.</p>
+                        </div>
+                      ) : (
+                        speakingAssignments.map(sa => (
+                          <div className="card" style={{ ...styles.assignmentCard, marginBottom: '0.75rem' }} key={sa.id}>
+                            <div>
+                              <h4 style={styles.testTitle}>{sa.title}</h4>
+                              <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem', flexWrap: 'wrap' }}>
+                                <span style={{ ...styles.statusLabel, backgroundColor: '#8b5cf6' }}>🎙️ Speaking Test</span>
+                                <span style={{ ...styles.statusLabel, backgroundColor: sa.status === 'submitted' ? '#10b981' : '#3b82f6' }}>
+                                  {sa.status === 'submitted' ? 'Submitted' : 'Assigned'}
+                                </span>
+                              </div>
+                              <p style={styles.dateLabel}>Assigned: {new Date(sa.assigned_at).toLocaleDateString()}</p>
+                            </div>
+                            {sa.status !== 'submitted' && onStartSpeaking && (
+                              <button
+                                onClick={() => onStartSpeaking(sa)}
+                                className="btn btn-success"
+                                style={styles.actionBtn}
+                              >
+                                Start Speaking 🎙️
+                              </button>
+                            )}
+                            {sa.status === 'submitted' && (
+                              <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: '600' }}>✅ Awaiting teacher review</span>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Right Column: Past Results */}
