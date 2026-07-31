@@ -650,12 +650,15 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                   <h3 style={styles.cardTitle}>🔗 Assign Mock Exams</h3>
                   <form onSubmit={handleAssignTest} style={{ marginTop: '1rem' }}>
                     <div className="form-group">
-                      <label className="form-label">Select Mock Tests (Bulk Select)</label>
+                      <label className="form-label">Select Tests to Assign (Categorized)</label>
                       <div style={styles.studentSelectBox}>
                         {tests.length === 0 ? (
                           <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No mock tests built yet.</p>
-                        ) : (
-                          tests.map(t => {
+                        ) : (() => {
+                          const fullMocks = tests.filter(t => !t.title.toLowerCase().includes('reading') && !t.title.toLowerCase().includes('listening'));
+                          const readingMocks = tests.filter(t => t.title.toLowerCase().includes('reading'));
+                          
+                          const renderRow = (t) => {
                             const isSelected = selectedTestIds.includes(t.id);
                             return (
                               <div 
@@ -670,14 +673,36 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                                 <input 
                                   type="checkbox" 
                                   checked={isSelected}
-                                  onChange={() => {}} // handled by row click
+                                  onChange={() => {}}
                                   style={{ pointerEvents: 'none' }}
                                 />
                                 <span>{t.title}</span>
                               </div>
                             );
-                          })
-                        )}
+                          };
+
+                          return (
+                            <div>
+                              {fullMocks.length > 0 && (
+                                <div style={{ marginBottom: '0.75rem' }}>
+                                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.3rem', paddingLeft: '0.2rem' }}>
+                                    🏆 Full IELTS Mock Tests
+                                  </div>
+                                  {fullMocks.map(renderRow)}
+                                </div>
+                              )}
+
+                              {readingMocks.length > 0 && (
+                                <div>
+                                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.3rem', paddingLeft: '0.2rem' }}>
+                                    📖 Reading Practice Tests
+                                  </div>
+                                  {readingMocks.map(renderRow)}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
@@ -942,14 +967,38 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                   <div style={{ marginTop: '1rem' }}>
                     {tests.length === 0 ? (
                       <p>No tests created yet.</p>
-                    ) : (
-                      tests.map(t => (
-                        <div key={t.id} style={styles.testListItem}>
-                          <span>📄 <strong>{t.title}</strong></span>
-                          <span style={styles.smallBadge}>ID: {t.id}</span>
+                    ) : (() => {
+                      const fullMocks = tests.filter(t => !t.title.toLowerCase().includes('reading'));
+                      const readingTests = tests.filter(t => t.title.toLowerCase().includes('reading'));
+
+                      return (
+                        <div>
+                          {fullMocks.length > 0 && (
+                            <div style={{ marginBottom: '1.25rem' }}>
+                              <h6 style={{ color: '#6366f1', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '0.4rem' }}>🏆 Full IELTS Mock Tests ({fullMocks.length})</h6>
+                              {fullMocks.map(t => (
+                                <div key={t.id} style={styles.testListItem}>
+                                  <span>📝 <strong>{t.title}</strong></span>
+                                  <span style={styles.smallBadge}>ID: {t.id}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {readingTests.length > 0 && (
+                            <div>
+                              <h6 style={{ color: '#10b981', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '0.4rem' }}>📖 Reading Practice Tests ({readingTests.length})</h6>
+                              {readingTests.map(t => (
+                                <div key={t.id} style={styles.testListItem}>
+                                  <span>📖 <strong>{t.title}</strong></span>
+                                  <span style={{ ...styles.smallBadge, backgroundColor: 'rgba(16,185,129,0.15)', color: '#10b981' }}>ID: {t.id}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      ))
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
 
