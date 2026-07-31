@@ -711,6 +711,18 @@ async function ensureCustomDataSeeded(db) {
     }
   }
 
+  // Ensure Full Mock Test 21 exists in tests table
+  try {
+    const title21 = 'IELTS Full CDI Mock Test 11';
+    const exists21 = await db.get('SELECT id FROM tests WHERE id = 21 OR title = ?', [title21]);
+    if (!exists21) {
+      await db.run(
+        `INSERT INTO tests (id, title, listening_data, reading_data, writing_data, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
+        [21, title21, JSON.stringify({ isIframe: true, iframeUrl: '/tests/mock21.html' }), JSON.stringify({}), JSON.stringify({}), 'admin']
+      );
+    }
+  } catch (e) {}
+
   // Seeding finished
 }
 
