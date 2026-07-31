@@ -192,11 +192,70 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
           <div style={{ display: 'flex', gap: '4px' }}>{part1Qs.map((_, i) => <div key={i} style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: i < currentQ ? '#10b981' : i === currentQ ? '#6366f1' : 'var(--bg-tertiary)', border: '1px solid var(--glass-border)' }} />)}</div>
         </div>
         <div style={qBox}>❓ {part1Qs[currentQ]}</div>
-        <textarea rows={4} placeholder="Speak (auto-transcribed) or type your answer..." value={currentTyping} onChange={e => setCurrentTyping(e.target.value)} style={textareaStyle('#6366f1')} />
-        <RecordDot color="#6366f1" />
+
+        {/* Clean Voice Recorder Box */}
+        <div style={{
+          backgroundColor: 'var(--bg-tertiary)',
+          border: `2px solid ${recording ? '#6366f1' : 'var(--glass-border)'}`,
+          borderRadius: '12px',
+          padding: '2rem 1.5rem',
+          textAlign: 'center',
+          marginBottom: '1.25rem',
+          boxShadow: recording ? '0 0 25px rgba(99,102,241,0.25)' : 'none',
+          transition: 'all 0.3s'
+        }}>
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1rem' }}>
+            <div style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '50%',
+              backgroundColor: recording ? 'rgba(99,102,241,0.2)' : 'var(--bg-secondary)',
+              border: `2px solid ${recording ? '#6366f1' : 'var(--glass-border)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              fontSize: '2rem'
+            }}>
+              🎙️
+            </div>
+            {recording && (
+              <span style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-2px',
+                width: '14px',
+                height: '14px',
+                borderRadius: '50%',
+                backgroundColor: '#f43f5e',
+                border: '2px solid var(--bg-tertiary)',
+                animation: 'spkPulse 1s infinite'
+              }} />
+            )}
+          </div>
+
+          {recording ? (
+            <div>
+              <div style={{ color: '#f43f5e', fontWeight: '700', fontSize: '1.1rem', marginBottom: '0.25rem' }}>
+                🔴 Recording Voice...
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Speak your answer into the microphone</p>
+            </div>
+          ) : (
+            <div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '1.05rem', marginBottom: '0.25rem' }}>
+                {currentTyping ? '✅ Answer Audio Captured' : 'Ready to Record'}
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                {currentTyping ? 'Your response is saved. Click Next to proceed.' : 'Press "Record Answer" below to speak your response.'}
+              </p>
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-          <button onClick={handleToggleRecording} className={recording ? 'btn btn-danger' : 'btn btn-secondary'} style={{ flex: 1, justifyContent: 'center' }}>{recording ? '⏹ Stop' : '⏺ Record'}</button>
-          <button onClick={handlePart1Next} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>{currentQ < part1Qs.length - 1 ? 'Next →' : 'Finish Part 1 →'}</button>
+          <button onClick={handleToggleRecording} className={recording ? 'btn btn-danger' : 'btn btn-secondary'} style={{ flex: 1, justifyContent: 'center' }}>{recording ? '⏹ Stop Recording' : '⏺ Record Answer'}</button>
+          <button onClick={handlePart1Next} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>{currentQ < part1Qs.length - 1 ? 'Next Question →' : 'Finish Part 1 →'}</button>
         </div>
       </div>
     </div>
@@ -211,10 +270,69 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
         <h2 style={{ color: 'var(--text-primary)', fontWeight: '800', fontSize: '1.2rem', marginBottom: '1rem' }}>Cue Card</h2>
         <div style={{ ...qBox, whiteSpace: 'pre-wrap', borderLeft: '4px solid #10b981' }}>{prompt.part2_cue_card}</div>
         {prepRunning && <div style={{ textAlign: 'center', padding: '0.75rem', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.85rem', color: '#f59e0b', fontWeight: '600' }}>⏱️ Preparation Time: {prepTime}s — Make notes, then press Record</div>}
-        <textarea rows={5} placeholder="Your speech will be transcribed here, or type your response..." value={currentTyping} onChange={e => setCurrentTyping(e.target.value)} style={textareaStyle('#10b981')} />
-        <RecordDot color="#10b981" />
+        
+        {/* Clean Voice Recorder Box */}
+        <div style={{
+          backgroundColor: 'var(--bg-tertiary)',
+          border: `2px solid ${recording ? '#10b981' : 'var(--glass-border)'}`,
+          borderRadius: '12px',
+          padding: '2rem 1.5rem',
+          textAlign: 'center',
+          marginBottom: '1.25rem',
+          boxShadow: recording ? '0 0 25px rgba(16,185,129,0.25)' : 'none',
+          transition: 'all 0.3s'
+        }}>
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1rem' }}>
+            <div style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '50%',
+              backgroundColor: recording ? 'rgba(16,185,129,0.2)' : 'var(--bg-secondary)',
+              border: `2px solid ${recording ? '#10b981' : 'var(--glass-border)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              fontSize: '2rem'
+            }}>
+              🎙️
+            </div>
+            {recording && (
+              <span style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-2px',
+                width: '14px',
+                height: '14px',
+                borderRadius: '50%',
+                backgroundColor: '#10b981',
+                border: '2px solid var(--bg-tertiary)',
+                animation: 'spkPulse 1s infinite'
+              }} />
+            )}
+          </div>
+
+          {recording ? (
+            <div>
+              <div style={{ color: '#10b981', fontWeight: '700', fontSize: '1.1rem', marginBottom: '0.25rem' }}>
+                🟢 Recording Long Turn Speech...
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Speak continuously on your cue card topic</p>
+            </div>
+          ) : (
+            <div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '1.05rem', marginBottom: '0.25rem' }}>
+                {transcripts.part2 ? '✅ Speech Recorded' : 'Ready for Long Turn'}
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                {transcripts.part2 ? 'Long turn audio recorded. Click Continue to proceed.' : 'Press "Start Speaking" below when ready.'}
+              </p>
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-          <button onClick={handleToggleRecording} className={recording ? 'btn btn-danger' : 'btn btn-secondary'} style={{ flex: 1, justifyContent: 'center' }}>{recording ? '⏹ Stop' : '⏺ Start Speaking'}</button>
+          <button onClick={handleToggleRecording} className={recording ? 'btn btn-danger' : 'btn btn-secondary'} style={{ flex: 1, justifyContent: 'center' }}>{recording ? '⏹ Stop Recording' : '⏺ Start Speaking'}</button>
           <button onClick={handlePart2Next} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Continue to Part 3 →</button>
         </div>
       </div>
@@ -231,11 +349,70 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
           <div style={{ display: 'flex', gap: '4px' }}>{part3Qs.map((_, i) => <div key={i} style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: i <= currentQ ? '#f59e0b' : 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', opacity: i > currentQ ? 0.4 : 1 }} />)}</div>
         </div>
         <div style={{ ...qBox, borderLeft: '4px solid #f59e0b' }}>❓ {part3Qs[currentQ]}</div>
-        <textarea rows={4} placeholder="Speak (auto-transcribed) or type your answer..." value={currentTyping} onChange={e => setCurrentTyping(e.target.value)} style={textareaStyle('#f59e0b')} />
-        <RecordDot color="#f59e0b" />
+        
+        {/* Clean Voice Recorder Box */}
+        <div style={{
+          backgroundColor: 'var(--bg-tertiary)',
+          border: `2px solid ${recording ? '#f59e0b' : 'var(--glass-border)'}`,
+          borderRadius: '12px',
+          padding: '2rem 1.5rem',
+          textAlign: 'center',
+          marginBottom: '1.25rem',
+          boxShadow: recording ? '0 0 25px rgba(245,158,11,0.25)' : 'none',
+          transition: 'all 0.3s'
+        }}>
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1rem' }}>
+            <div style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '50%',
+              backgroundColor: recording ? 'rgba(245,158,11,0.2)' : 'var(--bg-secondary)',
+              border: `2px solid ${recording ? '#f59e0b' : 'var(--glass-border)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto',
+              fontSize: '2rem'
+            }}>
+              🎙️
+            </div>
+            {recording && (
+              <span style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-2px',
+                width: '14px',
+                height: '14px',
+                borderRadius: '50%',
+                backgroundColor: '#f59e0b',
+                border: '2px solid var(--bg-tertiary)',
+                animation: 'spkPulse 1s infinite'
+              }} />
+            )}
+          </div>
+
+          {recording ? (
+            <div>
+              <div style={{ color: '#f59e0b', fontWeight: '700', fontSize: '1.1rem', marginBottom: '0.25rem' }}>
+                🟡 Recording Voice...
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Speak your answer clearly into the microphone</p>
+            </div>
+          ) : (
+            <div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: '600', fontSize: '1.05rem', marginBottom: '0.25rem' }}>
+                {currentTyping ? '✅ Response Recorded' : 'Ready to Record'}
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                {currentTyping ? 'Your response is saved.' : 'Press "Record Answer" below to speak.'}
+              </p>
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-          <button onClick={handleToggleRecording} className={recording ? 'btn btn-danger' : 'btn btn-secondary'} style={{ flex: 1, justifyContent: 'center' }}>{recording ? '⏹ Stop' : '⏺ Record'}</button>
-          <button onClick={handlePart3Next} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>{currentQ < part3Qs.length - 1 ? 'Next →' : '✅ Submit Test'}</button>
+          <button onClick={handleToggleRecording} className={recording ? 'btn btn-danger' : 'btn btn-secondary'} style={{ flex: 1, justifyContent: 'center' }}>{recording ? '⏹ Stop Recording' : '⏺ Record Answer'}</button>
+          <button onClick={handlePart3Next} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>{currentQ < part3Qs.length - 1 ? 'Next Question →' : '✅ Submit Test'}</button>
         </div>
       </div>
     </div>
