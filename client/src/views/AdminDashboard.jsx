@@ -388,6 +388,18 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
     }
   };
 
+  const handleClearAllAssignments = async () => {
+    if (!confirm('Are you sure you want to delete ALL test assignments for all students? All candidate dashboards will be reset.')) return;
+    try {
+      const res = await fetch('/api/admin/assignments/clear-all', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to clear assignments');
+      alert('All candidate assignments cleared successfully!');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   // HTML Mock Test Uploader
   const handleUploadHtmlTest = async () => {
     if (!testTitle.trim()) {
@@ -1004,7 +1016,18 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
 
                 {/* D. Assignment Activity Logs */}
                 <div className="card">
-                  <h3 style={styles.cardTitle}>📊 Live Candidate Assignments</h3>
+                  <div style={styles.flexHeader}>
+                    <h3 style={styles.cardTitle}>📊 Live Candidate Assignments</h3>
+                    {assignments.length > 0 && (
+                      <button 
+                        onClick={handleClearAllAssignments} 
+                        className="btn btn-danger"
+                        style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
+                      >
+                        🗑️ Clear All Assignments
+                      </button>
+                    )}
+                  </div>
 
                   {/* Filters Row */}
                   <div style={{ display: 'flex', gap: '0.75rem', margin: '0.75rem 0', flexWrap: 'wrap' }}>

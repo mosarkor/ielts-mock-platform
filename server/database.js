@@ -711,32 +711,7 @@ async function ensureCustomDataSeeded(db) {
     }
   }
 
-  // Auto-assign Reading Tests 11-20 & Speaking Prompts to all candidate accounts
-  try {
-    const allStudents = await db.all("SELECT id FROM users WHERE role = 'student'");
-    const readingTests = await db.all("SELECT id FROM tests WHERE id >= 11 OR title LIKE '%Reading%'");
-    
-    for (const s of allStudents) {
-      for (const t of readingTests) {
-        const asgExists = await db.get("SELECT 1 FROM assignments WHERE student_id = ? AND test_id = ?", [s.id, t.id]);
-        if (!asgExists) {
-          await db.run("INSERT INTO assignments (student_id, test_id, assigned_at, status) VALUES (?, ?, CURRENT_TIMESTAMP, 'assigned')", [s.id, t.id]);
-        }
-      }
-    }
-
-    const speakingPrompts = await db.all("SELECT id FROM speaking_prompts");
-    for (const s of allStudents) {
-      for (const sp of speakingPrompts) {
-        const spkExists = await db.get("SELECT 1 FROM speaking_assignments WHERE student_id = ? AND prompt_id = ?", [s.id, sp.id]);
-        if (!spkExists) {
-          await db.run("INSERT INTO speaking_assignments (student_id, prompt_id, assigned_at, status) VALUES (?, ?, CURRENT_TIMESTAMP, 'assigned')", [s.id, sp.id]);
-        }
-      }
-    }
-  } catch (e) {
-    console.error('Auto-assign seeding error:', e.message);
-  }
+  // Seeding finished
 }
 
 export { ensureCustomDataSeeded };
