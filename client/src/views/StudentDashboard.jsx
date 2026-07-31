@@ -631,69 +631,138 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
               })()}
             </div>
 
-            {/* Right Column: Past Results */}
+            {/* Right Column: Past Results & Score Breakdown */}
             <div style={styles.rightCol}>
-              <h3 style={styles.sectionTitle}>🏆 Past Results & Performance Feedback</h3>
-              {/* Speaking Results */}
-              {speakingResults.length > 0 && speakingResults.map(sr => {
-                const fb = (() => { try { return JSON.parse(sr.ai_feedback || '{}'); } catch { return {}; } })();
-                const bandColor = (s) => s >= 7.5 ? '#10b981' : s >= 6.0 ? '#6366f1' : s >= 4.5 ? '#f59e0b' : '#f43f5e';
+              {(() => {
+                const fullMockSubs = submissions.filter(sub => 
+                  !sub.title.toLowerCase().includes('reading') && !sub.title.toLowerCase().includes('listening')
+                );
+
+                const separateSubs = submissions.filter(sub => 
+                  sub.title.toLowerCase().includes('reading') || sub.title.toLowerCase().includes('listening')
+                );
+
                 return (
-                  <div className="card" style={{ ...styles.resultCard, borderLeft: '4px solid #6366f1', marginBottom: '1.5rem' }} key={sr.id}>
-                    <div style={styles.resultHeader}>
-                      <h4 style={styles.testTitle}>🎙️ {sr.prompt_title}</h4>
-                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                        <span style={{ ...styles.statusLabel, backgroundColor: '#6366f1' }}>Speaking</span>
-                        <span style={{ ...styles.statusLabel, backgroundColor: bandColor(sr.overall_score), fontSize: '0.8rem' }}>Band {sr.overall_score?.toFixed(1)}</span>
+                  <div>
+                    {/* BREAKDOWN 1: Full Mock Exam Results (All 4 Skills) */}
+                    <div style={{ marginBottom: '2.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>🏆</span>
+                        <h3 style={{ ...styles.sectionTitle, margin: 0 }}>1. Full Mock Exam Scores (All 4 Skills)</h3>
                       </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', margin: '1rem 0' }}>
-                      {[['Fluency', sr.fluency_score], ['Lexical', sr.lexical_score], ['Grammar', sr.grammar_score], ['Pronunciation', sr.pronunciation_score]].map(([label, score]) => (
-                        <div key={label} style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', padding: '0.5rem 0.75rem', border: '1px solid var(--glass-border)' }}>
-                          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block' }}>{label}</span>
-                          <span style={{ fontWeight: '800', fontSize: '1.1rem', color: bandColor(score) }}>{score?.toFixed(1)}</span>
+
+                      {/* Speaking Results Cards */}
+                      {speakingResults.length > 0 && speakingResults.map(sr => {
+                        const fb = (() => { try { return JSON.parse(sr.ai_feedback || '{}'); } catch { return {}; } })();
+                        const bandColor = (s) => s >= 7.5 ? '#10b981' : s >= 6.0 ? '#6366f1' : s >= 4.5 ? '#f59e0b' : '#f43f5e';
+                        return (
+                          <div className="card" style={{ ...styles.resultCard, borderLeft: '4px solid #8b5cf6', marginBottom: '1rem' }} key={sr.id}>
+                            <div style={styles.resultHeader}>
+                              <h4 style={styles.testTitle}>🎙️ {sr.prompt_title}</h4>
+                              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
+                                <span style={{ ...styles.statusLabel, backgroundColor: '#8b5cf6' }}>Speaking Test</span>
+                                <span style={{ ...styles.statusLabel, backgroundColor: bandColor(sr.overall_score), fontSize: '0.8rem' }}>Band {sr.overall_score?.toFixed(1)}</span>
+                              </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', margin: '0.75rem 0' }}>
+                              {[['Fluency', sr.fluency_score], ['Lexical', sr.lexical_score], ['Grammar', sr.grammar_score], ['Pronunciation', sr.pronunciation_score]].map(([label, score]) => (
+                                <div key={label} style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', padding: '0.4rem 0.6rem', border: '1px solid var(--glass-border)' }}>
+                                  <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', display: 'block' }}>{label}</span>
+                                  <span style={{ fontWeight: '800', fontSize: '1rem', color: bandColor(score) }}>{score?.toFixed(1)}</span>
+                                </div>
+                              ))}
+                            </div>
+                            {fb.overall && <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: '0.4rem 0 0', fontStyle: 'italic' }}>"{fb.overall}"</p>}
+                            <p style={styles.dateLabel}>Submitted: {new Date(sr.submitted_at).toLocaleDateString()}</p>
+                          </div>
+                        );
+                      })}
+
+                      {/* Full Mock Submissions */}
+                      {fullMockSubs.length === 0 ? (
+                        <div className="card" style={styles.emptyCard}>
+                          <p style={{ fontSize: '0.85rem' }}>No full 4-skill mock exam scores recorded yet.</p>
                         </div>
-                      ))}
+                      ) : (
+                        fullMockSubs.map((sub) => {
+                          const overall = getIeltsOverall(sub.listening_score, sub.reading_score, sub.writing_score);
+                          return (
+                            <div className="card" style={{ ...styles.resultCard, marginBottom: '1rem' }} key={sub.id}>
+                              <div style={styles.resultHeader}>
+                                <h4 style={styles.testTitle}>{sub.title}</h4>
+                                <div style={styles.overallScoreBox}>
+                                  <span style={styles.scoreNumber}>{overall}</span>
+                                  <span style={styles.scoreText}>Overall Band</span>
+                                </div>
+                              </div>
+                              <div style={styles.miniScores}>
+                                <span style={styles.miniScore}>🎧 Listening: <strong>{sub.listening_score ? sub.listening_score.toFixed(1) : '–'}</strong></span>
+                                <span style={styles.miniScore}>📖 Reading: <strong>{sub.reading_score ? sub.reading_score.toFixed(1) : '–'}</strong></span>
+                                <span style={styles.miniScore}>✍️ Writing: <strong>{sub.writing_score ? sub.writing_score.toFixed(1) : 'Pending'}</strong></span>
+                              </div>
+                              <p style={styles.dateLabel}>Submitted: {new Date(sub.submitted_at).toLocaleDateString()}</p>
+                              <button 
+                                onClick={() => setSelectedReview(sub)} 
+                                className="btn btn-secondary" 
+                                style={{ marginTop: '0.75rem', width: '100%', justifyContent: 'center', fontSize: '0.8rem' }}
+                              >
+                                🔍 View Teacher Feedback & Full Breakdown
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
-                    {fb.overall && <p style={{ fontSize: '0.83rem', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '0.5rem 0 0', fontStyle: 'italic' }}>"{fb.overall}"</p>}
-                    <p style={styles.dateLabel}>Submitted: {new Date(sr.submitted_at).toLocaleDateString()}</p>
+
+                    {/* BREAKDOWN 2: Separate Practice Test Breakdown (L & R) */}
+                    <div style={{ marginBottom: '2.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>📚</span>
+                        <h3 style={{ ...styles.sectionTitle, margin: 0 }}>2. Separate Practice Test Scores (L & R)</h3>
+                      </div>
+
+                      {separateSubs.length === 0 ? (
+                        <div className="card" style={styles.emptyCard}>
+                          <p style={{ fontSize: '0.85rem' }}>No separate Reading or Listening practice test scores recorded yet.</p>
+                        </div>
+                      ) : (
+                        separateSubs.map((sub) => {
+                          const isReading = sub.title.toLowerCase().includes('reading');
+                          const scoreVal = isReading ? sub.reading_score : sub.listening_score;
+
+                          return (
+                            <div className="card" style={{ ...styles.resultCard, borderLeft: `4px solid ${isReading ? '#10b981' : '#3b82f6'}`, marginBottom: '1rem' }} key={sub.id}>
+                              <div style={styles.resultHeader}>
+                                <div>
+                                  <h4 style={styles.testTitle}>{sub.title}</h4>
+                                  <span style={{ ...styles.statusLabel, backgroundColor: isReading ? '#10b981' : '#3b82f6', marginTop: '0.3rem', display: 'inline-block' }}>
+                                    {isReading ? '📖 Reading Practice' : '🎧 Listening Practice'}
+                                  </span>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <span style={{ fontSize: '1.6rem', fontWeight: '800', color: isReading ? '#10b981' : '#3b82f6' }}>
+                                    {scoreVal ? `Band ${scoreVal.toFixed(1)}` : '–'}
+                                  </span>
+                                  <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Instant Score</span>
+                                </div>
+                              </div>
+
+                              <p style={styles.dateLabel}>Submitted: {new Date(sub.submitted_at).toLocaleDateString()}</p>
+                              <button 
+                                onClick={() => setSelectedReview(sub)} 
+                                className="btn btn-secondary" 
+                                style={{ marginTop: '0.75rem', width: '100%', justifyContent: 'center', fontSize: '0.8rem' }}
+                              >
+                                🔍 Review Answers & Explanations
+                              </button>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 );
-              })}
-
-              {submissions.length === 0 ? (
-                <div className="card" style={styles.emptyCard}>
-                  <p>No graded results released yet. Submissions are marked by teachers within 24 hours.</p>
-                </div>
-              ) : (
-                submissions.map((sub) => {
-                  const overall = getIeltsOverall(sub.listening_score, sub.reading_score, sub.writing_score);
-                  return (
-                    <div className="card" style={styles.resultCard} key={sub.id}>
-                      <div style={styles.resultHeader}>
-                        <h4 style={styles.testTitle}>{sub.title}</h4>
-                        <div style={styles.overallScoreBox}>
-                          <span style={styles.scoreNumber}>{overall}</span>
-                          <span style={styles.scoreText}>Overall Band</span>
-                        </div>
-                      </div>
-                      <div style={styles.miniScores}>
-                        <span style={styles.miniScore}>🎧 Listening: <strong>{sub.listening_score.toFixed(1)}</strong></span>
-                        <span style={styles.miniScore}>📖 Reading: <strong>{sub.reading_score.toFixed(1)}</strong></span>
-                        <span style={styles.miniScore}>✍️ Writing: <strong>{sub.writing_score ? sub.writing_score.toFixed(1) : 'Pending'}</strong></span>
-                      </div>
-                      <p style={styles.dateLabel}>Submitted: {new Date(sub.submitted_at).toLocaleDateString()}</p>
-                      <button 
-                        onClick={() => setSelectedReview(sub)} 
-                        className="btn btn-secondary" 
-                        style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }}
-                      >
-                        🔍 View Teacher Comments & Criteria
-                      </button>
-                    </div>
-                  );
-                })
-              )}
+              })()}
             </div>
           </div>
         </>
