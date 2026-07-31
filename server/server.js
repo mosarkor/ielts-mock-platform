@@ -1023,12 +1023,12 @@ app.post('/api/speaking/submit', async (req, res) => {
       aiSettings
     );
 
-    // Save submission
+    // Save submission (is_revealed defaults to 0 until teacher sends to student)
     await db.run(`
       INSERT INTO speaking_submissions 
         (student_id, prompt_id, part1_transcript, part2_transcript, part3_transcript,
-         fluency_score, lexical_score, grammar_score, pronunciation_score, overall_score, ai_feedback, ai_provider)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         fluency_score, lexical_score, grammar_score, pronunciation_score, overall_score, ai_feedback, ai_provider, is_revealed)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
     `, [
       studentId, promptId,
       part1Transcript || '', part2Transcript || '', part3Transcript || '',
@@ -1041,7 +1041,7 @@ app.post('/api/speaking/submit', async (req, res) => {
       await db.run("UPDATE speaking_assignments SET status = 'submitted' WHERE id = ?", [assignmentId]);
     }
 
-    res.json({ success: true, scores: result });
+    res.json({ success: true, message: 'Submitted for teacher review' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

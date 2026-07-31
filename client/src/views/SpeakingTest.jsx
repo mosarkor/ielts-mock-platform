@@ -446,35 +446,23 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
     </div>
   );
 
-  // ── RESULTS ──
-  if (step === 'results' && results) return (
+  // ── SUBMITTED CONFIRMATION ──
+  if (step === 'results') return (
     <div style={wrap}>
       <div style={card}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '0.5rem' }}>🎉</div>
-          <h2 style={{ color: 'var(--text-primary)', fontWeight: '800', fontSize: '1.5rem' }}>Test Submitted!</h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Your teacher will review and send the official results to your dashboard.</p>
-        </div>
-        <div style={{ backgroundColor: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem', textAlign: 'center' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: '700' }}>AI Estimated Overall Band</span>
-          <div style={{ fontSize: '4rem', fontWeight: '900', color: bandColor(results.overall), lineHeight: 1.1 }}>{results.overall?.toFixed(1)}</div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          {[['Fluency & Coherence', 'fluency'], ['Lexical Resource', 'lexical'], ['Grammatical Range', 'grammar'], ['Pronunciation', 'pronunciation']].map(([label, key]) => (
-            <div key={key} style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', padding: '0.75rem 1rem', border: '1px solid var(--glass-border)' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.25rem' }}>{label}</span>
-              <span style={{ fontSize: '1.5rem', fontWeight: '800', color: bandColor(results[key]) }}>{results[key]?.toFixed(1)}</span>
-              {results.feedback?.[key] && <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0.4rem 0 0', lineHeight: 1.4 }}>{results.feedback[key]}</p>}
-            </div>
-          ))}
-        </div>
-        {results.feedback?.overall && (
-          <div style={{ backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', padding: '1rem', border: '1px solid var(--glass-border)', marginBottom: '1.5rem' }}>
-            <h5 style={{ color: 'var(--text-primary)', fontWeight: '700', marginBottom: '0.5rem', fontSize: '0.9rem' }}>📝 Overall Assessment</h5>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: '1.5', margin: 0 }}>{results.feedback.overall}</p>
+        <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🎉</div>
+          <h2 style={{ color: 'var(--text-primary)', fontWeight: '800', fontSize: '1.6rem', marginBottom: '0.5rem' }}>Speaking Test Submitted!</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '480px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
+            Your speaking responses have been successfully submitted. Your teacher will review your test and release the official results to your dashboard.
+          </p>
+          <div style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '2rem', fontSize: '0.85rem', color: '#10b981', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span>✅ Status: Submitted to Teacher Dashboard</span>
           </div>
-        )}
-        <button onClick={onFinished} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>← Return to Dashboard</button>
+          <button onClick={onFinished} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.85rem' }}>
+            ← Return to Student Dashboard
+          </button>
+        </div>
       </div>
     </div>
   );
