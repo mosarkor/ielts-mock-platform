@@ -564,6 +564,7 @@ async function ensureCustomDataSeeded(db) {
     ['G1-11', 'Daniel Abdamitov', 'MHNY58', 'Group 1'],
     ['G1-12', 'Mukhammedali Parmanov', 'TZWR5V', 'Group 1'],
     ['G1-13', 'Kayrat Mamadaliev', '8GDGR7', 'Group 1'],
+    ['G1-14', 'Abdumitalipov Zaphar', 'ZP3KWN', 'Group 1'],
 
     ['G2-01', 'Iskender Abdinabiev', '5XYWCD', 'Group 2'],
     ['G2-02', 'Fatima Kasymbekova', 'TX8R83', 'Group 2'],
