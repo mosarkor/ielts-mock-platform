@@ -1,5 +1,3 @@
-import sqlite3 from 'sqlite3';
-import { open } from 'sqlite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -8,6 +6,54 @@ import pg from 'pg';
 const { Pool } = pg;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'database.sqlite');
+
+function normalizeParams(params) {
+  return params.length === 1 && Array.isArray(params[0]) ? params[0] : params;
+}
+
+class SqliteDatabaseWrapper {
+  constructor(filename, DatabaseSync) {
+    this.database = new DatabaseSync(filename);
+  }
+
+  async get(sql, ...params) {
+    return this.database.prepare(sql).get(...normalizeParams(params)) || null;
+  }
+
+  async all(sql, ...params) {
+    return this.database.prepare(sql).all(...normalizeParams(params));
+  }
+
+  async run(sql, ...params) {
+    const result = this.database.prepare(sql).run(...normalizeParams(params));
+    return {
+      lastID: Number(result.lastInsertRowid || 0),
+      changes: Number(result.changes || 0)
+    };
+  }
+
+  async exec(sql) {
+    this.database.exec(sql);
+  }
+
+  async prepare(sql) {
+    const statement = this.database.prepare(sql);
+    return {
+      run: async (...params) => {
+        const result = statement.run(...normalizeParams(params));
+        return {
+          lastID: Number(result.lastInsertRowid || 0),
+          changes: Number(result.changes || 0)
+        };
+      },
+      finalize: async () => {}
+    };
+  }
+
+  async close() {
+    this.database.close();
+  }
+}
 
 function translateSql(sql) {
   let index = 1;
@@ -77,6 +123,10 @@ class PostgresDatabaseWrapper {
       finalize: async () => {}
     };
   }
+
+  async close() {
+    await this.pool.end();
+  }
 }
 
 export async function initDb() {
@@ -112,9 +162,12 @@ export async function initDb() {
         listening_data TEXT NOT NULL,
         reading_data TEXT NOT NULL,
         writing_data TEXT NOT NULL,
+        html_content TEXT,
         created_by TEXT REFERENCES users(id)
       )
     `);
+
+    await db.exec('ALTER TABLE tests ADD COLUMN html_content TEXT').catch(() => {});
 
     await db.exec(`
       CREATE TABLE IF NOT EXISTS assignments (
@@ -317,12 +370,12 @@ export async function initDb() {
     fs.mkdirSync(dbDir, { recursive: true });
   }
 
-  const db = await open({
-    filename: dbPath,
-    driver: sqlite3.Database
-  });
+  const { DatabaseSync } = await import('node:sqlite');
+  const db = new SqliteDatabaseWrapper(dbPath, DatabaseSync);
 
-  await db.get('PRAGMA foreign_keys = ON');
+  await db.exec('PRAGMA foreign_keys = ON');
+  await db.exec('PRAGMA journal_mode = WAL');
+  await db.exec('PRAGMA busy_timeout = 5000');
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -344,10 +397,13 @@ export async function initDb() {
       listening_data TEXT NOT NULL,
       reading_data TEXT NOT NULL,
       writing_data TEXT NOT NULL,
+      html_content TEXT,
       created_by TEXT,
       FOREIGN KEY (created_by) REFERENCES users(id)
     )
   `);
+
+  await db.exec('ALTER TABLE tests ADD COLUMN html_content TEXT').catch(() => {});
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS assignments (

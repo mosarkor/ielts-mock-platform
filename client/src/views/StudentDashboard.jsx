@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 
 export default function StudentDashboard({ user, onLogout, onStartTest, onStartSpeaking, theme, toggleTheme }) {
@@ -86,11 +86,7 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [user.id]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/student/dashboard/${user.id}`);
@@ -111,7 +107,11 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleStartTestClick = async (testId) => {
     try {

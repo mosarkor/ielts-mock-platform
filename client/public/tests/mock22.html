@@ -1113,14 +1113,14 @@
         readingScore: rScore
       })
     })
-    .then(res => res.json())
+    .then(async res => { const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.error || 'Submission was not accepted'); return data; })
     .then(data => {
       console.log('Synced to platform backend:', data);
       if (window.parent) {
-        window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+        window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, window.location.origin);
       }
     })
-    .catch(err => { console.error('Submission sync error:', err); if (window.parent) window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*'); }); setTimeout(() => { if (window.parent) window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*'); }, 1500);
+    .catch(err => { console.error('Submission sync error:', err); alert('Submission was not confirmed. Check your connection and try again.'); });
   }
 
   // ================= AUTO-SUBMIT ON LEAVING WINDOW (Listening & Writing only) =================

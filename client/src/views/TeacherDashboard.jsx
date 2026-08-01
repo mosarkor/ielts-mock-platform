@@ -143,7 +143,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
           if (lData.iframeUrl) {
             iframeUrl = lData.iframeUrl;
           }
-        } catch(e) {}
+        } catch {}
       }
       
       const res = await fetch(iframeUrl);

@@ -1277,10 +1277,9 @@
     } catch (_) {}
   }
 
-          clearProgressStorage();
           const sendSubmitMessage = () => {
             if (window.parent) {
-              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, window.location.origin);
             }
           };
 
@@ -1297,17 +1296,16 @@
               violationsCount: parseInt(sessionStorage.getItem('violations_' + tId) || '0')
             })
           })
-          .then(res => res.json())
+          .then(async res => { const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.error || 'Submission was not accepted'); return data; })
           .then(data => {
             console.log('Submission synced successfully:', data);
+            clearProgressStorage();
             sendSubmitMessage();
           })
           .catch(err => {
             console.error('Submission catch error:', err);
-            sendSubmitMessage();
+            alert('Submission was not confirmed. Your saved answers are still available; check your connection and try again.');
           });
-
-          setTimeout(sendSubmitMessage, 1500);
     
           return;
         }

@@ -12,7 +12,6 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
   const [part1Answers, setPart1Answers] = useState([]);
   const [part3Answers, setPart3Answers] = useState([]);
 
-  const [results, setResults] = useState(null);
   const [error, setError] = useState('');
 
   const recognitionRef = useRef(null);
@@ -44,13 +43,13 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
       setCurrentTyping(transcriptText.trim());
     };
     recognition.onerror = () => {};
-    try { recognition.start(); } catch (e) {}
+    try { recognition.start(); } catch {}
     recognitionRef.current = recognition;
   };
 
   const stopRecognition = () => {
     if (recognitionRef.current) {
-      try { recognitionRef.current.stop(); } catch (e) {}
+      try { recognitionRef.current.stop(); } catch {}
       recognitionRef.current = null;
     }
   };
@@ -83,7 +82,7 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
           const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
           resolve(blob);
         };
-        try { mediaRecorderRef.current.stop(); } catch (e) { resolve(null); }
+        try { mediaRecorderRef.current.stop(); } catch { resolve(null); }
       } else {
         resolve(null);
       }
@@ -150,7 +149,6 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Submission failed');
-      setResults(data.scores);
       setStep('results');
     } catch (err) {
       setError(err.message);
@@ -229,19 +227,9 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
   };
 
 
-  const bandColor = (s) => s >= 7.5 ? '#10b981' : s >= 6.0 ? '#6366f1' : s >= 4.5 ? '#f59e0b' : '#f43f5e';
-
   const wrap = { minHeight: '100vh', backgroundColor: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', fontFamily: 'Inter, sans-serif' };
   const card = { maxWidth: '720px', width: '100%', backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '2.5rem', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' };
   const qBox = { backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--glass-border)', borderRadius: '10px', padding: '1.25rem 1.5rem', fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: '500', lineHeight: '1.6', marginBottom: '1.25rem' };
-  const textareaStyle = (accent) => ({ width: '100%', backgroundColor: 'var(--bg-tertiary)', border: `1px solid ${recording ? accent : 'var(--glass-border)'}`, borderRadius: '8px', padding: '0.75rem', color: 'var(--text-primary)', fontSize: '0.9rem', resize: 'vertical', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' });
-
-  const RecordDot = ({ color }) => recording ? (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color, fontSize: '0.85rem', margin: '0.5rem 0' }}>
-      <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: color, animation: 'spkPulse 1s infinite' }} />
-      Recording... speak now
-    </div>
-  ) : null;
 
   // ── INTRO ──
   if (step === 'intro') return (

@@ -11,7 +11,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = process.env.PORT || 5000;
+const configuredPort = Number.parseInt(process.env.PORT, 10);
+const port = Number.isInteger(configuredPort) && configuredPort >= 0 ? configuredPort : 5000;
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -25,7 +26,45 @@ try {
   console.log('Database initialized successfully.');
 } catch (error) {
   console.error('Failed to initialize database:', error);
+  process.exitCode = 1;
+  throw error;
 }
+
+const submissionLocks = new Set();
+
+function parseJson(value, fallback) {
+  if (value === null || value === undefined || value === '') return fallback;
+  if (typeof value === 'object') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+app.get('/api/health', async (req, res) => {
+  try {
+    await db.get('SELECT 1 as ok');
+    res.json({ status: 'ok', database: 'connected' });
+  } catch (error) {
+    res.status(503).json({ status: 'error', database: 'unavailable' });
+  }
+});
+
+// Uploaded tests are stored in the database so they survive ephemeral deploy filesystems.
+app.get('/tests/:fileName', async (req, res, next) => {
+  const match = /^mock(\d+)\.html$/.exec(req.params.fileName);
+  if (!match) return next();
+
+  try {
+    const test = await db.get('SELECT html_content FROM tests WHERE id = ?', [match[1]]);
+    if (!test?.html_content) return next();
+    res.set('Cache-Control', 'no-store');
+    res.type('html').send(test.html_content);
+  } catch (error) {
+    next(error);
+  }
+});
 
 // ----------------------------------------
 // AUTHENTICATION
@@ -130,114 +169,157 @@ app.get('/api/student/test/:testId', async (req, res) => {
 // Submit Test Answers
 app.post('/api/student/submit/:testId', async (req, res) => {
   const { testId } = req.params;
-    const { studentId, listeningAnswers, readingAnswers, writingAnswers, violationsCount = 0 } = req.body;
+  const studentId = typeof req.body.studentId === 'string' ? req.body.studentId.trim() : '';
+  const listeningAnswers = req.body.listeningAnswers && typeof req.body.listeningAnswers === 'object' ? req.body.listeningAnswers : {};
+  const readingAnswers = req.body.readingAnswers && typeof req.body.readingAnswers === 'object' ? req.body.readingAnswers : {};
+  const writingAnswers = req.body.writingAnswers && typeof req.body.writingAnswers === 'object' ? req.body.writingAnswers : {};
+  const violationsCount = Math.max(0, Math.min(999, Number.parseInt(req.body.violationsCount, 10) || 0));
 
-    try {
-      const test = await db.get('SELECT * FROM tests WHERE id = ?', [testId]);
-      if (!test) {
-        return res.status(404).json({ error: 'Test not found' });
-      }
+  if (!studentId || !/^\d+$/.test(testId)) {
+    return res.status(400).json({ error: 'A valid student and test are required' });
+  }
 
-      const listeningData = JSON.parse(test.listening_data);
-      let listeningScore = req.body.listeningScore;
-      let readingScore = req.body.readingScore;
+  const lockKey = `${studentId}:${testId}`;
+  if (submissionLocks.has(lockKey)) {
+    return res.status(409).json({ error: 'This submission is already being processed' });
+  }
+  submissionLocks.add(lockKey);
 
-      if (listeningScore === undefined || readingScore === undefined) {
-        const listeningData = JSON.parse(test.listening_data || '{"sections":[]}');
-        const readingData = JSON.parse(test.reading_data || '{"passages":[]}');
+  try {
+    const student = await db.get("SELECT id FROM users WHERE id = ? AND role = 'student'", [studentId]);
+    if (!student) return res.status(404).json({ error: 'Student not found' });
 
-        // Simple IELTS band scale out of 9
-        const getIeltsBand = (correct, total) => {
-          if (total === 0) return 0;
-          const ratio = correct / total;
-          if (ratio >= 0.95) return 9.0;
-          if (ratio >= 0.85) return 8.0;
-          if (ratio >= 0.75) return 7.5;
-          if (ratio >= 0.65) return 7.0;
-          if (ratio >= 0.55) return 6.0;
-          if (ratio >= 0.45) return 5.5;
-          if (ratio >= 0.35) return 5.0;
-          if (ratio >= 0.25) return 4.5;
-          if (ratio >= 0.15) return 4.0;
-          return 3.0;
-        };
+    const test = await db.get('SELECT * FROM tests WHERE id = ?', [testId]);
+    if (!test) return res.status(404).json({ error: 'Test not found' });
 
-        if (listeningScore === undefined) {
-          let listeningCorrect = 0;
-          let totalListening = 0;
-          if (listeningData && listeningData.sections) {
-            listeningData.sections.forEach(sec => {
-              sec.questions.forEach(q => {
-                totalListening++;
-                const studentAns = (listeningAnswers[q.id] || '').trim().toLowerCase();
-                const correctAns = q.answer.trim().toLowerCase();
-                if (studentAns === correctAns) {
-                  listeningCorrect++;
-                }
-              });
-            });
-          }
-          listeningScore = getIeltsBand(listeningCorrect, totalListening);
-        }
-
-        if (readingScore === undefined) {
-          let readingCorrect = 0;
-          let totalReading = 0;
-          if (readingData && readingData.passages) {
-            readingData.passages.forEach(pass => {
-              pass.questions.forEach(q => {
-                totalReading++;
-                const studentAns = (readingAnswers[q.id] || '').trim().toLowerCase();
-                const correctAns = q.answer.trim().toLowerCase();
-                if (studentAns === correctAns) {
-                  readingCorrect++;
-                }
-              });
-            });
-          }
-          readingScore = getIeltsBand(readingCorrect, totalReading);
-        }
-      }
-
-      // Check if test is a separate Reading/Listening practice test
-      const testRecord = await db.get('SELECT title FROM tests WHERE id = ?', [testId]);
-      const isSeparatePracticeTest = testRecord && (
-        testRecord.title.toLowerCase().includes('reading') || 
-        testRecord.title.toLowerCase().includes('listening')
-      );
-      const defaultIsRevealed = isSeparatePracticeTest ? 1 : 0;
-
-      // Write to Submissions
-      await db.run(`
-        INSERT INTO submissions (
-          student_id, test_id, started_at, submitted_at, 
-          listening_answers, reading_answers, writing_answers, 
-          listening_score, reading_score, is_revealed, violations_count
-        ) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)
-      `, 
-        studentId, 
-        testId, 
-        JSON.stringify(listeningAnswers), 
-        JSON.stringify(readingAnswers), 
-        JSON.stringify(writingAnswers), 
-        listeningScore, 
-        readingScore,
-        defaultIsRevealed,
-        violationsCount
-      );
-
-    // Update assignment status
-    await db.run(`
-      UPDATE assignments 
-      SET status = 'completed' 
+    const assignment = await db.get(`
+      SELECT id, status FROM assignments
       WHERE student_id = ? AND test_id = ?
+      ORDER BY id DESC LIMIT 1
     `, [studentId, testId]);
 
-    res.json({ 
-      success: true, 
+    if (!assignment || assignment.status === 'completed') {
+      const existing = await db.get(`
+        SELECT listening_score, reading_score FROM submissions
+        WHERE student_id = ? AND test_id = ?
+        ORDER BY id DESC LIMIT 1
+      `, [studentId, testId]);
+      if (existing) {
+        return res.json({
+          success: true,
+          duplicate: true,
+          message: 'This test was already submitted successfully.',
+          listeningScore: existing.listening_score,
+          readingScore: existing.reading_score
+        });
+      }
+      return res.status(403).json({ error: 'This test is not currently assigned to the student' });
+    }
+
+    const listeningData = parseJson(test.listening_data, {});
+    const readingData = parseJson(test.reading_data, {});
+    const isIframeTest = listeningData?.isIframe === true;
+
+    const validBand = (value) => {
+      const number = Number(value);
+      if (!Number.isFinite(number) || number < 0 || number > 9) return undefined;
+      return Math.round(number * 2) / 2;
+    };
+
+    const getIeltsBand = (correct, total) => {
+      if (total === 0) return null;
+      const ratio = correct / total;
+      if (ratio >= 0.95) return 9.0;
+      if (ratio >= 0.85) return 8.0;
+      if (ratio >= 0.75) return 7.5;
+      if (ratio >= 0.65) return 7.0;
+      if (ratio >= 0.55) return 6.0;
+      if (ratio >= 0.45) return 5.5;
+      if (ratio >= 0.35) return 5.0;
+      if (ratio >= 0.25) return 4.5;
+      if (ratio >= 0.15) return 4.0;
+      return 3.0;
+    };
+
+    const scoreQuestions = (groups, answers) => {
+      let correct = 0;
+      let total = 0;
+      for (const group of Array.isArray(groups) ? groups : []) {
+        for (const question of Array.isArray(group?.questions) ? group.questions : []) {
+          if (question?.answer === undefined || question?.id === undefined) continue;
+          total += 1;
+          const studentAnswer = String(answers[question.id] ?? '').trim().toLowerCase();
+          const acceptedAnswers = (Array.isArray(question.answer) ? question.answer : [question.answer])
+            .map(answer => String(answer).trim().toLowerCase());
+          if (acceptedAnswers.includes(studentAnswer)) correct += 1;
+        }
+      }
+      return getIeltsBand(correct, total);
+    };
+
+    // Standalone HTML tests calculate against answer keys embedded in their document.
+    // Native tests are always scored from the server-side question data.
+    const listeningScore = isIframeTest
+      ? validBand(req.body.listeningScore)
+      : scoreQuestions(listeningData.sections, listeningAnswers);
+    const readingScore = isIframeTest
+      ? validBand(req.body.readingScore)
+      : scoreQuestions(readingData.passages, readingAnswers);
+
+    const lowerTitle = String(test.title || '').toLowerCase();
+    const defaultIsRevealed = lowerTitle.includes('reading') || lowerTitle.includes('listening') ? 1 : 0;
+
+    await db.run(`
+      INSERT INTO submissions (
+        student_id, test_id, started_at, submitted_at,
+        listening_answers, reading_answers, writing_answers,
+        listening_score, reading_score, is_revealed, violations_count
+      ) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)
+    `,
+      studentId,
+      testId,
+      JSON.stringify(listeningAnswers),
+      JSON.stringify(readingAnswers),
+      JSON.stringify(writingAnswers),
+      listeningScore,
+      readingScore,
+      defaultIsRevealed,
+      violationsCount
+    );
+
+    await db.run("UPDATE assignments SET status = 'completed' WHERE id = ?", [assignment.id]);
+
+    res.json({
+      success: true,
       message: 'Test submitted successfully! Your essays are now pending review.',
       listeningScore,
       readingScore
+    });
+  } catch (error) {
+    console.error('Test submission failed:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    submissionLocks.delete(lockKey);
+  }
+});
+
+app.get('/api/student/submission-status/:studentId/:testId', async (req, res) => {
+  const { studentId, testId } = req.params;
+  try {
+    const assignment = await db.get(`
+      SELECT status FROM assignments
+      WHERE student_id = ? AND test_id = ?
+      ORDER BY id DESC LIMIT 1
+    `, [studentId, testId]);
+    const submission = await db.get(`
+      SELECT id, submitted_at FROM submissions
+      WHERE student_id = ? AND test_id = ?
+      ORDER BY id DESC LIMIT 1
+    `, [studentId, testId]);
+    res.json({
+      submitted: Boolean(submission) && assignment?.status === 'completed',
+      assignmentStatus: assignment?.status || null,
+      submittedAt: submission?.submitted_at || null
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -248,12 +330,19 @@ app.post('/api/student/submit/:testId', async (req, res) => {
 app.post('/api/student/assignment/start', async (req, res) => {
   const { studentId, testId } = req.body;
   try {
-    await db.run(`
-      UPDATE assignments 
-      SET status = 'started' 
-      WHERE student_id = ? AND test_id = ? AND status = 'assigned'
+    const assignment = await db.get(`
+      SELECT id, status FROM assignments
+      WHERE student_id = ? AND test_id = ?
+      ORDER BY id DESC LIMIT 1
     `, [studentId, testId]);
-    res.json({ success: true });
+    if (!assignment) return res.status(404).json({ error: 'Assignment not found' });
+    if (assignment.status === 'completed') {
+      return res.status(409).json({ error: 'This assignment has already been completed' });
+    }
+    if (assignment.status === 'assigned') {
+      await db.run("UPDATE assignments SET status = 'started' WHERE id = ?", [assignment.id]);
+    }
+    res.json({ success: true, resumed: assignment.status === 'started' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -579,14 +668,21 @@ app.post('/api/admin/upload-test', async (req, res) => {
             readingScore: getIeltsBand(rScore)
           })
         })
-        .then(res => res.json())
+        .then(async res => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Submission was not accepted');
+          return data;
+        })
         .then(data => {
           console.log('Submission synced to backend successfully:', data);
           if (window.parent) {
-            window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+            window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, window.location.origin);
           }
         })
-        .catch(err => console.error('Failed to submit to database backend:', err));
+        .catch(err => {
+          console.error('Failed to submit to database backend:', err);
+          alert('Your submission could not be confirmed. Please check your connection and try again.');
+        });
         return;
       }
       `;
@@ -694,33 +790,45 @@ app.post('/api/admin/upload-test', async (req, res) => {
             readingScore: getIeltsBand(rRes.correctCount)
           })
         })
-        .then(res => res.json())
+        .then(async res => {
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Submission was not accepted');
+          return data;
+        })
         .then(data => {
           console.log('Submission synced to backend successfully:', data);
           if (window.parent) {
-            window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+            window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, window.location.origin);
           }
         })
-        .catch(err => console.error('Failed to submit to database backend:', err));
+        .catch(err => {
+          console.error('Failed to submit to database backend:', err);
+          alert('Your submission could not be confirmed. Please check your connection and try again.');
+        });
         return;
       }
       `;
       content = content.replace(finishWritingTarget, finishWritingReplacement);
     }
     
-    // Save file
-    fs.writeFileSync(filePath, content, 'utf8');
-    
-    // 3. Update tests record with iframe details
+    // 3. Persist the processed HTML in the database first. The file is only a fast local cache.
     const mockListening = {
       isIframe: true,
       iframeUrl: `/tests/${fileName}`
     };
     await db.run(`
       UPDATE tests 
-      SET listening_data = ? 
+      SET listening_data = ?, html_content = ?
       WHERE id = ?
-    `, [JSON.stringify(mockListening), testId]);
+    `, [JSON.stringify(mockListening), content, testId]);
+
+    if (process.env.DISABLE_TEST_FILE_CACHE !== 'true') {
+      try {
+        fs.writeFileSync(filePath, content, 'utf8');
+      } catch (fileError) {
+        console.warn(`Could not cache ${fileName} on disk; database copy will be used:`, fileError.message);
+      }
+    }
     
     res.json({ success: true, testId });
   } catch (error) {
@@ -802,12 +910,17 @@ app.delete('/api/admin/assignments/:id', async (req, res) => {
 app.post('/api/admin/assignments/:id/reset', async (req, res) => {
   const { id } = req.params;
   try {
-    // Also clear the related submission if present
     const asg = await db.get('SELECT * FROM assignments WHERE id = ?', [id]);
-    if (asg && asg.submission_id) {
-      await db.run('DELETE FROM submissions WHERE id = ?', [asg.submission_id]);
+    if (!asg) return res.status(404).json({ error: 'Assignment not found' });
+    const latestSubmission = await db.get(`
+      SELECT id FROM submissions
+      WHERE student_id = ? AND test_id = ?
+      ORDER BY id DESC LIMIT 1
+    `, [asg.student_id, asg.test_id]);
+    if (latestSubmission) {
+      await db.run('DELETE FROM submissions WHERE id = ?', [latestSubmission.id]);
     }
-    await db.run("UPDATE assignments SET status = 'assigned', submission_id = NULL WHERE id = ?", [id]);
+    await db.run("UPDATE assignments SET status = 'assigned' WHERE id = ?", [id]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1281,6 +1394,16 @@ app.post('/api/admin/speaking/reset/:studentId', async (req, res) => {
   }
 });
 
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API endpoint not found' });
+});
+
+app.use((error, req, res, next) => {
+  console.error('Unhandled request error:', error);
+  if (res.headersSent) return next(error);
+  res.status(500).json({ error: 'Unexpected server error' });
+});
+
 // Serve built static React client files in production
 const distPath = path.join(__dirname, '../client/dist');
 app.use(express.static(distPath));
@@ -1294,6 +1417,32 @@ app.get('*', (req, res, next) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`Backend server running on port ${port}`);
 });
+
+let shuttingDown = false;
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`${signal} received; shutting down cleanly.`);
+
+  const forceExitTimer = setTimeout(() => process.exit(1), 10_000);
+  forceExitTimer.unref();
+
+  server.close(async () => {
+    try {
+      await db.close?.();
+      clearTimeout(forceExitTimer);
+      process.exit(0);
+    } catch (error) {
+      console.error('Database shutdown failed:', error);
+      process.exit(1);
+    }
+  });
+}
+
+process.once('SIGTERM', () => shutdown('SIGTERM'));
+process.once('SIGINT', () => shutdown('SIGINT'));
+
+export { app, server, db };

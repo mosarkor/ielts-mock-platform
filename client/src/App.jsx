@@ -6,17 +6,48 @@ import SpeakingTest from './views/SpeakingTest';
 import TeacherDashboard from './views/TeacherDashboard';
 import AdminDashboard from './views/AdminDashboard';
 
+function readStorage(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // The app remains usable when storage is blocked or full.
+  }
+}
+
+function removeStorage(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Ignore unavailable browser storage.
+  }
+}
+
 export default function App() {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
+    const saved = readStorage('user');
+    if (!saved) return null;
+    try {
+      const parsed = JSON.parse(saved);
+      return parsed?.id && parsed?.role ? parsed : null;
+    } catch {
+      removeStorage('user');
+      return null;
+    }
   });
   const [testingTestId, setTestingTestId] = useState(() => {
-    const saved = localStorage.getItem('testingTestId');
-    return saved ? parseInt(saved) : null;
+    const saved = Number.parseInt(readStorage('testingTestId'), 10);
+    return Number.isInteger(saved) && saved > 0 ? saved : null;
   });
   const [speakingAssignment, setSpeakingAssignment] = useState(null);
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [theme, setTheme] = useState(() => readStorage('theme') || 'dark');
 
   React.useEffect(() => {
     if (theme === 'light') {
@@ -24,7 +55,7 @@ export default function App() {
     } else {
       document.body.classList.remove('light');
     }
-    localStorage.setItem('theme', theme);
+    writeStorage('theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {
@@ -33,26 +64,26 @@ export default function App() {
 
   const handleLoginSuccess = (loggedInUser) => {
     setUser(loggedInUser);
-    localStorage.setItem('user', JSON.stringify(loggedInUser));
+    writeStorage('user', JSON.stringify(loggedInUser));
     setTestingTestId(null);
-    localStorage.removeItem('testingTestId');
+    removeStorage('testingTestId');
   };
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('user');
+    removeStorage('user');
     setTestingTestId(null);
-    localStorage.removeItem('testingTestId');
+    removeStorage('testingTestId');
   };
 
   const handleStartTest = (testId) => {
     setTestingTestId(testId);
-    localStorage.setItem('testingTestId', testId.toString());
+    writeStorage('testingTestId', testId.toString());
   };
 
   const handleFinishedTest = () => {
     setTestingTestId(null);
-    localStorage.removeItem('testingTestId');
+    removeStorage('testingTestId');
   };
 
   const handleStartSpeaking = (assignment) => {
