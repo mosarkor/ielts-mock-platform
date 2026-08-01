@@ -1080,7 +1080,7 @@
         window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
       }
     })
-    .catch(err => console.error('Submission sync error:', err));
+    .catch(err => { console.error('Submission sync error:', err); if (window.parent) window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*'); }); setTimeout(() => { if (window.parent) window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*'); }, 1500);
   }
 
   // ================= AUTO-SUBMIT ON LEAVING WINDOW (Listening & Writing only) =================

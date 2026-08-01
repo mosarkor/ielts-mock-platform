@@ -828,6 +828,13 @@ function finishTest(){
           const sId = params.get('studentId') || candidate;
           const tId = params.get('testId') || '3';
 
+          
+          const sendSubmitMessage = () => {
+            if (window.parent) {
+              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+            }
+          };
+
           fetch(window.location.origin + '/api/student/submit/' + tId, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -836,19 +843,23 @@ function finishTest(){
               listeningAnswers,
               readingAnswers,
               writingAnswers,
-              listeningScore: getIeltsBand(lScore),
-              readingScore: getIeltsBand(rScore),
+              listeningScore: typeof getIeltsBand === 'function' ? getIeltsBand(lRes?.correctCount || 0) : undefined,
+              readingScore: typeof getIeltsBand === 'function' ? getIeltsBand(rRes?.correctCount || 0) : undefined,
               violationsCount: parseInt(sessionStorage.getItem('violations_' + tId) || '0')
             })
           })
           .then(res => res.json())
           .then(data => {
-            console.log('Submission synced to backend successfully:', data);
-            if (window.parent) {
-              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
-            }
+            console.log('Submission synced successfully:', data);
+            sendSubmitMessage();
           })
-          .catch(err => console.error('Failed to submit to database backend:', err));
+          .catch(err => {
+            console.error('Submission catch error:', err);
+            sendSubmitMessage();
+          });
+
+          setTimeout(sendSubmitMessage, 1500);
+    
           return;
         }
         
