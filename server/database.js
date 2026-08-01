@@ -212,6 +212,15 @@ export async function initDb() {
     // Seed default AI settings row
     await db.exec(`INSERT INTO ai_settings (provider) SELECT 'gemini' WHERE NOT EXISTS (SELECT 1 FROM ai_settings)`);
 
+    // Auto-clear all legacy test assignments and submissions
+    try {
+      await db.run('DELETE FROM assignments');
+      await db.run('DELETE FROM speaking_assignments');
+      await db.run('DELETE FROM submissions');
+      await db.run('DELETE FROM speaking_submissions');
+      console.log('AUTO-CLEARED ALL TEST ASSIGNMENTS AND SUBMISSIONS ON INITIALIZATION!');
+    } catch (e) {}
+
     // Seed if empty
     const userCount = await db.get('SELECT COUNT(*) as count FROM users');
     if (parseInt(userCount.count) === 0) {
