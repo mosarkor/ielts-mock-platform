@@ -578,7 +578,7 @@
     var d1=$("taker-id-display"); if(d1) d1.textContent=studentId;
     var d2=$("taker-id-display-final"); if(d2) d2.textContent=studentId;
     var d3=$("results-taker-id"); if(d3) d3.textContent=studentId;
-    renderPart(1); startTimer(); requestFullscreen();
+    restoreProgressFromStorage(); renderPart(1); startTimer(); requestFullscreen();
   })();
   if($("pwd-submit")) $("pwd-submit").addEventListener("click",()=>{});
   if($("pwd-input")) $("pwd-input").addEventListener("keydown",e=>{if(e.key==="Enter")$("pwd-submit")&&$("pwd-submit").click();});

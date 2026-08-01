@@ -143,6 +143,19 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
       const data = await res.json();
       setTest(data);
 
+      // Restore saved progress from localStorage if present
+      try {
+        const saveKey = `ielts_native_progress_${user?.id}_${testId}`;
+        const saved = localStorage.getItem(saveKey);
+        if (saved) {
+          const p = JSON.parse(saved);
+          if (p.listeningAnswers) setListeningAnswers(p.listeningAnswers);
+          if (p.readingAnswers) setReadingAnswers(p.readingAnswers);
+          if (p.writingAnswers) setWritingAnswers(p.writingAnswers);
+          if (p.timeLeft && p.timeLeft > 0) setTimeLeft(p.timeLeft);
+        }
+      } catch (_) {}
+
       // Initialize active question id
       if (data.listening_data?.sections?.[0]?.questions?.[0]) {
         setActiveQuestionId(data.listening_data.sections[0].questions[0].id);
@@ -153,6 +166,21 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
       setLoading(false);
     }
   };
+
+  // Auto-save answers & time state to localStorage
+  useEffect(() => {
+    if (!isExamStarted || !user || !testId) return;
+    try {
+      const saveKey = `ielts_native_progress_${user?.id}_${testId}`;
+      localStorage.setItem(saveKey, JSON.stringify({
+        listeningAnswers,
+        readingAnswers,
+        writingAnswers,
+        timeLeft,
+        timestamp: Date.now()
+      }));
+    } catch (_) {}
+  }, [listeningAnswers, readingAnswers, writingAnswers, timeLeft, isExamStarted, user, testId]);
 
   const handleAutoSubmit = () => {
     alert("Time is up! Your answers are being submitted automatically.");
@@ -174,6 +202,10 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Failed to submit answers');
+
+      try {
+        localStorage.removeItem(`ielts_native_progress_${user?.id}_${testId}`);
+      } catch (_) {}
 
       alert(result.message);
       onFinished();

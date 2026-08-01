@@ -824,6 +824,47 @@ function finishTest(){
           const tId = params.get('testId') || '1';
 
           
+          
+  // LocalStorage Progress Auto-Save & Recovery
+  function saveProgressToStorage() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sId = params.get('studentId') || state.takerId || 'STUDENT';
+      const key = 'ielts_progress_' + tId + '_' + sId;
+      localStorage.setItem(key, JSON.stringify({
+        lAnswers: state.lAnswers || {},
+        rAnswers: state.rAnswers || {},
+        wAnswers: state.wAnswers || {},
+        stage: state.stage || 'listening',
+        timestamp: Date.now()
+      }));
+    } catch (_) {}
+  }
+
+  function restoreProgressFromStorage() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sId = params.get('studentId') || state.takerId || 'STUDENT';
+      const key = 'ielts_progress_' + tId + '_' + sId;
+      const data = localStorage.getItem(key);
+      if (data) {
+        const p = JSON.parse(data);
+        if (p.lAnswers && state.lAnswers) Object.assign(state.lAnswers, p.lAnswers);
+        if (p.rAnswers && state.rAnswers) Object.assign(state.rAnswers, p.rAnswers);
+        if (p.wAnswers && state.wAnswers) Object.assign(state.wAnswers, p.wAnswers);
+      }
+    } catch (_) {}
+  }
+
+  function clearProgressStorage() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sId = params.get('studentId') || state.takerId || 'STUDENT';
+      localStorage.removeItem('ielts_progress_' + tId + '_' + sId);
+    } catch (_) {}
+  }
+
+          clearProgressStorage();
           const sendSubmitMessage = () => {
             if (window.parent) {
               window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');

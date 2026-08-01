@@ -634,18 +634,18 @@
     $("prev-btn").disabled=(part===1); $("next-btn").disabled=(part===4);
     $("prev-btn").onclick=()=>{if(state.lCurrentPart>1)renderListeningStage(state.lCurrentPart-1);};
     $("next-btn").onclick=()=>{if(state.lCurrentPart<4)renderListeningStage(state.lCurrentPart+1);else handleSubmitClick();};
-    renderBottomBarListening();
+    renderBottomBarListening(); saveProgressToStorage();
   }
   function attachListeningListeners(){
-    document.querySelectorAll("#content input.blank").forEach(inp=>inp.addEventListener("input",e=>{state.lAnswers[e.target.dataset.q]=e.target.value;renderBottomBarListening();}));
-    document.querySelectorAll("#content select").forEach(sel=>sel.addEventListener("change",e=>{state.lAnswers[e.target.dataset.q]=e.target.value;renderBottomBarListening();}));
-    document.querySelectorAll("#content input[type=radio]").forEach(r=>r.addEventListener("change",e=>{state.lAnswers[e.target.name.replace("q","")]=e.target.value;renderBottomBarListening();}));
+    document.querySelectorAll("#content input.blank").forEach(inp=>inp.addEventListener("input",e=>{state.lAnswers[e.target.dataset.q]=e.target.value;renderBottomBarListening(); saveProgressToStorage();}));
+    document.querySelectorAll("#content select").forEach(sel=>sel.addEventListener("change",e=>{state.lAnswers[e.target.dataset.q]=e.target.value;renderBottomBarListening(); saveProgressToStorage();}));
+    document.querySelectorAll("#content input[type=radio]").forEach(r=>r.addEventListener("change",e=>{state.lAnswers[e.target.name.replace("q","")]=e.target.value;renderBottomBarListening(); saveProgressToStorage();}));
     document.querySelectorAll("#content input[type=checkbox][data-multi-group]").forEach(box=>{
       box.addEventListener("change",e=>{
         const group=e.target.dataset.multiGroup, qnums=parseGroupQnums(group);
         let checked=[...document.querySelectorAll(`#content input[data-multi-group="${group}"]:checked`)];
         if(checked.length>qnums.length){e.target.checked=false;checked=[...document.querySelectorAll(`#content input[data-multi-group="${group}"]:checked`)];}
-        const values=checked.map(el=>el.value);qnums.forEach((q,i)=>{if(values[i])state.lAnswers[q]=values[i];else delete state.lAnswers[q];});renderBottomBarListening();
+        const values=checked.map(el=>el.value);qnums.forEach((q,i)=>{if(values[i])state.lAnswers[q]=values[i];else delete state.lAnswers[q];});renderBottomBarListening(); saveProgressToStorage();
       });
     });
     attachDragDrop($("content"),state.lAnswers,renderBottomBarListening);
@@ -671,13 +671,13 @@
   function renderReadingQ3(){ return `${partBanner("Reading Passage 3","27–40")}${renderCurrentTemplate(currentReadingQuestions["3"],"reading")}`; }
 
   const readingData={1:{passage:passage1,renderQ:renderReadingQ1,range:[1,13]},2:{passage:passage2,renderQ:renderReadingQ2,range:[14,26]},3:{passage:passage3,renderQ:renderReadingQ3,range:[27,40]}};
-  function renderReadingStage(part){state.rCurrentPart=part;$("content-wrap").innerHTML=`<div class="left-pane" id="left-pane"></div><div class="pane-resizer" id="pane-resizer" title="Drag to resize"></div><div class="right-pane" id="right-pane"></div>`;$("left-pane").innerHTML=renderPassage(readingData[part].passage);$("right-pane").innerHTML=readingData[part].renderQ();enablePaneResizer();attachReadingListeners();$("left-pane").scrollTop=0;$("right-pane").scrollTop=0;$("nav-arrows").classList.remove("show");renderBottomBarReading();}
+  function renderReadingStage(part){state.rCurrentPart=part;$("content-wrap").innerHTML=`<div class="left-pane" id="left-pane"></div><div class="pane-resizer" id="pane-resizer" title="Drag to resize"></div><div class="right-pane" id="right-pane"></div>`;$("left-pane").innerHTML=renderPassage(readingData[part].passage);$("right-pane").innerHTML=readingData[part].renderQ();enablePaneResizer();attachReadingListeners();$("left-pane").scrollTop=0;$("right-pane").scrollTop=0;$("nav-arrows").classList.remove("show");renderBottomBarReading(); saveProgressToStorage();}
   function attachReadingListeners(){
-    document.querySelectorAll("#right-pane input.blank").forEach(inp=>inp.addEventListener("input",e=>{state.rAnswers[e.target.dataset.q]=e.target.value;renderBottomBarReading();}));
-    document.querySelectorAll("#right-pane select").forEach(sel=>sel.addEventListener("change",e=>{state.rAnswers[e.target.dataset.q]=e.target.value;renderBottomBarReading();}));
-    document.querySelectorAll("#right-pane input[type=radio]").forEach(r=>r.addEventListener("change",e=>{state.rAnswers[e.target.name.replace("q","")]=e.target.value;renderBottomBarReading();}));
+    document.querySelectorAll("#right-pane input.blank").forEach(inp=>inp.addEventListener("input",e=>{state.rAnswers[e.target.dataset.q]=e.target.value;renderBottomBarReading(); saveProgressToStorage();}));
+    document.querySelectorAll("#right-pane select").forEach(sel=>sel.addEventListener("change",e=>{state.rAnswers[e.target.dataset.q]=e.target.value;renderBottomBarReading(); saveProgressToStorage();}));
+    document.querySelectorAll("#right-pane input[type=radio]").forEach(r=>r.addEventListener("change",e=>{state.rAnswers[e.target.name.replace("q","")]=e.target.value;renderBottomBarReading(); saveProgressToStorage();}));
     document.querySelectorAll("#right-pane input[type=checkbox][data-multi-group]").forEach(box=>{
-      box.addEventListener("change",e=>{const group=e.target.dataset.multiGroup,qnums=parseGroupQnums(group);let checked=[...document.querySelectorAll(`#right-pane input[data-multi-group="${group}"]:checked`)];if(checked.length>qnums.length){e.target.checked=false;checked=[...document.querySelectorAll(`#right-pane input[data-multi-group="${group}"]:checked`)];}const values=checked.map(el=>el.value);qnums.forEach((q,i)=>{if(values[i])state.rAnswers[q]=values[i];else delete state.rAnswers[q];});renderBottomBarReading();});
+      box.addEventListener("change",e=>{const group=e.target.dataset.multiGroup,qnums=parseGroupQnums(group);let checked=[...document.querySelectorAll(`#right-pane input[data-multi-group="${group}"]:checked`)];if(checked.length>qnums.length){e.target.checked=false;checked=[...document.querySelectorAll(`#right-pane input[data-multi-group="${group}"]:checked`)];}const values=checked.map(el=>el.value);qnums.forEach((q,i)=>{if(values[i])state.rAnswers[q]=values[i];else delete state.rAnswers[q];});renderBottomBarReading(); saveProgressToStorage();});
     });
     $("right-pane").addEventListener("mouseup",handleTextSelection);$("left-pane").addEventListener("mouseup",handleTextSelection);
   }
@@ -900,7 +900,7 @@
     $("taker-id-display-t").textContent = val;
     $("results-taker-id").textContent = val;
     hide($("screen-id")); show($("screen-test"));
-    startListeningStage();
+    restoreProgressFromStorage(); startListeningStage();
     enterFullscreen();
   });
   $("id-input").addEventListener("keydown", (e) => { if (e.key==="Enter") $("id-submit").click(); });
@@ -1068,6 +1068,47 @@
           };
 
           
+          
+  // LocalStorage Progress Auto-Save & Recovery
+  function saveProgressToStorage() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sId = params.get('studentId') || state.takerId || 'STUDENT';
+      const key = 'ielts_progress_' + tId + '_' + sId;
+      localStorage.setItem(key, JSON.stringify({
+        lAnswers: state.lAnswers || {},
+        rAnswers: state.rAnswers || {},
+        wAnswers: state.wAnswers || {},
+        stage: state.stage || 'listening',
+        timestamp: Date.now()
+      }));
+    } catch (_) {}
+  }
+
+  function restoreProgressFromStorage() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sId = params.get('studentId') || state.takerId || 'STUDENT';
+      const key = 'ielts_progress_' + tId + '_' + sId;
+      const data = localStorage.getItem(key);
+      if (data) {
+        const p = JSON.parse(data);
+        if (p.lAnswers && state.lAnswers) Object.assign(state.lAnswers, p.lAnswers);
+        if (p.rAnswers && state.rAnswers) Object.assign(state.rAnswers, p.rAnswers);
+        if (p.wAnswers && state.wAnswers) Object.assign(state.wAnswers, p.wAnswers);
+      }
+    } catch (_) {}
+  }
+
+  function clearProgressStorage() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const sId = params.get('studentId') || state.takerId || 'STUDENT';
+      localStorage.removeItem('ielts_progress_' + tId + '_' + sId);
+    } catch (_) {}
+  }
+
+          clearProgressStorage();
           const sendSubmitMessage = () => {
             if (window.parent) {
               window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
