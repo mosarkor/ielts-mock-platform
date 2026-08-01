@@ -191,6 +191,45 @@
   @media(max-width:760px){.form-row{grid-template-columns:1fr}.form-note-row{grid-template-columns:22px 1fr}.form-note-row .form-label{grid-column:1/-1}.form-card,.timeline-card{padding:16px 14px}}
 
 </style>
+
+<script>
+// Auto-bypass password/ID gate when loaded inside platform iframe
+(function() {
+  if (window === window.top) return; // Only bypass in iframe context
+  // Wait for DOM to be ready, then bypass
+  function bypassGate() {
+    var params = new URLSearchParams(window.location.search);
+    var studentId = params.get('studentId') || 'STUDENT';
+    
+    // Hide password screen if present
+    var pwdScreen = document.getElementById('screen-password');
+    if (pwdScreen) pwdScreen.style.display = 'none';
+    
+    // Hide ID screen if present
+    var idScreen = document.getElementById('screen-id');
+    if (idScreen) idScreen.style.display = 'none';
+    
+    // Set the student ID input if present
+    var idInput = document.getElementById('id-input');
+    if (idInput) { idInput.value = studentId; }
+    
+    // Show the test screen
+    var testScreen = document.getElementById('screen-test');
+    if (testScreen) testScreen.style.display = 'flex';
+    
+    // Trigger start by simulating id-submit click (starts timer, renders parts)
+    var idSubmit = document.getElementById('id-submit');
+    if (idSubmit) {
+      setTimeout(function() { idSubmit.click(); }, 50);
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bypassGate);
+  } else {
+    bypassGate();
+  }
+})();
+</script>
 </head>
 <body>
 <div id="app">
