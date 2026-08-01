@@ -814,8 +814,8 @@ app.post('/api/admin/assignments/:id/reset', async (req, res) => {
   }
 });
 
-// Clear All Assignments (Mock Exams + Speaking + Submissions)
-app.post('/api/admin/assignments/clear-all', async (req, res) => {
+// Clear All Assignments (Mock Exams + Speaking + Submissions) - Support both POST and GET
+app.all('/api/admin/assignments/clear-all', async (req, res) => {
   try {
     await db.run('DELETE FROM assignments');
     await db.run('DELETE FROM speaking_assignments');
