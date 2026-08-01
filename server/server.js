@@ -1217,7 +1217,7 @@ app.post('/api/speaking/submit-audio', async (req, res) => {
       await db.run("UPDATE speaking_assignments SET status = 'submitted' WHERE id = ?", [assignmentId]);
     }
 
-    res.json({ success: true, message: 'Submitted and transcribed with OpenAI Whisper' });
+    res.json({ success: true, scores: result, message: 'Submitted and transcribed with OpenAI Whisper' });
   } catch (error) {
     console.error('Submit audio error:', error);
     res.status(500).json({ error: error.message });
