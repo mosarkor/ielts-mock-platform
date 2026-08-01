@@ -240,13 +240,13 @@
 </style>
 
       <style>
-        .brand-badge, 
-        .brand, 
-        .gate-footer, 
-        .tg-circle, 
-        [title*="Telegram"], 
-        [title*="blog"], 
-        [alt*="IELTS Mock Team"], 
+        .brand-badge,
+        .brand,
+        .gate-footer,
+        .tg-circle,
+        [title*="Telegram"],
+        [title*="blog"],
+        [alt*="IELTS Mock Team"],
         a[href*="t.me"] {
           display: none !important;
           opacity: 0 !important;
@@ -254,8 +254,47 @@
           pointer-events: none !important;
         }
       </style>
-      </head>
-      
+
+<script>
+// Auto-bypass password/ID gate when loaded inside platform iframe
+(function() {
+  if (window === window.top) return; // Only bypass in iframe context
+  // Wait for DOM to be ready, then bypass
+  function bypassGate() {
+    var params = new URLSearchParams(window.location.search);
+    var studentId = params.get('studentId') || 'STUDENT';
+
+    // Hide password screen if present
+    var pwdScreen = document.getElementById('screen-password');
+    if (pwdScreen) pwdScreen.style.display = 'none';
+
+    // Hide ID screen if present
+    var idScreen = document.getElementById('screen-id');
+    if (idScreen) idScreen.style.display = 'none';
+
+    // Set the student ID input if present
+    var idInput = document.getElementById('id-input');
+    if (idInput) { idInput.value = studentId; }
+
+    // Show the test screen
+    var testScreen = document.getElementById('screen-test');
+    if (testScreen) testScreen.style.display = 'flex';
+
+    // Trigger start by simulating id-submit click (starts timer, renders parts)
+    var idSubmit = document.getElementById('id-submit');
+    if (idSubmit) {
+      setTimeout(function() { idSubmit.click(); }, 50);
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bypassGate);
+  } else {
+    bypassGate();
+  }
+})();
+</script>
+</head>
+
 <body>
 <div id="app">
 
@@ -591,6 +630,55 @@
         ]
     ]
 };
+
+  // ================= RELIABLE PROGRESS STORAGE =================
+  function progressStorageKey(){
+    const params = new URLSearchParams(window.location.search);
+    const studentId = params.get("studentId") || state.takerId || "STUDENT";
+    const testId = params.get("testId") || "4";
+    return `ielts_progress_${testId}_${studentId}`;
+  }
+  function saveProgressToStorage(){
+    if (state.submitted) return;
+    try {
+      const audio = document.getElementById("test-audio");
+      localStorage.setItem(progressStorageKey(), JSON.stringify({
+        lAnswers: state.lAnswers || {}, rAnswers: state.rAnswers || {}, wAnswers: state.wAnswers || {},
+        stage: state.stage || "listening", lCurrentPart: state.lCurrentPart || 1,
+        rCurrentPart: state.rCurrentPart || 1, wCurrentTask: state.wCurrentTask || 1,
+        rTimeLeft: state.rTimeLeft, wTimeLeft: state.wTimeLeft,
+        audioTime: audio && Number.isFinite(audio.currentTime) ? audio.currentTime : 0,
+        timestamp: Date.now()
+      }));
+    } catch (_) {}
+  }
+  function restoreProgressFromStorage(){
+    try {
+      const raw = localStorage.getItem(progressStorageKey());
+      if (!raw) return false;
+      const saved = JSON.parse(raw);
+      if (saved.lAnswers && typeof saved.lAnswers === "object") state.lAnswers = {...saved.lAnswers};
+      if (saved.rAnswers && typeof saved.rAnswers === "object") state.rAnswers = {...saved.rAnswers};
+      if (saved.wAnswers && typeof saved.wAnswers === "object") state.wAnswers = {...saved.wAnswers};
+      if (["listening","reading","writing"].includes(saved.stage)) state.stage = saved.stage;
+      if (Number.isInteger(saved.lCurrentPart)) state.lCurrentPart = Math.min(4, Math.max(1, saved.lCurrentPart));
+      if (Number.isInteger(saved.rCurrentPart)) state.rCurrentPart = Math.min(3, Math.max(1, saved.rCurrentPart));
+      if (Number.isInteger(saved.wCurrentTask)) state.wCurrentTask = Math.min(2, Math.max(1, saved.wCurrentTask));
+      if (Number.isFinite(saved.rTimeLeft) && saved.rTimeLeft > 0) state.rTimeLeft = saved.rTimeLeft;
+      if (Number.isFinite(saved.wTimeLeft) && saved.wTimeLeft > 0) state.wTimeLeft = saved.wTimeLeft;
+      state.audioTime = Number.isFinite(saved.audioTime) ? Math.max(0, saved.audioTime) : 0;
+      return true;
+    } catch (_) { return false; }
+  }
+  function clearProgressStorage(){
+    try { localStorage.removeItem(progressStorageKey()); } catch (_) {}
+  }
+  function startRestoredStage(){
+    if (state.stage === "writing") startWritingStage();
+    else if (state.stage === "reading") startReadingStage();
+    else startListeningStage();
+  }
+  window.addEventListener("pagehide", saveProgressToStorage);
 
   // ================= SHARED HELPERS =================
   function inputBlank(qnum, answersObj, width){
@@ -1157,7 +1245,9 @@
     $("taker-id-display-t").textContent = val;
     $("results-taker-id").textContent = val;
     hide($("screen-id")); show($("screen-test"));
-    restoreProgressFromStorage(); startListeningStage();
+    if (state.testStarted) return;
+    state.testStarted = true;
+    restoreProgressFromStorage(); startRestoredStage();
     enterFullscreen();
   });
   $("id-input").addEventListener("keydown", (e) => { if (e.key==="Enter") $("id-submit").click(); });
@@ -1174,7 +1264,7 @@
     state.blurAutoSubmitEnabled = false;
     state.autoHandled = false;
     refreshTopbarForStage();
-    renderListeningStage(1);
+    renderListeningStage(state.lCurrentPart || 1);
     startListeningAudio(true);
   }
   function startReadingStage(){
@@ -1182,7 +1272,7 @@
     state.blurAutoSubmitEnabled = false; // reading: no auto-submit on leaving window
     state.autoHandled = false;
     refreshTopbarForStage();
-    renderReadingStage(1);
+    renderReadingStage(state.rCurrentPart || 1);
     startReadingTimer();
   }
   function startWritingStage(){
@@ -1190,7 +1280,7 @@
     state.blurAutoSubmitEnabled = false;
     state.autoHandled = false;
     refreshTopbarForStage();
-    renderWritingStage(1);
+    renderWritingStage(state.wCurrentTask || 1);
     startWritingTimer();
   }
 
@@ -1199,9 +1289,9 @@
   function startListeningAudio(autoAttempt=false){
     const btn = $("play-audio-btn");
     if (btn){ btn.disabled = false; btn.textContent = "▶ Play"; }
-    try { audioEl.currentTime = 0; } catch(e){}
-    const proceed = () => { hide($("audio-gate-overlay")); state.audioStarted = true; refreshTopbarForStage(); };
-    const fallback = () => { if (autoAttempt){ show($("audio-gate-overlay")); } else { proceed(); } };
+    try { audioEl.currentTime = Number.isFinite(state.audioTime) ? state.audioTime : 0; } catch(e){}
+    const proceed = () => { $("audio-gate-overlay").classList.remove("show"); state.audioStarted = true; refreshTopbarForStage(); };
+    const fallback = () => { if (autoAttempt){ $("audio-gate-overlay").classList.add("show"); } else { proceed(); } };
     const p = audioEl.play();
     if (p && p.then) { p.then(proceed).catch(fallback); } else { proceed(); }
   }
@@ -1267,7 +1357,7 @@
   function finishWriting(){
           clearInterval(state.wTimerInterval);
           hide($("screen-test")); hide($("screen-transition"));
-          
+
           const resultsScreen = $("screen-results");
           if (resultsScreen) {
             resultsScreen.innerHTML = `
@@ -1324,46 +1414,7 @@
             return 4.0;
           };
 
-          
-          
-  // LocalStorage Progress Auto-Save & Recovery
-  function saveProgressToStorage() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sId = params.get('studentId') || state.takerId || 'STUDENT';
-      const key = 'ielts_progress_' + tId + '_' + sId;
-      localStorage.setItem(key, JSON.stringify({
-        lAnswers: state.lAnswers || {},
-        rAnswers: state.rAnswers || {},
-        wAnswers: state.wAnswers || {},
-        stage: state.stage || 'listening',
-        timestamp: Date.now()
-      }));
-    } catch (_) {}
-  }
 
-  function restoreProgressFromStorage() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sId = params.get('studentId') || state.takerId || 'STUDENT';
-      const key = 'ielts_progress_' + tId + '_' + sId;
-      const data = localStorage.getItem(key);
-      if (data) {
-        const p = JSON.parse(data);
-        if (p.lAnswers && state.lAnswers) Object.assign(state.lAnswers, p.lAnswers);
-        if (p.rAnswers && state.rAnswers) Object.assign(state.rAnswers, p.rAnswers);
-        if (p.wAnswers && state.wAnswers) Object.assign(state.wAnswers, p.wAnswers);
-      }
-    } catch (_) {}
-  }
-
-  function clearProgressStorage() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sId = params.get('studentId') || state.takerId || 'STUDENT';
-      localStorage.removeItem('ielts_progress_' + tId + '_' + sId);
-    } catch (_) {}
-  }
 
           const sendSubmitMessage = () => {
             if (window.parent) {
@@ -1387,6 +1438,7 @@
           .then(async res => { const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.error || 'Submission was not accepted'); return data; })
           .then(data => {
             console.log('Submission synced successfully:', data);
+            state.submitted = true;
             clearProgressStorage();
             sendSubmitMessage();
           })
@@ -1394,10 +1446,10 @@
             console.error('Submission catch error:', err);
             alert('Submission was not confirmed. Your saved answers are still available; check your connection and try again.');
           });
-    
+
           return;
         }
-        
+
 
   // ================= AUTO-SUBMIT ON LEAVING WINDOW (Listening & Writing only) =================
   function autoSubmitIfActive(){ return; }
@@ -1550,6 +1602,9 @@
     state.blurAutoSubmitEnabled = false; state.autoHandled = false;
     document.body.className = ""; $("app").className = ""; $("app").classList.add("textsize-regular");
     hide($("screen-results")); hide($("screen-transition")); hide($("screen-test"));
+    state.testStarted = false;
+    state.submitted = false;
+    clearProgressStorage();
     show($("screen-password"));
     $("pwd-input").value=""; $("id-input").value="";
     $("pwd-error").textContent=""; $("id-error").textContent="";
@@ -1566,30 +1621,34 @@
           const params = new URLSearchParams(window.location.search);
           const sId = params.get('studentId');
           const tId = params.get('testId') || '4';
-          
+
           if (sId) {
             state.takerId = sId;
-            
+
             const pwdScreen = document.getElementById("screen-password");
             const idScreen = document.getElementById("screen-id");
             if (pwdScreen) pwdScreen.classList.add("hidden");
             if (idScreen) idScreen.classList.add("hidden");
-            
+
             const takerDisplay = document.getElementById("taker-id-display");
             const takerDisplayT = document.getElementById("taker-id-display-t");
             const resultsTaker = document.getElementById("results-taker-id");
-            
+
             if (takerDisplay) takerDisplay.textContent = sId;
             if (takerDisplayT) takerDisplayT.textContent = sId;
             if (resultsTaker) resultsTaker.textContent = sId;
-            
+
             const testScreen = document.getElementById("screen-test");
             if (testScreen) testScreen.classList.remove("hidden");
-            
-            startListeningStage();
+
+            if (!state.testStarted) {
+              state.testStarted = true;
+              restoreProgressFromStorage();
+              startRestoredStage();
+            }
           }
         });
-        
+
 })();
 </script>
 </body>
