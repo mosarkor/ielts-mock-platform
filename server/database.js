@@ -755,6 +755,31 @@ async function ensureCustomDataSeeded(db) {
     }
   } catch (e) {}
 
+  // ── Auto-assign Mock Test 9 to every real student on every startup ──────────
+  // Render's free tier wipes the SQLite file on redeploy, so we must re-seed
+  // assignments every time the server boots.
+  try {
+    const mock9 = await db.get(`SELECT id FROM tests WHERE id = 9 OR title LIKE '%Mock Test 9%' OR title LIKE '%Mock Test%9%' LIMIT 1`);
+    if (mock9) {
+      const realStudents = await db.all(`SELECT id FROM users WHERE role = 'student' AND id LIKE 'G%'`);
+      for (const s of realStudents) {
+        const exists = await db.get(
+          `SELECT 1 FROM assignments WHERE student_id = ? AND test_id = ?`,
+          [s.id, mock9.id]
+        );
+        if (!exists) {
+          await db.run(
+            `INSERT INTO assignments (student_id, test_id, assigned_at, status) VALUES (?, ?, datetime('now'), 'assigned')`,
+            [s.id, mock9.id]
+          );
+        }
+      }
+      console.log(`Auto-assigned Mock Test 9 (id=${mock9.id}) to ${realStudents.length} students.`);
+    }
+  } catch (e) {
+    console.error('Auto-assign Mock Test 9 failed:', e.message);
+  }
+
   // Seeding finished
 }
 
