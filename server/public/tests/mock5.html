@@ -815,7 +815,7 @@
     document.querySelectorAll("#content input[type=checkbox][data-multi-group]").forEach(box => {
       box.addEventListener("change", (e) => {
         const group = e.target.dataset.multiGroup;
-        const qnums = group.split("-").map(Number);
+        const qnums = parseGroupQnums(group);
         let checked = [...document.querySelectorAll(`#content input[data-multi-group="${group}"]:checked`)];
         if (checked.length > qnums.length){ e.target.checked = false; checked = [...document.querySelectorAll(`#content input[data-multi-group="${group}"]:checked`)]; }
         const values = checked.map(el => el.value);

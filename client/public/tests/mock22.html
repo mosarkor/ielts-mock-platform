@@ -572,6 +572,7 @@
     return parts.filter(Number.isFinite);
   }
 
+  function parseGroupQnums(g){const p=String(g).split("-").map(Number);if(p.length===2&&!isNaN(p[0])&&!isNaN(p[1])&&p[1]>=p[0]){const a=[];for(let n=p[0];n<=p[1];n++)a.push(n);return a;}return p;}
   function multiSelectBlock(group, title, options, answersObj){
     const qnums = parseQuestionRange(group);
     const selected = new Set(qnums.map(q=>answersObj[q]).filter(Boolean));

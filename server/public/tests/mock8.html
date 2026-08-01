@@ -532,8 +532,9 @@
         return `<label><input type="radio" name="q${qnum}" value="${val}" ${selected===val?'checked':''}> ${val}) ${opt}</label>`;
       }).join("")}</div></div>`;
   }
+  function parseGroupQnums(g){const p=String(g).split("-").map(Number);if(p.length===2&&!isNaN(p[0])&&!isNaN(p[1])&&p[1]>=p[0]){const a=[];for(let n=p[0];n<=p[1];n++)a.push(n);return a;}return p;}
   function multiSelectBlock(group, title, options, answersObj){
-    const qnums = group.split("-").map(Number);
+    const qnums = parseGroupQnums(group);
     const selected = new Set(qnums.map(q=>answersObj[q]).filter(Boolean));
     return `<div class="mc-question"><div style="font-weight:600;margin:7px 0 8px;">${title}</div>
       <div class="mc-opts">${options.map((opt,i)=>{
@@ -707,7 +708,7 @@
     document.querySelectorAll("#content input[type=radio]").forEach(r=>r.addEventListener("change",e=>{state.lAnswers[e.target.name.replace("q","")]=e.target.value;renderBottomBarListening();}));
     document.querySelectorAll("#content input[type=checkbox][data-multi-group]").forEach(box=>{
       box.addEventListener("change",e=>{
-        const group=e.target.dataset.multiGroup, qnums=group.split("-").map(Number);
+        const group=e.target.dataset.multiGroup, qnums=parseGroupQnums(group);
         let checked=[...document.querySelectorAll(`#content input[data-multi-group="${group}"]:checked`)];
         if(checked.length>qnums.length){e.target.checked=false;checked=[...document.querySelectorAll(`#content input[data-multi-group="${group}"]:checked`)];}
         const values=checked.map(el=>el.value);qnums.forEach((q,i)=>{if(values[i])state.lAnswers[q]=values[i];else delete state.lAnswers[q];});renderBottomBarListening();
@@ -825,7 +826,7 @@
     document.querySelectorAll("#right-pane select").forEach(sel=>sel.addEventListener("change",e=>{state.rAnswers[e.target.dataset.q]=e.target.value;renderBottomBarReading();}));
     document.querySelectorAll("#right-pane input[type=radio]").forEach(r=>r.addEventListener("change",e=>{state.rAnswers[e.target.name.replace("q","")]=e.target.value;renderBottomBarReading();}));
     document.querySelectorAll("#right-pane input[type=checkbox][data-multi-group]").forEach(box=>{
-      box.addEventListener("change",e=>{const group=e.target.dataset.multiGroup,qnums=group.split("-").map(Number);let checked=[...document.querySelectorAll(`#right-pane input[data-multi-group="${group}"]:checked`)];if(checked.length>qnums.length){e.target.checked=false;checked=[...document.querySelectorAll(`#right-pane input[data-multi-group="${group}"]:checked`)];}const values=checked.map(el=>el.value);qnums.forEach((q,i)=>{if(values[i])state.rAnswers[q]=values[i];else delete state.rAnswers[q];});renderBottomBarReading();});
+      box.addEventListener("change",e=>{const group=e.target.dataset.multiGroup,qnums=parseGroupQnums(group);let checked=[...document.querySelectorAll(`#right-pane input[data-multi-group="${group}"]:checked`)];if(checked.length>qnums.length){e.target.checked=false;checked=[...document.querySelectorAll(`#right-pane input[data-multi-group="${group}"]:checked`)];}const values=checked.map(el=>el.value);qnums.forEach((q,i)=>{if(values[i])state.rAnswers[q]=values[i];else delete state.rAnswers[q];});renderBottomBarReading();});
     });
     $("right-pane").addEventListener("mouseup",handleTextSelection);$("left-pane").addEventListener("mouseup",handleTextSelection);
   }
