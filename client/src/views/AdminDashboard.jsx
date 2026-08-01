@@ -722,8 +722,60 @@ export default function AdminDashboard({ user, onLogout, theme, toggleTheme }) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
                         <label className="form-label" style={{ margin: 0 }}>Select Candidates (Bulk Select)</label>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                          Selected: {selectedStudentIds.length}
+                          Selected: {selectedStudentIds.length} / {students.length}
                         </span>
+                      </div>
+
+                      {/* Quick Group & Select All Buttons */}
+                      <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', backgroundColor: '#6366f1', color: '#fff', borderColor: '#6366f1' }}
+                          onClick={() => setSelectedStudentIds(students.map(s => s.id))}
+                        >
+                          Select ALL ({students.length})
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem' }}
+                          onClick={() => setSelectedStudentIds(students.filter(s => s.id.startsWith('G1')).map(s => s.id))}
+                        >
+                          Group 1
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem' }}
+                          onClick={() => setSelectedStudentIds(students.filter(s => s.id.startsWith('G2')).map(s => s.id))}
+                        >
+                          Group 2
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem' }}
+                          onClick={() => setSelectedStudentIds(students.filter(s => s.id.startsWith('G3')).map(s => s.id))}
+                        >
+                          Group 3
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem' }}
+                          onClick={() => setSelectedStudentIds(students.filter(s => s.id.startsWith('G4')).map(s => s.id))}
+                        >
+                          Group 4
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', backgroundColor: '#f43f5e', color: '#fff', borderColor: '#f43f5e' }}
+                          onClick={() => setSelectedStudentIds([])}
+                        >
+                          Clear
+                        </button>
                       </div>
 
                       {/* Instant Search Bar for Assign Box */}
