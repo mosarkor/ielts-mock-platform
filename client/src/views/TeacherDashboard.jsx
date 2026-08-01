@@ -150,16 +150,56 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
       if (!res.ok) throw new Error('Answer key not found');
       const html = await res.text();
       
-      const answersMatch = html.match(/const\s+ANSWERS\s*=\s*({[^;]+});/);
-      const displayAnswersMatch = html.match(/const\s+DISPLAY_ANSWERS\s*=\s*({[^;]+});/);
-      
+      let answersObj = {};
+      let displayObj = {};
+
+      const answersMatch = html.match(/const\s+ANSWERS\s*=\s*({[\s\S]*?});/);
+      const displayAnswersMatch = html.match(/const\s+DISPLAY_ANSWERS\s*=\s*({[\s\S]*?});/);
+
       if (answersMatch) {
-        const answersObj = JSON.parse(answersMatch[1]);
-        const displayObj = displayAnswersMatch ? JSON.parse(displayAnswersMatch[1]) : {};
+        answersObj = JSON.parse(answersMatch[1]);
+        displayObj = displayAnswersMatch ? JSON.parse(displayAnswersMatch[1]) : {};
+      } else {
+        const lMatch = html.match(/const\s+listeningAnswerKey\s*=\s*({[\s\S]*?});/);
+        const rMatch = html.match(/const\s+readingAnswerKey\s*=\s*({[\s\S]*?});/);
+
+        if (lMatch) {
+          try {
+            const lKey = JSON.parse(lMatch[1]);
+            for (let q = 1; q <= 40; q++) {
+              const val = lKey[q] || lKey[String(q)];
+              if (val !== undefined) {
+                const arr = Array.isArray(val) ? val : [String(val)];
+                answersObj['l' + q] = arr;
+                displayObj['l' + q] = Array.isArray(val) ? val.join(' / ') : String(val);
+              }
+            }
+          } catch(e) { console.warn('Failed to parse listeningAnswerKey:', e); }
+        }
+
+        if (rMatch) {
+          try {
+            const rKey = JSON.parse(rMatch[1]);
+            for (let q = 1; q <= 40; q++) {
+              const val = rKey[q] || rKey[String(q)];
+              if (val !== undefined) {
+                const arr = Array.isArray(val) ? val : [String(val)];
+                answersObj['r' + q] = arr;
+                displayObj['r' + q] = Array.isArray(val) ? val.join(' / ') : String(val);
+              }
+            }
+          } catch(e) { console.warn('Failed to parse readingAnswerKey:', e); }
+        }
+      }
+
+      if (Object.keys(answersObj).length > 0) {
         setAnswerKey({ answers: answersObj, display: displayObj });
+      } else {
+        setAnswerKey(null);
       }
     } catch (err) {
       console.error('Failed to load answer key:', err);
+      setAnswerKey(null);
     } finally {
       setLoadingKey(false);
     }
