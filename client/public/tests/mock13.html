@@ -686,7 +686,7 @@
     hide($("screen-id")); show($("screen-test")); renderPart(1); state.testActive = true; enterFullscreen(); startTimer();
   });
   $("id-input").addEventListener("keydown", e => { if (e.key==="Enter") $("id-submit").click(); });
-  function enterFullscreen(){ const el = document.documentElement; const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen; if (req) { try { req.call(el); } catch(e){} } }
+  function enterFullscreen(){ const el = document.documentElement; const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen; if (req) { try { const p = req.call(el); if (p && typeof p.catch === "function") p.catch(()=>{}); } catch(e){} } }
 
   function startTimer(){ clearInterval(state.timerInterval); updateTimerDisplay(); state.timerInterval = setInterval(() => { state.timeLeft--; updateTimerDisplay(); if (state.timeLeft <= 0){ clearInterval(state.timerInterval); checkAnswersAndShowResults(); } }, 1000); }
   function updateTimerDisplay(){ const m = Math.floor(state.timeLeft/60); const s = state.timeLeft%60; const txt = String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0"); $("timer-display").textContent = txt; $("timer-display").classList.toggle("low", state.timeLeft <= 300); }

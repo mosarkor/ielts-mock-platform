@@ -1051,7 +1051,7 @@
   function enterFullscreen(){
     const el = document.documentElement;
     const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
-    if (req) { try { req.call(el); } catch(e){} }
+    if (req) { try { const p = req.call(el); if (p && typeof p.catch === "function") p.catch(()=>{}); } catch(e){} }
   }
 
   // ================= STAGE STARTERS =================
