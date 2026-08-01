@@ -37,65 +37,39 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   const timerIntervalRef = useRef(null);
   const iframeRef = useRef(null);
 
-  // Anti-Cheat System (Fullscreen & Tab Swaps)
+  // Anti-Cheat System (Disabled strict kickout to prevent false-positive auto-submissions)
   useEffect(() => {
     if (!isExamStarted || examTerminated) return;
 
-    // Sync violations to sessionStorage so the iframe can read it
+    // Sync violations to sessionStorage for telemetry if needed
     sessionStorage.setItem('violations_' + testId, violations.toString());
 
+    // Auto-termination disabled so students are NEVER kicked out mid-test
+    /*
     if (violations >= 3) {
       setExamTerminated(true);
       setIsLockoutActive(false);
-      
-      // Force submit answers
-      if (test && test.listening_data && test.listening_data.isIframe) {
-        if (iframeRef.current && iframeRef.current.contentWindow) {
-          iframeRef.current.contentWindow.postMessage({ type: 'FORCE_SUBMIT' }, '*');
-        }
-      } else {
-        submitTestAnswers();
-      }
-
-      alert('Exam terminated due to multiple cheating violations. Your test is being auto-submitted.');
-      setTimeout(() => {
-        onFinished();
-      }, 5000);
-      return;
+      ...
     }
+    */
 
     const handleVisibilityChange = () => {
+      // Soft tab tracking without auto-submitting or locking out
       if (document.hidden) {
         setViolations(prev => {
           const next = prev + 1;
           sessionStorage.setItem('violations_' + testId, next.toString());
           return next;
         });
-        setLockoutReason('Tab switch or browser window minimization detected.');
-        setIsLockoutActive(true);
-      }
-    };
-
-    const handleFullscreenChange = () => {
-      if (!document.fullscreenElement && !examTerminated) {
-        setViolations(prev => {
-          const next = prev + 1;
-          sessionStorage.setItem('violations_' + testId, next.toString());
-          return next;
-        });
-        setLockoutReason('Fullscreen mode was exited.');
-        setIsLockoutActive(true);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
-  }, [isExamStarted, violations, examTerminated, testId, onFinished]);
+  }, [isExamStarted, violations, examTerminated, testId]);
 
   const startExamAndEnterFullscreen = () => {
     setIsExamStarted(true);

@@ -722,14 +722,9 @@
 
   // ---------------- AUTO-SUBMIT ON LEAVING WINDOW ----------------
   let autoSubmitted = false;
-  function autoSubmitIfActive(){
-    if (state.testActive && !autoSubmitted){
-      autoSubmitted = true; state.testActive = false;
-      checkAnswersAndShowResults();
-    }
-  }
-  window.addEventListener("blur", autoSubmitIfActive);
-  document.addEventListener("visibilitychange", () => { if (document.hidden) autoSubmitIfActive(); });
+  function autoSubmitIfActive(){ return; }
+  // blur auto-submit disabled
+  // visibility auto-submit disabled
 
   // ---------------- HAMBURGER MENU ----------------
   $("hamburger-btn").addEventListener("click", () => { $("menu-overlay").classList.add("open"); showMenuRoot(); });
@@ -1531,14 +1526,9 @@
 
   // ---------------- AUTO-SUBMIT ON LEAVING WINDOW ----------------
   let autoSubmitted = false;
-  function autoSubmitIfActive(){
-    if (state.testActive && !autoSubmitted){
-      autoSubmitted = true; state.testActive = false;
-      checkAnswersAndShowResults();
-    }
-  }
-  window.addEventListener("blur", autoSubmitIfActive);
-  document.addEventListener("visibilitychange", () => { if (document.hidden) autoSubmitIfActive(); });
+  function autoSubmitIfActive(){ return; }
+  // blur auto-submit disabled
+  // visibility auto-submit disabled
 
   // ---------------- HAMBURGER MENU ----------------
   $("hamburger-btn").addEventListener("click", () => { $("menu-overlay").classList.add("open"); showMenuRoot(); });

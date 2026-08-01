@@ -1331,7 +1331,7 @@
   // ================= STAGE STARTERS =================
   function startListeningStage(){
     state.stage = "listening";
-    state.blurAutoSubmitEnabled = true;
+    state.blurAutoSubmitEnabled = false;
     state.autoHandled = false;
     refreshTopbarForStage();
     renderListeningStage(1);
@@ -1347,7 +1347,7 @@
   }
   function startWritingStage(){
     state.stage = "writing";
-    state.blurAutoSubmitEnabled = true;
+    state.blurAutoSubmitEnabled = false;
     state.autoHandled = false;
     refreshTopbarForStage();
     renderWritingStage(1);
@@ -1521,14 +1521,9 @@
         
 
   // ================= AUTO-SUBMIT ON LEAVING WINDOW (Listening & Writing only) =================
-  function autoSubmitIfActive(){
-    if (state.blurAutoSubmitEnabled && !state.autoHandled && !$("screen-test").classList.contains("hidden")){
-      state.autoHandled = true;
-      handleSubmitClick();
-    }
-  }
-  window.addEventListener("blur", autoSubmitIfActive);
-  document.addEventListener("visibilitychange", () => { if (document.hidden) autoSubmitIfActive(); });
+  function autoSubmitIfActive(){ return; }
+  // blur auto-submit disabled
+  // visibility auto-submit disabled
 
   // ================= HAMBURGER MENU =================
   $("hamburger-btn").addEventListener("click", () => { $("menu-overlay").classList.add("open"); showMenuRoot(); });
