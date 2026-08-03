@@ -3,7 +3,7 @@ const fmtScore = (v) => (v === null || v === undefined || isNaN(Number(v))) ? '�
 import React, { useState, useEffect } from 'react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 
-export default function TeacherDashboard({ user, onLogout, theme, toggleTheme }) {
+export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, toggleTheme }) {
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -682,6 +682,16 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
             <span style={styles.userName}>{user.name}</span>
             <span style={styles.userId}>Assessor Profile</span>
           </div>
+                    {onSwitchRole && (
+            <button 
+              onClick={onSwitchRole}
+              className="btn btn-secondary"
+              style={{ marginRight: '0.75rem', fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
+              title="Switch to Admin Dashboard"
+            >
+              🛡️ Admin View
+            </button>
+          )}
           <button 
             onClick={() => setShowPwdModal(true)} 
             className="theme-toggle-btn"

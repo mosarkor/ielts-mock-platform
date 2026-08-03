@@ -69,8 +69,21 @@ export default function App() {
     removeStorage('testingTestId');
   };
 
+  const [activeRole, setActiveRole] = useState(null);
+
+  React.useEffect(() => {
+    if (user?.role && !activeRole) {
+      setActiveRole(user.role);
+    }
+  }, [user]);
+
+  const handleSwitchRole = (newRole) => {
+    setActiveRole(newRole);
+  };
+
   const handleLogout = () => {
     setUser(null);
+    setActiveRole(null);
     removeStorage('user');
     setTestingTestId(null);
     removeStorage('testingTestId');
@@ -130,12 +143,28 @@ export default function App() {
     );
   }
 
-  if (user.role === 'teacher') {
-    return <TeacherDashboard user={user} onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} />;
-  }
-
-  if (user.role === 'admin') {
-    return <AdminDashboard user={user} onLogout={handleLogout} theme={theme} toggleTheme={toggleTheme} />;
+  if (user.role === 'teacher' || user.role === 'admin') {
+    const currentViewRole = activeRole || user.role;
+    if (currentViewRole === 'admin') {
+      return (
+        <AdminDashboard 
+          user={user} 
+          onLogout={handleLogout} 
+          onSwitchRole={() => handleSwitchRole('teacher')}
+          theme={theme} 
+          toggleTheme={toggleTheme} 
+        />
+      );
+    }
+    return (
+      <TeacherDashboard 
+        user={user} 
+        onLogout={handleLogout} 
+        onSwitchRole={() => handleSwitchRole('admin')}
+        theme={theme} 
+        toggleTheme={toggleTheme} 
+      />
+    );
   }
 
   return (
