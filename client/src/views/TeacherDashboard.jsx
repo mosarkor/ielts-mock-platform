@@ -16,7 +16,9 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   const [loadingKey, setLoadingKey] = useState(false);
 
   // Rubric scores state
-  const [rubric, setRubric] = useState({ ta: 6.0, cc: 6.0, lr: 6.0, gra: 6.0 });
+  const [rubricTask1, setRubricTask1] = useState({ ta: 6.0, cc: 6.0, lr: 6.0, gra: 6.0 });
+  const [rubricTask2, setRubricTask2] = useState({ tr: 6.0, cc: 6.0, lr: 6.0, gra: 6.0 });
+  const [activeTaskTab, setActiveTaskTab] = useState('task1');
   const [feedbackText, setFeedbackText] = useState('');
   const [releaseImmediately, setReleaseImmediately] = useState(true);
 
@@ -317,7 +319,12 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          writingScores: rubric,
+          writingScores: {
+            task1: rubricTask1,
+            task2: rubricTask2,
+            task1Band: calculateTask1Band(),
+            task2Band: calculateTask2Band()
+          },
           teacherFeedback: feedbackText,
           gradedBy: user.id
         })
@@ -806,73 +813,198 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
 
                 {/* Right Grading Panel */}
                 <form onSubmit={handleSaveGrade} className="card" style={styles.gradingPanel}>
-                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem' }}>
-                    IELTS Writing Rubric Assessment
-                  </h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.75rem' }}>
+                    <h4 style={{ color: 'var(--text-primary)', margin: 0 }}>
+                      IELTS Writing Rubric Assessment
+                    </h4>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                      Task 1 (33%) + Task 2 (67%)
+                    </span>
+                  </div>
 
-                  <div style={styles.rubricGrid}>
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
-                      <label className="form-label">Task Achievement / Response (TR)</label>
-                      <select 
-                        className="form-input"
-                        value={rubric.ta} 
-                        onChange={(e) => handleRubricChange('ta', e.target.value)}
-                      >
-                        {bandOptions.map(val => (
-                          <option key={val} value={val}>Band {val.toFixed(1)}</option>
-                        ))}
-                      </select>
-                      <p style={styles.descriptorHint}>
-                        💡 {descriptors.ta[(rubric.ta || 6.0).toString()] || "No descriptor found."}
-                      </p>
+                  {/* Task 1 / Task 2 Tab Toggle */}
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.25rem', borderRadius: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTaskTab('task1')}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem 0.75rem',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontWeight: '600',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        backgroundColor: activeTaskTab === 'task1' ? '#2563eb' : 'transparent',
+                        color: activeTaskTab === 'task1' ? '#ffffff' : '#94a3b8',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      📝 Task 1 (Band {calculateTask1Band().toFixed(1)})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTaskTab('task2')}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem 0.75rem',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontWeight: '600',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        backgroundColor: activeTaskTab === 'task2' ? '#2563eb' : 'transparent',
+                        color: activeTaskTab === 'task2' ? '#ffffff' : '#94a3b8',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      ✍️ Task 2 (Band {calculateTask2Band().toFixed(1)})
+                    </button>
+                  </div>
+
+                  {activeTaskTab === 'task1' ? (
+                    /* TASK 1 RUBRIC (TA, CC, LR, GRA) */
+                    <div style={styles.rubricGrid}>
+                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label className="form-label">Task Achievement (TA) — Task 1</label>
+                        <select 
+                          className="form-input"
+                          value={rubricTask1.ta} 
+                          onChange={(e) => handleTask1Change('ta', e.target.value)}
+                        >
+                          {bandOptions.map(val => (
+                            <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                          ))}
+                        </select>
+                        <p style={styles.descriptorHint}>
+                          💡 {descriptors.ta[(rubricTask1.ta || 6.0).toString()] || "No descriptor found."}
+                        </p>
+                      </div>
+
+                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label className="form-label">Coherence & Cohesion (CC)</label>
+                        <select 
+                          className="form-input"
+                          value={rubricTask1.cc} 
+                          onChange={(e) => handleTask1Change('cc', e.target.value)}
+                        >
+                          {bandOptions.map(val => (
+                            <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                          ))}
+                        </select>
+                        <p style={styles.descriptorHint}>
+                          💡 {descriptors.cc[(rubricTask1.cc || 6.0).toString()] || "No descriptor found."}
+                        </p>
+                      </div>
+
+                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label className="form-label">Lexical Resource (LR)</label>
+                        <select 
+                          className="form-input"
+                          value={rubricTask1.lr} 
+                          onChange={(e) => handleTask1Change('lr', e.target.value)}
+                        >
+                          {bandOptions.map(val => (
+                            <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                          ))}
+                        </select>
+                        <p style={styles.descriptorHint}>
+                          💡 {descriptors.lr[(rubricTask1.lr || 6.0).toString()] || "No descriptor found."}
+                        </p>
+                      </div>
+
+                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label className="form-label">Grammatical Range & Accuracy (GRA)</label>
+                        <select 
+                          className="form-input"
+                          value={rubricTask1.gra} 
+                          onChange={(e) => handleTask1Change('gra', e.target.value)}
+                        >
+                          {bandOptions.map(val => (
+                            <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                          ))}
+                        </select>
+                        <p style={styles.descriptorHint}>
+                          💡 {descriptors.gra[(rubricTask1.gra || 6.0).toString()] || "No descriptor found."}
+                        </p>
+                      </div>
                     </div>
+                  ) : (
+                    /* TASK 2 RUBRIC (TR, CC, LR, GRA) */
+                    <div style={styles.rubricGrid}>
+                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label className="form-label">Task Response (TR) — Task 2</label>
+                        <select 
+                          className="form-input"
+                          value={rubricTask2.tr} 
+                          onChange={(e) => handleTask2Change('tr', e.target.value)}
+                        >
+                          {bandOptions.map(val => (
+                            <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                          ))}
+                        </select>
+                        <p style={styles.descriptorHint}>
+                          💡 {descriptors.ta[(rubricTask2.tr || 6.0).toString()] || "No descriptor found."}
+                        </p>
+                      </div>
 
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
-                      <label className="form-label">Coherence & Cohesion (CC)</label>
-                      <select 
-                        className="form-input"
-                        value={rubric.cc} 
-                        onChange={(e) => handleRubricChange('cc', e.target.value)}
-                      >
-                        {bandOptions.map(val => (
-                          <option key={val} value={val}>Band {val.toFixed(1)}</option>
-                        ))}
-                      </select>
-                      <p style={styles.descriptorHint}>
-                        💡 {descriptors.cc[(rubric.cc || 6.0).toString()] || "No descriptor found."}
-                      </p>
+                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label className="form-label">Coherence & Cohesion (CC)</label>
+                        <select 
+                          className="form-input"
+                          value={rubricTask2.cc} 
+                          onChange={(e) => handleTask2Change('cc', e.target.value)}
+                        >
+                          {bandOptions.map(val => (
+                            <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                          ))}
+                        </select>
+                        <p style={styles.descriptorHint}>
+                          💡 {descriptors.cc[(rubricTask2.cc || 6.0).toString()] || "No descriptor found."}
+                        </p>
+                      </div>
+
+                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label className="form-label">Lexical Resource (LR)</label>
+                        <select 
+                          className="form-input"
+                          value={rubricTask2.lr} 
+                          onChange={(e) => handleTask2Change('lr', e.target.value)}
+                        >
+                          {bandOptions.map(val => (
+                            <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                          ))}
+                        </select>
+                        <p style={styles.descriptorHint}>
+                          💡 {descriptors.lr[(rubricTask2.lr || 6.0).toString()] || "No descriptor found."}
+                        </p>
+                      </div>
+
+                      <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
+                        <label className="form-label">Grammatical Range & Accuracy (GRA)</label>
+                        <select 
+                          className="form-input"
+                          value={rubricTask2.gra} 
+                          onChange={(e) => handleTask2Change('gra', e.target.value)}
+                        >
+                          {bandOptions.map(val => (
+                            <option key={val} value={val}>Band {val.toFixed(1)}</option>
+                          ))}
+                        </select>
+                        <p style={styles.descriptorHint}>
+                          💡 {descriptors.gra[(rubricTask2.gra || 6.0).toString()] || "No descriptor found."}
+                        </p>
+                      </div>
                     </div>
+                  )}
 
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
-                      <label className="form-label">Lexical Resource (LR)</label>
-                      <select 
-                        className="form-input"
-                        value={rubric.lr} 
-                        onChange={(e) => handleRubricChange('lr', e.target.value)}
-                      >
-                        {bandOptions.map(val => (
-                          <option key={val} value={val}>Band {val.toFixed(1)}</option>
-                        ))}
-                      </select>
-                      <p style={styles.descriptorHint}>
-                        💡 {descriptors.lr[(rubric.lr || 6.0).toString()] || "No descriptor found."}
-                      </p>
+                  {/* Summary Bar */}
+                  <div style={{ backgroundColor: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: '6px', padding: '0.75rem 1rem', marginTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      📝 Task 1: <strong>Band {calculateTask1Band().toFixed(1)}</strong> (33%) | ✍️ Task 2: <strong>Band {calculateTask2Band().toFixed(1)}</strong> (67%)
                     </div>
-
-                    <div className="form-group" style={{ display: 'flex', flexDirection: 'column' }}>
-                      <label className="form-label">Grammatical Range & Accuracy (GRA)</label>
-                      <select 
-                        className="form-input"
-                        value={rubric.gra} 
-                        onChange={(e) => handleRubricChange('gra', e.target.value)}
-                      >
-                        {bandOptions.map(val => (
-                          <option key={val} value={val}>Band {val.toFixed(1)}</option>
-                        ))}
-                      </select>
-                      <p style={styles.descriptorHint}>
-                        💡 {descriptors.gra[(rubric.gra || 6.0).toString()] || "No descriptor found."}
-                      </p>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#2563eb' }}>
+                      Overall Writing: Band {calculateLiveOverall().toFixed(1)}
                     </div>
                   </div>
 

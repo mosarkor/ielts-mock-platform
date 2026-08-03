@@ -375,16 +375,32 @@ app.get('/api/teacher/submissions', async (req, res) => {
 app.post('/api/teacher/grade/:submissionId', async (req, res) => {
   const { submissionId } = req.params;
   const { writingScores, teacherFeedback, gradedBy } = req.body;
-  // writingScores is an object: { ta: number, cc: number, lr: number, gra: number }
 
-  const calculateOverallWritingBand = (scores) => {
-    const avg = (scores.ta + scores.cc + scores.lr + scores.gra) / 4;
-    // IELTS rounds to the nearest 0.5.
-    // e.g. 6.25 -> 6.5, 6.125 -> 6.0, 6.75 -> 7.0
+  const roundIelts = (avg) => {
     const decimal = avg - Math.floor(avg);
     if (decimal < 0.25) return Math.floor(avg);
     if (decimal < 0.75) return Math.floor(avg) + 0.5;
     return Math.ceil(avg);
+  };
+
+  const calculateOverallWritingBand = (scores) => {
+    if (!scores) return 6.0;
+    // Support dual task scoring: { task1: { ta, cc, lr, gra }, task2: { tr, cc, lr, gra } }
+    if (scores.task1 && scores.task2) {
+      const t1Vals = Object.values(scores.task1).map(Number);
+      const t2Vals = Object.values(scores.task2).map(Number);
+      const t1Avg = t1Vals.reduce((a, b) => a + b, 0) / (t1Vals.length || 4);
+      const t2Avg = t2Vals.reduce((a, b) => a + b, 0) / (t2Vals.length || 4);
+      const t1Band = roundIelts(t1Avg);
+      const t2Band = roundIelts(t2Avg);
+      // Official IELTS weighting: Task 1 is 1/3, Task 2 is 2/3
+      const weightedAvg = (t1Band * 1 + t2Band * 2) / 3;
+      return roundIelts(weightedAvg);
+    }
+    // Fallback for single rubric { ta, cc, lr, gra }
+    const vals = [scores.ta, scores.cc, scores.lr, scores.gra].map(Number).filter(v => !isNaN(v));
+    const avg = vals.reduce((a, b) => a + b, 0) / (vals.length || 4);
+    return roundIelts(avg);
   };
 
   try {
