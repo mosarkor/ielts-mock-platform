@@ -1,0 +1,618 @@
+{
+  "id": 2,
+  "title": "IELTS Academic Mock Test 2",
+  "listening_data": {
+    "isIframe": false,
+    "audioUrl": "https://files.catbox.moe/v74cap.mp3",
+    "sections": [
+      {
+        "title": "Listening Part 1: Social Context",
+        "instructions": "Listen carefully and answer questions 1 to 10. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 1,
+            "label": "Question 1",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q1",
+            "text": "Question 1",
+            "options": [],
+            "answer": "x"
+          },
+          {
+            "id": 2,
+            "label": "Question 2",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q2",
+            "text": "Question 2",
+            "options": [],
+            "answer": "ix"
+          },
+          {
+            "id": 3,
+            "label": "Question 3",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q3",
+            "text": "Question 3",
+            "options": [],
+            "answer": "vi"
+          },
+          {
+            "id": 4,
+            "label": "Question 4",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q4",
+            "text": "Question 4",
+            "options": [],
+            "answer": "v"
+          },
+          {
+            "id": 5,
+            "label": "Question 5",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q5",
+            "text": "Question 5",
+            "options": [],
+            "answer": "iii"
+          },
+          {
+            "id": 6,
+            "label": "Question 6",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q6",
+            "text": "Question 6",
+            "options": [],
+            "answer": "i"
+          },
+          {
+            "id": 7,
+            "label": "Question 7",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q7",
+            "text": "Question 7",
+            "options": [],
+            "answer": "A"
+          },
+          {
+            "id": 8,
+            "label": "Question 8",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q8",
+            "text": "Question 8",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 9,
+            "label": "Question 9",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q9",
+            "text": "Question 9",
+            "options": [],
+            "answer": "E"
+          },
+          {
+            "id": 10,
+            "label": "Question 10",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q10",
+            "text": "Question 10",
+            "options": [],
+            "answer": "D"
+          }
+        ]
+      },
+      {
+        "title": "Listening Part 2: Monologue / Guide",
+        "instructions": "Listen carefully and answer questions 11 to 20. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 11,
+            "label": "Question 11",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q11",
+            "text": "Select the correct option for question 11:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "C"
+          },
+          {
+            "id": 12,
+            "label": "Question 12",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q12",
+            "text": "Select the correct option for question 12:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "Energetic, energetics, energy"
+          },
+          {
+            "id": 13,
+            "label": "Question 13",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q13",
+            "text": "Select the correct option for question 13:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "Force sensors, force sensor"
+          },
+          {
+            "id": 14,
+            "label": "Question 14",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q14",
+            "text": "Select the correct option for question 14:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "D"
+          },
+          {
+            "id": 15,
+            "label": "Question 15",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q15",
+            "text": "Question 15",
+            "options": [],
+            "answer": "G"
+          },
+          {
+            "id": 16,
+            "label": "Question 16",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q16",
+            "text": "Question 16",
+            "options": [],
+            "answer": "E"
+          },
+          {
+            "id": 17,
+            "label": "Question 17",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q17",
+            "text": "Question 17",
+            "options": [],
+            "answer": "A"
+          },
+          {
+            "id": 18,
+            "label": "Question 18",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q18",
+            "text": "Question 18",
+            "options": [],
+            "answer": "E"
+          },
+          {
+            "id": 19,
+            "label": "Question 19",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q19",
+            "text": "Question 19",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 20,
+            "label": "Question 20",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q20",
+            "text": "Question 20",
+            "options": [],
+            "answer": "F"
+          }
+        ]
+      },
+      {
+        "title": "Listening Part 3: Academic Discussion",
+        "instructions": "Listen carefully and answer questions 21 to 30. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 21,
+            "label": "Question 21",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q21",
+            "text": "Select the correct option for question 21:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 22,
+            "label": "Question 22",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q22",
+            "text": "Select the correct option for question 22:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 23,
+            "label": "Question 23",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q23",
+            "text": "Select the correct option for question 23:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "TRUE"
+          },
+          {
+            "id": 24,
+            "label": "Question 24",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q24",
+            "text": "Select the correct option for question 24:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "FALSE"
+          },
+          {
+            "id": 25,
+            "label": "Question 25",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q25",
+            "text": "Select the correct option for question 25:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "FALSE"
+          },
+          {
+            "id": 26,
+            "label": "Question 26",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q26",
+            "text": "Question 26",
+            "options": [],
+            "answer": "TRUE"
+          },
+          {
+            "id": 27,
+            "label": "Question 27",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q27",
+            "text": "Question 27",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 28,
+            "label": "Question 28",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q28",
+            "text": "Question 28",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 29,
+            "label": "Question 29",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q29",
+            "text": "Question 29",
+            "options": [],
+            "answer": "H"
+          },
+          {
+            "id": 30,
+            "label": "Question 30",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q30",
+            "text": "Question 30",
+            "options": [],
+            "answer": "G"
+          }
+        ]
+      },
+      {
+        "title": "Listening Part 4: Academic Lecture",
+        "instructions": "Listen carefully and answer questions 31 to 40. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 31,
+            "label": "Question 31",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q31",
+            "text": "Question 31",
+            "options": [],
+            "answer": "E"
+          },
+          {
+            "id": 32,
+            "label": "Question 32",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q32",
+            "text": "Question 32",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 33,
+            "label": "Question 33",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q33",
+            "text": "Question 33",
+            "options": [],
+            "answer": "A"
+          },
+          {
+            "id": 34,
+            "label": "Question 34",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q34",
+            "text": "Question 34",
+            "options": [],
+            "answer": "bee-keeping, bee keeping, beekeeping"
+          },
+          {
+            "id": 35,
+            "label": "Question 35",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q35",
+            "text": "Question 35",
+            "options": [],
+            "answer": "life cycles"
+          },
+          {
+            "id": 36,
+            "label": "Question 36",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q36",
+            "text": "Question 36",
+            "options": [],
+            "answer": "droughts, drought"
+          },
+          {
+            "id": 37,
+            "label": "Question 37",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q37",
+            "text": "Question 37",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 38,
+            "label": "Question 38",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q38",
+            "text": "Question 38",
+            "options": [],
+            "answer": "A"
+          },
+          {
+            "id": 39,
+            "label": "Question 39",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q39",
+            "text": "Question 39",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 40,
+            "label": "Question 40",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q40",
+            "text": "Question 40",
+            "options": [],
+            "answer": "D"
+          }
+        ]
+      }
+    ]
+  },
+  "reading_data": {
+    "passages": [
+      {
+        "title": "Insects and Inspired Artificial Robots",
+        "text": "\r\n<h2>Insects and Inspired Artificial Robots</h2>\r\n<p><b>A</b><br>The creation of artificial devices with life-like characteristics has been pursued for over 2,000 years, beginning, as did so many things in our modern world, in Ancient Greece. For example, among the inventions of Hero of Alexandria were a windmill-operated pipe organ and a mechanical theatrical play.</p>\r\n<p><b>B</b><br>With the raise of cybernetic approaches in the late 1940s and early 1950s. A wide variety of electromechanical machines designed to mimic biological processes and systems were constructed. Perhaps the best-known and most directly relevant to biorobotics is W. Gray Walters’ robotic “tortoises” Elsie and Elmer. Walters was a physiologist who made important early contributions to electroencephalography and clinical neurophysiology. His tortoises were small mobile robots covered by a hard shell. The robots were driven by steerable motorized wheels and possessed a headlight, a light sensor, and a touch sensor that responded when the shell was hit. Their behavior was controlled by electronic circuit analogues of neural circuits. The behavioral repertoire of the tortoises included exploration, both positive and negative phototropism, and obstacle avoidance. The activation of these different behaviors in interaction with the robots’ environment could produce a variety of behavioral sequences. Although originally designed to explore Walters’ theories of brain function, the tortoises became objects of popular fascination in much the same way that ancient automata did.</p>\r\n<p><b>C</b><br>The seeds of the modern renaissance of biorobotics were sown from the mid 1980s to mid 1990s. A key event in this resurgence was Rodney Brooks’ work on behavior-based robots. Although not as directly based on biology as later work would be, Brooks argues that nontrivial and flexible behavior in a robot could be generated by the interaction between simple control machinery and its environment, demonstrating his point with robots accomplishing such tasks as insect-like walking. Another important milestone was Raibert’s work on hopping and legged robots, which emphasized the central role of energetics in the dynamic balance and locomotion of animals. Based on studies of serpentine motion, Hirose developed a number of snake-like locomotors and manipulators. In the early 1990s, Beer, Quinn, Chiel &amp; Ritzmann developed a series of hexapod robots based directly on cockroach and stick insect body morphology and neural control. Early biorobotic work on the sensory side includes Franceshini’s robotic compound eye based on studies of insect eyes and motion-sensitive neurons in the fly, Webb’s robotic model of cricket phonotaxis and Grasso et al’s robotic model of lobster chemical orientation strategies. An early example of robots whose control was based on theories of human brain function is given by the work of Edelman et al.</p>\r\n<p><b>D</b><br>There has been an explosion of work in biorobotics in recent years, with robotic vocal tracts, jaws, retinas, expressive faces, hands, arms, legs, etc. deployed on robotic worms, snakes, ants, flies, crickets, cockroaches, walking stick insects, dinosaurs, bats, lobsters, tuna, pickerel, turkeys, apes and humanoids. Thus, no brief survey could possibly do justice to the range of work being undertaken.</p>\r\n<p><b>E</b><br>A recent example of biologically-inspired robotics is Spenko et al’s work on a hexapedal robotic climber called RiSE. In order to grip a vertical surface, this robot combines both bonding mechanisms inspired by the structure of gecko feet and interlocking mechanisms inspired by the structure of insect spines and claws. In addition, its design is based on a set of principles that have been found to be common to many climbing animals: a sprawled posture keeps the body close to the surface so as to reduce the pitch-back moment; front limbs pull inward and rear limbs push outward so as to counteract the pitch-back moment; a long body reduces the pull-in force required of the front limbs; lateral forces act inward toward the central axis of the body; complaint legs, ankles and toes so as to distribute contact forces. Each of the six legs of RiSE have two degrees of freedom and the robot also possesses s static tail that presses against the surface to reduce the pull-in forces required of the front legs. The robot uses a wave gait in which only one leg at a time is lifted from the surface. In addition to an open-loop gait generator, RiSE utilizes a variety of feedback controllers, including traction force control, normal force control and gait regulation. In addition, the robot has a pawing behavior that allows a foot that fails to grasp on initial contact to reestablish a grip on the climbing surface. Spenko et al have demonstrated that RiSE is able to traverse a variety of horizontal and vertical surfaces, including climbing trees and brick or cinder block walls.</p>\r\n<p><b>F</b><br>A powerful example of biorobotic modeling is provided by the aerodynamics of insect flight. Although quasi-steady-state aerodynamical analyses of the sort used to understand aircraft have been successfully applied to larger animals, they have not been very successful for explaining the generation of lift in small flying insects due to the tiny wingspans, relatively slow flight speeds and extremely fast wing movements involved. However, a recent biorobotic model by Dickinson and colleagues has begun to shed considerable light on the unsteady aerodynamics insect flight. Because of the delicate size and high speed of insect wings, direct measurement of the forces involved is extremely difficult. For this reason, a robotic model with a 60 cm wingspan was used to explore the non-steady-state airflow during hovering by the fruit fly Drosophila melanogaster. In order to reproduce the Reynolds number relevant to small insects flying in air, their model was submerged in mineral oil and scaled both in space and time. Force sensors at the base of one wing allowed direct measurement of the forces produced and illumination of air bubbles in the tank allowed direct observation of the fluid flow around the robotic wings. Dickinson and colleagues found that three major mechanisms contributed to lift generation in the model. First, vortices formed at the leading edge of the wing produce lift during much of the power stroke. Second, additional lift is produced by circulation of air around the wings due to rapid rotation at the beginning and end of each stroke. Third, further forces are produces at the start of each upstroke and downstroke due to collisions of the wings with the swirling wake produced by the previous stroke, a mechanism termed wake capture. Due to the sensitivity of these latter two mechanisms to the timing of wing rotation, the model suggests that the control of small details of wing motion can be used in steering flight.</p>\r\n",
+        "questions": [
+          {
+            "id": 1,
+            "label": "Question 1",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q1",
+            "text": "Question 1 regarding Insects and Inspired Artificial Robots",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "x"
+          },
+          {
+            "id": 2,
+            "label": "Question 2",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q2",
+            "text": "Question 2 regarding Insects and Inspired Artificial Robots",
+            "options": [],
+            "answer": "ix"
+          },
+          {
+            "id": 3,
+            "label": "Question 3",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q3",
+            "text": "Question 3 regarding Insects and Inspired Artificial Robots",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "vi"
+          },
+          {
+            "id": 4,
+            "label": "Question 4",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q4",
+            "text": "Question 4 regarding Insects and Inspired Artificial Robots",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "v"
+          },
+          {
+            "id": 5,
+            "label": "Question 5",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q5",
+            "text": "Question 5 regarding Insects and Inspired Artificial Robots",
+            "options": [],
+            "answer": "iii"
+          },
+          {
+            "id": 6,
+            "label": "Question 6",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q6",
+            "text": "Question 6 regarding Insects and Inspired Artificial Robots",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "i"
+          },
+          {
+            "id": 7,
+            "label": "Question 7",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q7",
+            "text": "Question 7 regarding Insects and Inspired Artificial Robots",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "A"
+          },
+          {
+            "id": 8,
+            "label": "Question 8",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q8",
+            "text": "Question 8 regarding Insects and Inspired Artificial Robots",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 9,
+            "label": "Question 9",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q9",
+            "text": "Question 9 regarding Insects and Inspired Artificial Robots",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "E"
+          },
+          {
+            "id": 10,
+            "label": "Question 10",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q10",
+            "text": "Question 10 regarding Insects and Inspired Artificial Robots",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "D"
+          },
+          {
+            "id": 11,
+            "label": "Question 11",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q11",
+            "text": "Question 11 regarding Insects and Inspired Artificial Robots",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 12,
+            "label": "Question 12",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q12",
+            "text": "Question 12 regarding Insects and Inspired Artificial Robots",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "Energetic, energetics, energy"
+          },
+          {
+            "id": 13,
+            "label": "Question 13",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q13",
+            "text": "Question 13 regarding Insects and Inspired Artificial Robots",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "Force sensors, force sensor"
+          }
+        ]
+      }
+    ]
+  },
+  "writing_data": {
+    "task1": {
+      "prompt": "The table shows information about the numbers of Australian people who visited the seven most popular destinations in 1999 and 2009.",
+      "imageUrl": "https://engnovatewebsitestorage.blob.core.windows.net/ielts-writing-task-1-images/e60c81c392969881",
+      "minWords": 150
+    },
+    "task2": {
+      "prompt": "Some people believe that modern technology has made life easier, while others argue it creates more problems. Discuss both views and give your own opinion.",
+      "minWords": 250
+    }
+  }
+}

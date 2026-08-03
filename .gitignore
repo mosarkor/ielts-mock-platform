@@ -3,5 +3,7 @@ client/node_modules/
 server/node_modules/
 client/dist/
 *.sqlite
+*.sqlite-wal
+*.sqlite-shm
 *.log
 .DS_Store

@@ -1,0 +1,954 @@
+{
+  "id": 1,
+  "title": "IELTS Academic Mock Test 1",
+  "listening_data": {
+    "isIframe": false,
+    "audioUrl": "https://audio.jukehost.co.uk/019e589c-60da-7228-ba3f-0095d8a8fc84",
+    "sections": [
+      {
+        "title": "Listening Part 1: Social Context",
+        "instructions": "Listen carefully and answer questions 1 to 10. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 1,
+            "label": "Question 1",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q1",
+            "text": "Question 1",
+            "options": [],
+            "answer": "TRUE"
+          },
+          {
+            "id": 2,
+            "label": "Question 2",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q2",
+            "text": "Question 2",
+            "options": [],
+            "answer": "FALSE"
+          },
+          {
+            "id": 3,
+            "label": "Question 3",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q3",
+            "text": "Question 3",
+            "options": [],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 4,
+            "label": "Question 4",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q4",
+            "text": "Question 4",
+            "options": [],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 5,
+            "label": "Question 5",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q5",
+            "text": "Question 5",
+            "options": [],
+            "answer": "FALSE"
+          },
+          {
+            "id": 6,
+            "label": "Question 6",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q6",
+            "text": "Question 6",
+            "options": [],
+            "answer": "boat"
+          },
+          {
+            "id": 7,
+            "label": "Question 7",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q7",
+            "text": "Question 7",
+            "options": [],
+            "answer": "1999"
+          },
+          {
+            "id": 8,
+            "label": "Question 8",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q8",
+            "text": "Question 8",
+            "options": [],
+            "answer": "terminal"
+          },
+          {
+            "id": 9,
+            "label": "Question 9",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q9",
+            "text": "Question 9",
+            "options": [],
+            "answer": "food"
+          },
+          {
+            "id": 10,
+            "label": "Question 10",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q10",
+            "text": "Question 10",
+            "options": [],
+            "answer": "donkey"
+          }
+        ]
+      },
+      {
+        "title": "Listening Part 2: Monologue / Guide",
+        "instructions": "Listen carefully and answer questions 11 to 20. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 11,
+            "label": "Question 11",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q11",
+            "text": "Select the correct option for question 11:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "traditions"
+          },
+          {
+            "id": 12,
+            "label": "Question 12",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q12",
+            "text": "Select the correct option for question 12:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "plants"
+          },
+          {
+            "id": 13,
+            "label": "Question 13",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q13",
+            "text": "Select the correct option for question 13:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "report"
+          },
+          {
+            "id": 14,
+            "label": "Question 14",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q14",
+            "text": "Select the correct option for question 14:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "B"
+          },
+          {
+            "id": 15,
+            "label": "Question 15",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q15",
+            "text": "Question 15",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 16,
+            "label": "Question 16",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q16",
+            "text": "Question 16",
+            "options": [],
+            "answer": "H"
+          },
+          {
+            "id": 17,
+            "label": "Question 17",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q17",
+            "text": "Question 17",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 18,
+            "label": "Question 18",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q18",
+            "text": "Question 18",
+            "options": [],
+            "answer": "F"
+          },
+          {
+            "id": 19,
+            "label": "Question 19",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q19",
+            "text": "Question 19",
+            "options": [],
+            "answer": "G"
+          },
+          {
+            "id": 20,
+            "label": "Question 20",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q20",
+            "text": "Question 20",
+            "options": [],
+            "answer": "B"
+          }
+        ]
+      },
+      {
+        "title": "Listening Part 3: Academic Discussion",
+        "instructions": "Listen carefully and answer questions 21 to 30. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 21,
+            "label": "Question 21",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q21",
+            "text": "Select the correct option for question 21:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "E"
+          },
+          {
+            "id": 22,
+            "label": "Question 22",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q22",
+            "text": "Select the correct option for question 22:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "A"
+          },
+          {
+            "id": 23,
+            "label": "Question 23",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q23",
+            "text": "Select the correct option for question 23:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "D"
+          },
+          {
+            "id": 24,
+            "label": "Question 24",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q24",
+            "text": "Select the correct option for question 24:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "small car, car"
+          },
+          {
+            "id": 25,
+            "label": "Question 25",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q25",
+            "text": "Select the correct option for question 25:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "30 miles"
+          },
+          {
+            "id": 26,
+            "label": "Question 26",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q26",
+            "text": "Question 26",
+            "options": [],
+            "answer": "Birmingham"
+          },
+          {
+            "id": 27,
+            "label": "Question 27",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q27",
+            "text": "Question 27",
+            "options": [],
+            "answer": "G"
+          },
+          {
+            "id": 28,
+            "label": "Question 28",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q28",
+            "text": "Question 28",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 29,
+            "label": "Question 29",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q29",
+            "text": "Question 29",
+            "options": [],
+            "answer": "F"
+          },
+          {
+            "id": 30,
+            "label": "Question 30",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q30",
+            "text": "Question 30",
+            "options": [],
+            "answer": "B"
+          }
+        ]
+      },
+      {
+        "title": "Listening Part 4: Academic Lecture",
+        "instructions": "Listen carefully and answer questions 31 to 40. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 31,
+            "label": "Question 31",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q31",
+            "text": "Question 31",
+            "options": [],
+            "answer": "A"
+          },
+          {
+            "id": 32,
+            "label": "Question 32",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q32",
+            "text": "Question 32",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 33,
+            "label": "Question 33",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q33",
+            "text": "Question 33",
+            "options": [],
+            "answer": "A"
+          },
+          {
+            "id": 34,
+            "label": "Question 34",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q34",
+            "text": "Question 34",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 35,
+            "label": "Question 35",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q35",
+            "text": "Question 35",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 36,
+            "label": "Question 36",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q36",
+            "text": "Question 36",
+            "options": [],
+            "answer": "YES"
+          },
+          {
+            "id": 37,
+            "label": "Question 37",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q37",
+            "text": "Question 37",
+            "options": [],
+            "answer": "NO"
+          },
+          {
+            "id": 38,
+            "label": "Question 38",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q38",
+            "text": "Question 38",
+            "options": [],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 39,
+            "label": "Question 39",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q39",
+            "text": "Question 39",
+            "options": [],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 40,
+            "label": "Question 40",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q40",
+            "text": "Question 40",
+            "options": [],
+            "answer": "NO"
+          }
+        ]
+      }
+    ]
+  },
+  "reading_data": {
+    "passages": [
+      {
+        "title": "Socotra Island",
+        "text": "<p>Situated in the Arabian Sea off the Arabian Peninsula is the Socotra archipelago, a remnant of an ancient landmass that became separated from Africa and Arabia 18 million years ago.</p>\n<p>When scientists began the first substantial exploration of the islands 30 years ago, they found a fascinating collection of unusual plants and animals - a unique combination of 'relict' populations (organisms that have become extinct elsewhere) and species that have evolved to cope with the island's harsh conditions. In fact, almost a third of its plant species and up to 80 percent of its terrestrial animals are found nowhere else.</p>\n<p>Life in the arid conditions is harsh for the people living there too. Isolated from the mainland by hundreds of kilometres, and with monsoons that rage for several months every year, the islanders were historically self-sufficient - relying only on what they themselves could produce to survive. There are floods and droughts, and many islanders lack adequate water resources and nutrition. Medical care and education are limited.</p>\n<p>However, the main island, Socotra, is experiencing significant change. A rapid development programme has been instituted that will have far-reaching impacts on the island's people and the environment for decades to come. In the past, the only way to get to Socotra was by travelling for several days on a boat, but irregular flights began touching down on dirt landing strips during the late 1960s. By 1999, a runway had been constructed on Socotra that was capable of taking larger aircraft all year round, and since 2000 the capital, Hadibo, has seen huge expansion. New schools have been built, and a modern terminal was added to the airport, through which an increasing number of tourists are beginning to pass. And there are plans to construct new harbour facilities that will enable fishermen to sell their catch more easily, and also make it simpler for local people to have food, and bricks and timber for construction projects brought to the island.</p>\n<p>However, although these improvements are significant, it’s the continuing development of Socotra’s road system that is having the greatest impact on the islanders. Until 1991, a few dirt tracks, navigable only by four-wheel drive, gave access to part of the island. Otherwise it was only possible to reach most areas on foot, or with a donkey. By 2001, however, there was an extensive network of unpaved car tracks, and the following year a tarmac road, the first of its kind on Socotra, connecting the airport to Hadibo, was completed. Now, a road traverses the Diksam plateau and continues on to the south coast, making essential services more accessible to a large number of villagers.</p>\n<p>There is no doubt that the development of Socotra’s infrastructure has brought many benefits to the island’s inhabitants, but there is growing concern that the speed with which it is taking place is so rapid that it will be difficult for local people to maintain certain traditions. There is also the fear that the developments will threaten the island’s unique ecosystems. Building new roads and harbours may lead to the introduction of alien species to Socotra Island (as has already happened with the Indian house crow), damage to the sea’s biodiversity through the increased collection and sale of coral, and tourist developments on an inappropriate and unsustainable scale.</p>\n<p>Problems were also caused by increasing access to sensitive areas. For example, cutting the road along the coast caused considerable damage to the stunning scenery. However, some steps were then taken to limit the damage caused by further development. For example, biodiversity project officers were consulted in the planning stages of the road that crosses the centre of Socotra, so it avoids some of the most scenic areas and sites that contain plants only found in a limited number of locations. It is an area which is also home to the greatest concentrations of dragon's blood trees and supports many endemic animals.</p>\n<p>An agreement has now been reached about all future construction of roads. To protect the island’s ecologically sensitive areas, any proposed road will be subject to a report assessing its environmental impact prior to construction. The challenge has been to bring the benefits of development to Socotra without damaging the environment, which supports the people’s way of life and will form the basis of future development on the island.</p>",
+        "questions": [
+          {
+            "id": 1,
+            "label": "Question 1",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q1",
+            "text": "Question 1 regarding Socotra Island",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "TRUE"
+          },
+          {
+            "id": 2,
+            "label": "Question 2",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q2",
+            "text": "Question 2 regarding Socotra Island",
+            "options": [],
+            "answer": "FALSE"
+          },
+          {
+            "id": 3,
+            "label": "Question 3",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q3",
+            "text": "Question 3 regarding Socotra Island",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 4,
+            "label": "Question 4",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q4",
+            "text": "Question 4 regarding Socotra Island",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 5,
+            "label": "Question 5",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q5",
+            "text": "Question 5 regarding Socotra Island",
+            "options": [],
+            "answer": "FALSE"
+          },
+          {
+            "id": 6,
+            "label": "Question 6",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q6",
+            "text": "Question 6 regarding Socotra Island",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "boat"
+          },
+          {
+            "id": 7,
+            "label": "Question 7",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q7",
+            "text": "Question 7 regarding Socotra Island",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "1999"
+          },
+          {
+            "id": 8,
+            "label": "Question 8",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q8",
+            "text": "Question 8 regarding Socotra Island",
+            "options": [],
+            "answer": "terminal"
+          },
+          {
+            "id": 9,
+            "label": "Question 9",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q9",
+            "text": "Question 9 regarding Socotra Island",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "food"
+          },
+          {
+            "id": 10,
+            "label": "Question 10",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q10",
+            "text": "Question 10 regarding Socotra Island",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "donkey"
+          },
+          {
+            "id": 11,
+            "label": "Question 11",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q11",
+            "text": "Question 11 regarding Socotra Island",
+            "options": [],
+            "answer": "traditions"
+          },
+          {
+            "id": 12,
+            "label": "Question 12",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q12",
+            "text": "Question 12 regarding Socotra Island",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "plants"
+          },
+          {
+            "id": 13,
+            "label": "Question 13",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q13",
+            "text": "Question 13 regarding Socotra Island",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "report"
+          }
+        ]
+      },
+      {
+        "title": "The development of television and its introduction in Britain",
+        "text": "<p><b>A</b> The possibility of seeing events without being present at them was a dream of humanity for countless centuries. When the telephone emerged as a practical device in the late 1870s, the idea of also ‘seeing by electricity’ caught the public imagination, and as early as 1878 a cartoonist conceived of the ‘telephonoscope’, a wildly accurate prediction of global video communication. Various experiments were conducted, and two forms of television were invented almost simultaneously: the electronic and the mechanical.</p>\n<p><b>B</b> In 1897 a German physicist, Ferdinand Braun, developed a method of displaying electronic traces on a fluorescent screen coated inside an evacuated glass bulb. He called this the cathode-ray oscilloscope. A few years later a British scientist, A. A. Campbell Swinton, realized that Braun’s device could be used to display pictures transmitted electronically. Campbell Swinton wrote about the possibility of a television system in a scientific journal, <i>Nature</i>, in 1911. However, at that time it could not be built, as the components were not available.</p>\n<p><b>C</b> The real pioneer of electronic television was Vladimir Zworykin. His interest in the field developed when he worked on a cathode-ray tube receiver in St. Petersburg. In 1918 he left Russia for the United States, and in 1923 he patented the principles of the Iconoscope, a camera tube, and in 1924 the Kinescope, or television receiver. The Radio Corporation of America (RCA) recognized the potential of Zworykin’s ideas, and in 1929 funded a laboratory for him to continue his research. The work was conducted in secret and Zworykin did not publish his paper describing the Iconoscope in detail until 1933. This was the breakthrough that made electronic television a practical possibility. For the first time, a pick-up device could televise studio and outdoor scenes at a standard of definition that would bear comparison with the cinema.</p>\n<p><b>D</b> Meanwhile, in Britain, public interest in television was stimulated by a Scotsman, John L. Baird. He loved experimenting and, in 1922, found the cause to which he was to devote his life—to invent mechanical television. As he lacked a real understanding of electronics, and would probably have been unaware of Zworykin’s work, he began his research using very simple mechanical equipment. Baird successfully transmitted his first crude pictures in April 1925, and gave the first public demonstration of television in 1926. But it was not until 1929 that the government accepted that the technical quality of his pictures had improved sufficiently to allow broadcasting. Transmissions began on frequencies available when normal radio programs had finished for the day. Baird used the late transmission time to his advantage—it became an opportunity to encourage performers from top London shows to the medium. They dropped into his nearby studio after finishing on stage and performed a song or a dance for one of his shows. He developed a large amount of material, and in 1931 he televised the Epsom Derby horse race live.</p>\n<p><b>E</b> However, at the beginning of the 1930s, interest in television in Britain was spreading beyond Baird. The research departments of Britain’s two largest record companies came together and formed Electric and Musical Industries Ltd. (EMI) in 1931. The new department of brilliant scientists was led by Isaac Schoenberg, who, like Zworykin, had once worked in Russia. The group first looked to develop cathode-ray receivers, retaining mechanical scanning for generating the picture. However, work on an electronic camera tube started in 1933, after Zworykin’s paper was published.</p>\n<p><b>F</b> The EMI team made a successful electronic tube in January 1934 and they called the design the Emitron. This was fundamentally the same as Zworykin’s Iconoscope, though there were manufacturing differences that gave it a superior performance. EMI did not immediately give up mechanical scanning, but they now joined forces with the Marconi Company to design the components and circuits of an all-electronic system of television. Very soon the technical superiority of the Marconi-EMI system was so obvious that, on 30 January 1937, the BBC ended transmissions using Baird’s television equipment.</p>\n<p><b>G</b> In 1936 television receiving sets were very expensive, possibly costing as much as a small car. Fewer than 500 were in use when the broadcasting service started, and growth was slower than had been hoped for. The signals could only be received clearly within a radius of about 30 miles from the television studio. Gradually the cost of sets came down, and just under 19,000 had been sold by 1939, when television in Britain abruptly came to an end for security reasons. War was about to be declared. The screens were to be dark for nearly seven years until, in 1946, the British government decided to restart television.</p>\n<p><b>H</b> Transmissions restarted with a broadcast of the Victory Parade in London. Television remained confined to the London region until 1949 when studios in Birmingham opened. From then on, coverage gradually spread across Britain. Many people had their first experience of television watching Queen Elizabeth’s 1953 coronation ceremony. Households with television receivers opened up their homes to friends and neighbors. As the better-off purchased their new sets, so their old ones were sold on, which enlarged the audience still further. With quality entertainment now cheaply available at home, people went out far less often. Many cinemas and theatres closed down, and town centers became much emptier at night. The television age had finally arrived.</p>",
+        "questions": [
+          {
+            "id": 14,
+            "label": "Question 14",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q14",
+            "text": "Question 14 regarding The development of television and its introduction in Britain",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 15,
+            "label": "Question 15",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q15",
+            "text": "Question 15 regarding The development of television and its introduction in Britain",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "D"
+          },
+          {
+            "id": 16,
+            "label": "Question 16",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q16",
+            "text": "Question 16 regarding The development of television and its introduction in Britain",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "H"
+          },
+          {
+            "id": 17,
+            "label": "Question 17",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q17",
+            "text": "Question 17 regarding The development of television and its introduction in Britain",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 18,
+            "label": "Question 18",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q18",
+            "text": "Question 18 regarding The development of television and its introduction in Britain",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "F"
+          },
+          {
+            "id": 19,
+            "label": "Question 19",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q19",
+            "text": "Question 19 regarding The development of television and its introduction in Britain",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "G"
+          },
+          {
+            "id": 20,
+            "label": "Question 20",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q20",
+            "text": "Question 20 regarding The development of television and its introduction in Britain",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 21,
+            "label": "Question 21",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q21",
+            "text": "Question 21 regarding The development of television and its introduction in Britain",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "E"
+          },
+          {
+            "id": 22,
+            "label": "Question 22",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q22",
+            "text": "Question 22 regarding The development of television and its introduction in Britain",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "A"
+          },
+          {
+            "id": 23,
+            "label": "Question 23",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q23",
+            "text": "Question 23 regarding The development of television and its introduction in Britain",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 24,
+            "label": "Question 24",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q24",
+            "text": "Question 24 regarding The development of television and its introduction in Britain",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "small car, car"
+          },
+          {
+            "id": 25,
+            "label": "Question 25",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q25",
+            "text": "Question 25 regarding The development of television and its introduction in Britain",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "30 miles"
+          },
+          {
+            "id": 26,
+            "label": "Question 26",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q26",
+            "text": "Question 26 regarding The development of television and its introduction in Britain",
+            "options": [],
+            "answer": "Birmingham"
+          }
+        ]
+      },
+      {
+        "title": "Thinking for themselves",
+        "text": "<p>In 1977 Irene Pepperberg brought Alex, a one-year-old African gray parrot, into her lab at Harvard University to teach him to reproduce the sounds of English. At that time most scientists considered animals mere machines, lacking the ability to think in a rational way or feel emotions as humans do. ‘I wasn't trying to see if Alex could learn a human language,' said Pepperberg. ‘My plan always was to use his imitative skills to get a better understanding of avian cognition.' Given that Alex's brain was the size of a walnut, most researchers thought Pepperberg's study would be futile.</p>\n<p>But by the time Alex died in 2007, he knew 150 words, could count, do simple arithmetic, and distinguish between objects according to shape, color, and material. Many of Alex's skills, such as his ability to understand the concepts of ‘same' and ‘different', are generally ascribed only to higher mammals. But parrots, like higher apes (and humans), live in complex societies, and need to monitor changing relationships and environments.</p>\n<p>‘They need to distinguish colors to know when a fruit is ripe or unripe,' Pepperberg noted. They need to categorize things - what's edible, what isn't - and to know the shapes of predators. And it helps to have a concept of numbers if you need to keep track of your flock. For a long-lived bird, you can't do all of this with instinct; cognition must be involved.'</p>\n<p>Just how easily mental skills can be acquired is perhaps best illustrated by dogs. For abstract thinking, humans employ symbols, letting one thing stand for another. And Juliane Kaminski, of the Max Planck Institute for Evolutionary Anthropology in Leipzig, believes that dogs can do this too. In 2008, Kaminski and her colleague Sebastian Tempelmann conducted an experiment with a border collie. The dog successfully selected and brought her owner toys which she had never seen before, prompted only by a picture of each toy.</p>\n<p>Creativity is another skill which seems to have evolved in humans and animals alike. ‘People were initially surprised to discover that chimpanzees make tools,' says behavioral ecologist Alex Kacelnik. ‘But then people thought, “Well, they share our ancestry - of course they're smart.” Now we're finding these kinds of exceptional behaviors in some species of birds.' New Caledonian crows, for example, use their beaks and claws to fashion tools to poke out grubs from palm trees. ‘But the problem is we don't have a recently shared ancestry with birds - our last common ancestor was a reptile living over 300 million years ago.'</p>\n<p>Kacelnik and his researchers at Oxford University were particularly impressed with the ingenuity of one of the crows - Betty, a wild-caught female. In one experiment, Betty successfully selected a hook-shaped wire to get a piece of meat from a glass tube. Then, when another bird unexpectedly stole the hook, Betty took a straight piece of wire, shaped it into a hook, and retrieved the food. This was the first time Betty had seen a piece of wire like this, Kacelnik says, ‘is a major kind of cognitive sophistication.'</p>\n<p>We are clearly not alone in our ability to invent or plan - or even to plot and lie. Studies show that western scrub jays can guess another bird's intentions and act on that knowledge. A jay knows that if another jay watches it hide a nut, there's a chance it will be stolen. So the first jay will return to move the nut when the other jay is gone. ‘It's some of the best evidence so far of experience projection in another species,' says Nicky Clayton of Cambridge University. What's more, the jays seem to know how long ago they hid a particular kind of food, and they manage to retrieve it before it spoils.</p>\n<p>Human cognitive psychologists call this ability ‘episodic memory' and argue that it only exists in species that can mentally travel back in time. They believe that animals cannot distinguish among past, present, and future the way humans do. Such skepticism is a challenge for Clayton. ‘We have good evidence that jays remember specific hiding events, which is the original definition of episodic memory. But now the goalposts have moved. Whenever we find a mental skill in a species that is reminiscent of human ability, the human cognition scientists change the definition.'</p>\n<p>Cognitive psychologist Louis Herman has spent decades studying bottlenose dolphins. These intelligent mammals are highly interactive, social and cosmopolitan, living in subpolar to tropical environments worldwide. Among the many skills exhibited by Herman's dolphins is the ability to imitate the motor behaviors of instructors. If a trainer bent backward and lifted a leg, the dolphin would turn on its back and lift its tail in the air. This requires the imitator to form a mental image of the other individual's body, then adjust its own body accordingly - actions that imply an awareness of one's self, an ability once seen as the sole preserve of humans.</p>\n<p>What Herman finds fascinating is that these aquatic creatures diverged from primates millions of years ago. That kind of cognitive convergence suggests there must be some similar pressures selecting for intellect. ‘We don't share their biology or ecology, but do share the need to establish life-long bonds and alliances. This appears to be the likely common driving force.'</p>",
+        "questions": [
+          {
+            "id": 27,
+            "label": "Question 27",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q27",
+            "text": "Question 27 regarding Thinking for themselves",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "G"
+          },
+          {
+            "id": 28,
+            "label": "Question 28",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q28",
+            "text": "Question 28 regarding Thinking for themselves",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "D"
+          },
+          {
+            "id": 29,
+            "label": "Question 29",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q29",
+            "text": "Question 29 regarding Thinking for themselves",
+            "options": [],
+            "answer": "F"
+          },
+          {
+            "id": 30,
+            "label": "Question 30",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q30",
+            "text": "Question 30 regarding Thinking for themselves",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "B"
+          },
+          {
+            "id": 31,
+            "label": "Question 31",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q31",
+            "text": "Question 31 regarding Thinking for themselves",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "A"
+          },
+          {
+            "id": 32,
+            "label": "Question 32",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q32",
+            "text": "Question 32 regarding Thinking for themselves",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 33,
+            "label": "Question 33",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q33",
+            "text": "Question 33 regarding Thinking for themselves",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "A"
+          },
+          {
+            "id": 34,
+            "label": "Question 34",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q34",
+            "text": "Question 34 regarding Thinking for themselves",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "B"
+          },
+          {
+            "id": 35,
+            "label": "Question 35",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q35",
+            "text": "Question 35 regarding Thinking for themselves",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 36,
+            "label": "Question 36",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q36",
+            "text": "Question 36 regarding Thinking for themselves",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "YES"
+          },
+          {
+            "id": 37,
+            "label": "Question 37",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q37",
+            "text": "Question 37 regarding Thinking for themselves",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "NO"
+          },
+          {
+            "id": 38,
+            "label": "Question 38",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q38",
+            "text": "Question 38 regarding Thinking for themselves",
+            "options": [],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 39,
+            "label": "Question 39",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q39",
+            "text": "Question 39 regarding Thinking for themselves",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 40,
+            "label": "Question 40",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q40",
+            "text": "Question 40 regarding Thinking for themselves",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "NO"
+          }
+        ]
+      }
+    ]
+  },
+  "writing_data": {
+    "task1": {
+      "prompt": "The table shows how many international students study in Canada and the United States by country of origin. Summarize the information by selecting and reporting the main features and making comparisons where relevant.",
+      "imageUrl": "data:image/jpeg;base64,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",
+      "minWords": 150
+    },
+    "task2": {
+      "prompt": "Some people believe that modern technology has made life easier, while others argue it creates more problems. Discuss both views and give your own opinion.",
+      "minWords": 250
+    }
+  }
+}

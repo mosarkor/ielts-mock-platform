@@ -281,18 +281,26 @@ export async function initDb() {
 
       let firstTestId = null;
       for (let i = 1; i <= 9; i++) {
-        const mockListening = {
-          isIframe: true,
-          iframeUrl: `/tests/mock${i}.html`
-        };
+        let mockData = null;
+        try {
+          const jsonPath = path.join(__dirname, 'data', 'mocks', `mock${i}.json`);
+          if (fs.existsSync(jsonPath)) {
+            mockData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+          }
+        } catch (e) {}
+
+        const listeningData = mockData ? mockData.listening_data : { isIframe: false };
+        const readingData = mockData ? mockData.reading_data : {};
+        const writingData = mockData ? mockData.writing_data : {};
+
         const result = await db.run(`
           INSERT INTO tests (title, listening_data, reading_data, writing_data, created_by)
           VALUES (?, ?, ?, ?, ?)
         `, 
           `IELTS Academic Mock Test ${i}`, 
-          JSON.stringify(mockListening), 
-          JSON.stringify({}), 
-          JSON.stringify({}), 
+          JSON.stringify(listeningData), 
+          JSON.stringify(readingData), 
+          JSON.stringify(writingData), 
           'admin'
         );
         if (i === 1) {
@@ -521,18 +529,26 @@ export async function initDb() {
 
     let firstTestId = null;
     for (let i = 1; i <= 9; i++) {
-      const mockListening = {
-        isIframe: true,
-        iframeUrl: `/tests/mock${i}.html`
-      };
+      let mockData = null;
+      try {
+        const jsonPath = path.join(__dirname, 'data', 'mocks', `mock${i}.json`);
+        if (fs.existsSync(jsonPath)) {
+          mockData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+        }
+      } catch (e) {}
+
+      const listeningData = mockData ? mockData.listening_data : { isIframe: false };
+      const readingData = mockData ? mockData.reading_data : {};
+      const writingData = mockData ? mockData.writing_data : {};
+
       const result = await db.run(`
         INSERT INTO tests (title, listening_data, reading_data, writing_data, created_by)
         VALUES (?, ?, ?, ?, ?)
       `, 
         `IELTS Academic Mock Test ${i}`, 
-        JSON.stringify(mockListening), 
-        JSON.stringify({}), 
-        JSON.stringify({}), 
+        JSON.stringify(listeningData), 
+        JSON.stringify(readingData), 
+        JSON.stringify(writingData), 
         'admin'
       );
       if (i === 1) {
