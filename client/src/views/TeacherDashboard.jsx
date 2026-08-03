@@ -1,3 +1,5 @@
+
+const fmtScore = (v) => (v === null || v === undefined || isNaN(Number(v))) ? '—' : Number(v).toFixed(1);
 import React, { useState, useEffect } from 'react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 
@@ -321,10 +323,10 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
     report += `Test Title: ${selectedSub.test_title}\n\n`;
     
     report += `BAND SCORES OVERVIEW:\n`;
-    report += `- Listening Score: Band ${selectedSub.listening_score.toFixed(1)}\n`;
-    report += `- Reading Score: Band ${selectedSub.reading_score.toFixed(1)}\n`;
+    report += `- Listening Score: Band ${fmtScore(selectedSub.listening_score)}\n`;
+    report += `- Reading Score: Band ${fmtScore(selectedSub.reading_score)}\n`;
     if (selectedSub.writing_score !== null) {
-      report += `- Writing Score: Band ${selectedSub.writing_score.toFixed(1)}\n`;
+      report += `- Writing Score: Band ${fmtScore(selectedSub.writing_score)}\n`;
     }
     report += `- Exam Integrity: ${selectedSub.violations_count || 0} Tab switches / Fullscreen exits detected\n`;
     report += `\nINCORRECT & MISSED ANSWERS FEEDBACK:\n\n`;
@@ -370,10 +372,10 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
     report += `Test Title: ${selectedSub.test_title}\n\n`;
     
     report += `BAND SCORES OVERVIEW:\n`;
-    report += `- Listening Score: Band ${selectedSub.listening_score.toFixed(1)}\n`;
-    report += `- Reading Score: Band ${selectedSub.reading_score.toFixed(1)}\n`;
+    report += `- Listening Score: Band ${fmtScore(selectedSub.listening_score)}\n`;
+    report += `- Reading Score: Band ${fmtScore(selectedSub.reading_score)}\n`;
     if (selectedSub.writing_score !== null) {
-      report += `- Writing Score: Band ${selectedSub.writing_score.toFixed(1)}\n`;
+      report += `- Writing Score: Band ${fmtScore(selectedSub.writing_score)}\n`;
       
       const overallVal = ((selectedSub.listening_score + selectedSub.reading_score + selectedSub.writing_score) / 3);
       const decimal = overallVal - Math.floor(overallVal);
@@ -493,9 +495,9 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
 
       doc.setFontSize(16);
       doc.setTextColor(15, 23, 42);
-      doc.text(sub.listening_score.toFixed(1), M + 22, 94);
-      doc.text(sub.reading_score.toFixed(1), M + 62, 94);
-      doc.text(sub.writing_score !== null ? sub.writing_score.toFixed(1) : 'Pending', M + 102, 94);
+      doc.text(fmtScore(sub.listening_score), M + 22, 94);
+      doc.text(fmtScore(sub.reading_score), M + 62, 94);
+      doc.text(sub.writing_score !== null ? fmtScore(sub.writing_score) : 'Pending', M + 102, 94);
       doc.setTextColor(99, 102, 241);
       doc.text(roundedOverall.toFixed(1), M + 148, 94);
 
@@ -828,12 +830,12 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
 
                   <div className="form-group" style={{ marginTop: '1rem' }}>
                     <label className="form-label">🎧 Listening Calculated Band (Reference)</label>
-                    <input type="text" className="form-input" value={`Band ${selectedSub.listening_score.toFixed(1)}`} disabled style={{ opacity: 0.6 }} />
+                    <input type="text" className="form-input" value={`Band ${fmtScore(selectedSub.listening_score)}`} disabled style={{ opacity: 0.6 }} />
                   </div>
 
                   <div className="form-group">
                     <label className="form-label">📖 Reading Calculated Band (Reference)</label>
-                    <input type="text" className="form-input" value={`Band ${selectedSub.reading_score.toFixed(1)}`} disabled style={{ opacity: 0.6 }} />
+                    <input type="text" className="form-input" value={`Band ${fmtScore(selectedSub.reading_score)}`} disabled style={{ opacity: 0.6 }} />
                   </div>
 
                   <div className="form-group" style={{ marginTop: '1.5rem' }}>
@@ -886,7 +888,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                     <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <h4 style={{ color: 'var(--text-primary)' }}>🎧 Listening Overview</h4>
                       <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#6366f1' }}>
-                        Band {selectedSub.listening_score.toFixed(1)}
+                        Band {fmtScore(selectedSub.listening_score)}
                       </span>
                     </div>
                     
@@ -946,7 +948,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                     <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <h4 style={{ color: 'var(--text-primary)' }}>📖 Reading Overview</h4>
                       <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#10b981' }}>
-                        Band {selectedSub.reading_score.toFixed(1)}
+                        Band {fmtScore(selectedSub.reading_score)}
                       </span>
                     </div>
                     
@@ -1086,12 +1088,12 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                             {[['F', ss.fluency_score], ['L', ss.lexical_score], ['G', ss.grammar_score], ['P', ss.pronunciation_score]].map(([l, s]) => (
                               <div key={l} style={{ textAlign: 'center', backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', padding: '0.25rem 0.4rem', minWidth: '36px' }}>
                                 <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>{l}</div>
-                                <div style={{ fontSize: '0.9rem', fontWeight: '800', color: bandColor(s) }}>{s?.toFixed(1)}</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: '800', color: bandColor(s) }}>{fmtScore(s)}</div>
                               </div>
                             ))}
                             <div style={{ textAlign: 'center', backgroundColor: 'rgba(99,102,241,0.1)', borderRadius: '6px', padding: '0.25rem 0.4rem', minWidth: '44px', border: '1px solid rgba(99,102,241,0.3)' }}>
                               <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)' }}>OVR</div>
-                              <div style={{ fontSize: '0.9rem', fontWeight: '900', color: bandColor(ss.overall_score) }}>{ss.overall_score?.toFixed(1)}</div>
+                              <div style={{ fontSize: '0.9rem', fontWeight: '900', color: bandColor(ss.overall_score) }}>{fmtScore(ss?.overall_score)}</div>
                             </div>
                           </div>
                           <button
@@ -1368,8 +1370,8 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                       <span style={styles.dateLabel}>{new Date(sub.submitted_at).toLocaleDateString()}</span>
                     </div>
                     <div style={styles.miniScoresRow}>
-                      <span>🎧 Listening: <strong>{sub.listening_score.toFixed(1)}</strong></span>
-                      <span>📖 Reading: <strong>{sub.reading_score.toFixed(1)}</strong></span>
+                      <span>🎧 Listening: <strong>{fmtScore(sub.listening_score)}</strong></span>
+                      <span>📖 Reading: <strong>{fmtScore(sub.reading_score)}</strong></span>
                     </div>
                     <button 
                       onClick={() => handleSelectSubmission(sub)}
@@ -1411,15 +1413,15 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                       </div>
                       <span style={styles.subMeta}>ID: {sub.student_id} | {sub.test_title}</span>
                       <div style={styles.miniBadgeBox}>
-                        <span style={styles.overallScoreNumMini}>{sub.writing_score.toFixed(1)}</span>
+                        <span style={styles.overallScoreNumMini}>{fmtScore(sub.writing_score)}</span>
                         <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Writing Band</span>
                       </div>
                     </div>
                     
                     <div style={{ ...styles.miniScoresRow, marginTop: '0.5rem' }}>
-                      <span>🎧 List: <strong>{sub.listening_score.toFixed(1)}</strong></span>
-                      <span>📖 Read: <strong>{sub.reading_score.toFixed(1)}</strong></span>
-                      <span>✍️ Writ: <strong>{sub.writing_score.toFixed(1)}</strong></span>
+                      <span>🎧 List: <strong>{fmtScore(sub.listening_score)}</strong></span>
+                      <span>📖 Read: <strong>{fmtScore(sub.reading_score)}</strong></span>
+                      <span>✍️ Writ: <strong>{fmtScore(sub.writing_score)}</strong></span>
                     </div>
 
                     <div style={styles.revealControlBox}>

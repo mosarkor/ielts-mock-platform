@@ -1,3 +1,5 @@
+
+const fmtScore = (v) => (v === null || v === undefined || isNaN(Number(v))) ? '—' : Number(v).toFixed(1);
 import React, { useState, useEffect, useCallback } from 'react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 
@@ -739,9 +741,9 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                                 </div>
                               </div>
                               <div style={styles.miniScores}>
-                                <span style={styles.miniScore}>🎧 Listening: <strong>{sub.listening_score ? sub.listening_score.toFixed(1) : '–'}</strong></span>
-                                <span style={styles.miniScore}>📖 Reading: <strong>{sub.reading_score ? sub.reading_score.toFixed(1) : '–'}</strong></span>
-                                <span style={styles.miniScore}>✍️ Writing: <strong>{sub.writing_score ? sub.writing_score.toFixed(1) : 'Pending'}</strong></span>
+                                <span style={styles.miniScore}>🎧 Listening: <strong>{sub.listening_score ? fmtScore(sub.listening_score) : '–'}</strong></span>
+                                <span style={styles.miniScore}>📖 Reading: <strong>{sub.reading_score ? fmtScore(sub.reading_score) : '–'}</strong></span>
+                                <span style={styles.miniScore}>✍️ Writing: <strong>{sub.writing_score ? fmtScore(sub.writing_score) : 'Pending'}</strong></span>
                                 <span style={styles.miniScore}>🎙️ Speaking: <strong>{spkScore ? spkScore.toFixed(1) : '–'}</strong></span>
                               </div>
                               <p style={styles.dateLabel}>Submitted: {new Date(sub.submitted_at).toLocaleDateString()}</p>
@@ -827,16 +829,16 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
               
               <div style={{ ...styles.overallMetricBanner, backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--glass-border)' }}>
                 <div style={{ ...styles.metricItem, borderRight: '1px solid var(--glass-border)' }}>
-                  <span style={{ ...styles.metricVal, color: 'var(--text-primary)' }}>{selectedReview.listening_score.toFixed(1)}</span>
+                  <span style={{ ...styles.metricVal, color: 'var(--text-primary)' }}>{fmtScore(selectedReview.listening_score)}</span>
                   <span style={{ ...styles.metricLabel, color: 'var(--text-secondary)' }}>Listening Band</span>
                 </div>
                 <div style={{ ...styles.metricItem, borderRight: '1px solid var(--glass-border)' }}>
-                  <span style={{ ...styles.metricVal, color: 'var(--text-primary)' }}>{selectedReview.reading_score.toFixed(1)}</span>
+                  <span style={{ ...styles.metricVal, color: 'var(--text-primary)' }}>{fmtScore(selectedReview.reading_score)}</span>
                   <span style={{ ...styles.metricLabel, color: 'var(--text-secondary)' }}>Reading Band</span>
                 </div>
                 <div style={{ ...styles.metricItem, borderRight: '1px solid var(--glass-border)' }}>
                   <span style={{ ...styles.metricVal, color: 'var(--text-primary)' }}>
-                    {selectedReview.writing_score ? selectedReview.writing_score.toFixed(1) : 'Pending'}
+                    {selectedReview.writing_score ? fmtScore(selectedReview.writing_score) : 'Pending'}
                   </span>
                   <span style={{ ...styles.metricLabel, color: 'var(--text-secondary)' }}>Writing Band</span>
                 </div>
