@@ -245,10 +245,46 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
   };
 
   const handleSelectSubmission = (sub) => {
-    setSelectedSub(sub);
+    if (!sub) return;
+    let parsedWriting = sub.writing_answers;
+    if (typeof parsedWriting === 'string') {
+      try { parsedWriting = JSON.parse(parsedWriting); } catch(_) { parsedWriting = { task1: String(sub.writing_answers || ''), task2: '' }; }
+    }
+    if (!parsedWriting || typeof parsedWriting !== 'object') parsedWriting = { task1: '', task2: '' };
+
+    let parsedListening = sub.listening_answers;
+    if (typeof parsedListening === 'string') {
+      try { parsedListening = JSON.parse(parsedListening); } catch(_) { parsedListening = {}; }
+    }
+    if (!parsedListening || typeof parsedListening !== 'object') parsedListening = {};
+
+    let parsedReading = sub.reading_answers;
+    if (typeof parsedReading === 'string') {
+      try { parsedReading = JSON.parse(parsedReading); } catch(_) { parsedReading = {}; }
+    }
+    if (!parsedReading || typeof parsedReading !== 'object') parsedReading = {};
+
+    let parsedRubric = sub.writing_scores;
+    if (typeof parsedRubric === 'string') {
+      try { parsedRubric = JSON.parse(parsedRubric); } catch(_) { parsedRubric = null; }
+    }
+
+    const cleanSub = {
+      ...sub,
+      writing_answers: parsedWriting,
+      listening_answers: parsedListening,
+      reading_answers: parsedReading,
+    };
+
+    setSelectedSub(cleanSub);
     setViewMode('grading');
-    if (sub.writing_scores) {
-      setRubric(sub.writing_scores);
+    if (parsedRubric && typeof parsedRubric === 'object') {
+      setRubric({
+        ta: Number(parsedRubric.ta) || 6.0,
+        cc: Number(parsedRubric.cc) || 6.0,
+        lr: Number(parsedRubric.lr) || 6.0,
+        gra: Number(parsedRubric.gra) || 6.0,
+      });
     } else {
       setRubric({ ta: 6.0, cc: 6.0, lr: 6.0, gra: 6.0 });
     }
@@ -608,10 +644,12 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
 
   const bandOptions = [0, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0];
 
-  const studentGroups = [...new Set(submissions.map(s => s.student_group).filter(Boolean))];
+  const safeSubmissions = Array.isArray(submissions) ? submissions : [];
+  const safeSpeakingSubmissions = Array.isArray(speakingSubmissions) ? speakingSubmissions : [];
+  const studentGroups = [...new Set(safeSubmissions.map(s => s.student_group).filter(Boolean))];
 
   // Dynamic filter logic
-  const filteredSubmissions = submissions.filter(sub => {
+  const filteredSubmissions = safeSubmissions.filter(sub => {
     const matchesSearch = sub.student_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           sub.student_id.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           sub.test_title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -741,8 +779,8 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                     </div>
                     <p style={styles.writingPrompt}>Refer to Task 1 instructions assigned in this test.</p>
                     
-                    <h5 style={{ color: 'var(--text-secondary)', marginTop: '1rem', marginBottom: '0.5rem' }}>Student Essay (Word count: {getWordCount(selectedSub.writing_answers.task1)}):</h5>
-                    <div style={styles.rawEssayText}>{selectedSub.writing_answers.task1 || "No answer submitted"}</div>
+                    <h5 style={{ color: 'var(--text-secondary)', marginTop: '1rem', marginBottom: '0.5rem' }}>Student Essay (Word count: {getWordCount((selectedSub?.writing_answers?.task1 || ""))}):</h5>
+                    <div style={styles.rawEssayText}>{(selectedSub?.writing_answers?.task1 || "") || "No answer submitted"}</div>
                   </div>
 
                   <div style={{ ...styles.essayBox, marginTop: '2rem' }}>
@@ -751,8 +789,8 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                     </div>
                     <p style={styles.writingPrompt}>Refer to Task 2 instructions assigned in this test.</p>
                     
-                    <h5 style={{ color: 'var(--text-secondary)', marginTop: '1rem', marginBottom: '0.5rem' }}>Student Essay (Word count: {getWordCount(selectedSub.writing_answers.task2)}):</h5>
-                    <div style={styles.rawEssayText}>{selectedSub.writing_answers.task2 || "No answer submitted"}</div>
+                    <h5 style={{ color: 'var(--text-secondary)', marginTop: '1rem', marginBottom: '0.5rem' }}>Student Essay (Word count: {getWordCount((selectedSub?.writing_answers?.task2 || ""))}):</h5>
+                    <div style={styles.rawEssayText}>{(selectedSub?.writing_answers?.task2 || "") || "No answer submitted"}</div>
                   </div>
                 </div>
 
@@ -775,7 +813,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                         ))}
                       </select>
                       <p style={styles.descriptorHint}>
-                        💡 {descriptors.ta[rubric.ta.toString()] || "No descriptor found."}
+                        💡 {descriptors.ta[(rubric.ta || 6.0).toString()] || "No descriptor found."}
                       </p>
                     </div>
 
@@ -791,7 +829,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                         ))}
                       </select>
                       <p style={styles.descriptorHint}>
-                        💡 {descriptors.cc[rubric.cc.toString()] || "No descriptor found."}
+                        💡 {descriptors.cc[(rubric.cc || 6.0).toString()] || "No descriptor found."}
                       </p>
                     </div>
 
@@ -807,7 +845,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                         ))}
                       </select>
                       <p style={styles.descriptorHint}>
-                        💡 {descriptors.lr[rubric.lr.toString()] || "No descriptor found."}
+                        💡 {descriptors.lr[(rubric.lr || 6.0).toString()] || "No descriptor found."}
                       </p>
                     </div>
 
@@ -823,7 +861,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                         ))}
                       </select>
                       <p style={styles.descriptorHint}>
-                        💡 {descriptors.gra[rubric.gra.toString()] || "No descriptor found."}
+                        💡 {descriptors.gra[(rubric.gra || 6.0).toString()] || "No descriptor found."}
                       </p>
                     </div>
                   </div>
@@ -1047,9 +1085,9 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                   }}
                 >
                   {label}
-                  {key === 'speaking' && speakingSubmissions.filter(s => !s.is_revealed).length > 0 && (
+                  {key === 'speaking' && safeSpeakingSubmissions.filter(s => !s.is_revealed).length > 0 && (
                     <span style={{ marginLeft: '0.5rem', backgroundColor: '#f43f5e', borderRadius: '10px', padding: '0.1rem 0.45rem', fontSize: '0.75rem', fontWeight: '800' }}>
-                      {speakingSubmissions.filter(s => !s.is_revealed).length}
+                      {safeSpeakingSubmissions.filter(s => !s.is_revealed).length}
                     </span>
                   )}
                 </button>
@@ -1064,7 +1102,7 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
                     <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎙️</div>
                     <p>No speaking submissions yet. Assign speaking tests to students from the Admin Dashboard.</p>
                   </div>
-                ) : speakingSubmissions.map(ss => {
+                ) : safeSpeakingSubmissions.map(ss => {
                   const fb = (() => { try { return JSON.parse(ss.ai_feedback || '{}'); } catch { return {}; } })();
                   const bandColor = (s) => s >= 7.5 ? '#10b981' : s >= 6.0 ? '#6366f1' : s >= 4.5 ? '#f59e0b' : '#f43f5e';
                   const isExpanded = expandedSpeaking === ss.id;
