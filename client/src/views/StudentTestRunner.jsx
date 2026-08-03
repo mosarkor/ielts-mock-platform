@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function StudentTestRunner({ testId, user, onFinished }) {
   const [test, setTest] = useState(null);
@@ -25,17 +25,21 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   // Modal State
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Anti-Cheat Proctoring States
   const [isExamStarted, setIsExamStarted] = useState(false);
   const [violations, setViolations] = useState(0);
   const [isLockoutActive, setIsLockoutActive] = useState(false);
-  const [lockoutReason, setLockoutReason] = useState('');
-  const [examTerminated, setExamTerminated] = useState(false);
+  const [lockoutReason] = useState('');
+  const [examTerminated] = useState(false);
 
   const audioRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const iframeRef = useRef(null);
+  const submissionInFlightRef = useRef(false);
+  const completionCheckRef = useRef(false);
+  const latestSubmissionRef = useRef(null);
 
   // Anti-Cheat System (Disabled strict kickout to prevent false-positive auto-submissions)
   useEffect(() => {
@@ -101,11 +105,39 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
   // Fetch test details and listen to iframe submit events
   useEffect(() => {
-    fetchTestDetails();
-    
-    const handleIframeMessage = (event) => {
-      if (event.data && event.data.type === 'IELTS_TEST_SUBMITTED') {
-        onFinished();
+    const handleIframeMessage = async (event) => {
+      if (
+        event.origin !== window.location.origin ||
+        event.source !== iframeRef.current?.contentWindow ||
+        event.data?.type !== 'IELTS_TEST_SUBMITTED' ||
+        String(event.data?.testId) !== String(testId) ||
+        completionCheckRef.current
+      ) {
+        return;
+      }
+
+      completionCheckRef.current = true;
+      try {
+        // Legacy HTML tests can post completion before their request settles.
+        // Confirm against the server before leaving the exam.
+        for (const delay of [0, 800, 1600]) {
+          if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+          const response = await fetch(`/api/student/submission-status/${encodeURIComponent(user.id)}/${testId}`, {
+            cache: 'no-store'
+          });
+          if (!response.ok) continue;
+          const status = await response.json();
+          if (status.submitted) {
+            onFinished();
+            return;
+          }
+        }
+        alert('Your submission has not been confirmed yet. Your exam will stay open so you can retry safely.');
+      } catch (error) {
+        console.error('Could not confirm iframe submission:', error);
+        alert('The platform could not confirm your submission. Check your connection and try again.');
+      } finally {
+        completionCheckRef.current = false;
       }
     };
     window.addEventListener('message', handleIframeMessage);
@@ -114,28 +146,9 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       window.removeEventListener('message', handleIframeMessage);
     };
-  }, [testId, onFinished]);
+  }, [testId, user.id, onFinished]);
 
-  // Start countdown timer
-  useEffect(() => {
-    timerIntervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerIntervalRef.current);
-          handleAutoSubmit();
-          return 0;
-        }
-        if (prev <= 300) {
-          setTimerWarning(true); // 5 minutes left warning
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timerIntervalRef.current);
-  }, []);
-
-  const fetchTestDetails = async () => {
+  const fetchTestDetails = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/student/test/${testId}`);
@@ -154,7 +167,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           if (p.writingAnswers) setWritingAnswers(p.writingAnswers);
           if (p.timeLeft && p.timeLeft > 0) setTimeLeft(p.timeLeft);
         }
-      } catch (_) {}
+      } catch {}
 
       // Initialize active question id
       if (data.listening_data?.sections?.[0]?.questions?.[0]) {
@@ -165,7 +178,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [testId, user?.id]);
 
   // Auto-save answers & time state to localStorage
   useEffect(() => {
@@ -179,40 +192,80 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         timeLeft,
         timestamp: Date.now()
       }));
-    } catch (_) {}
+    } catch {}
   }, [listeningAnswers, readingAnswers, writingAnswers, timeLeft, isExamStarted, user, testId]);
 
-  const handleAutoSubmit = () => {
-    alert("Time is up! Your answers are being submitted automatically.");
-    submitTestAnswers();
-  };
-
   const submitTestAnswers = async () => {
+    if (submissionInFlightRef.current) return;
+    submissionInFlightRef.current = true;
+    setSubmitting(true);
+    setShowSubmitConfirm(false);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+
     try {
       const res = await fetch(`/api/student/submit/${testId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           studentId: user.id,
           listeningAnswers,
           readingAnswers,
-          writingAnswers
+          writingAnswers,
+          violationsCount: violations
         })
       });
 
-      const result = await res.json();
+      const result = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(result.error || 'Failed to submit answers');
 
       try {
         localStorage.removeItem(`ielts_native_progress_${user?.id}_${testId}`);
-      } catch (_) {}
+      } catch {}
 
-      alert(result.message);
+      if (document.fullscreenElement) {
+        await document.exitFullscreen().catch(() => {});
+      }
+      alert(result.message || 'Test submitted successfully.');
       onFinished();
     } catch (err) {
-      alert(`Submission Error: ${err.message}`);
+      const message = err.name === 'AbortError'
+        ? 'The submission timed out. Your answers are still saved; check your connection and try again.'
+        : err.message;
+      alert(`Submission Error: ${message}`);
+    } finally {
+      clearTimeout(timeout);
+      submissionInFlightRef.current = false;
+      setSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    fetchTestDetails();
+  }, [fetchTestDetails]);
+
+  latestSubmissionRef.current = submitTestAnswers;
+
+  // Native tests use the parent timer. Standalone iframe tests own their timer.
+  useEffect(() => {
+    if (!isExamStarted || !test || test.listening_data?.isIframe) return;
+
+    timerIntervalRef.current = setInterval(() => {
+      setTimeLeft((previous) => {
+        if (previous <= 1) {
+          clearInterval(timerIntervalRef.current);
+          alert('Time is up! Your answers are being submitted automatically.');
+          latestSubmissionRef.current?.();
+          return 0;
+        }
+        if (previous <= 300) setTimerWarning(true);
+        return previous - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerIntervalRef.current);
+  }, [isExamStarted, test]);
 
   // Helper to format remaining seconds into MM:SS
   const formatTime = (seconds) => {
@@ -301,12 +354,14 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
       {test && test.listening_data && test.listening_data.isIframe ? (
         <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
-          <iframe 
-            ref={iframeRef}
-            src={`${window.location.origin}${test.listening_data.iframeUrl}?studentId=${user.id}&testId=${testId}`}
-            style={{ width: '100%', height: '100%', border: 'none' }}
-            title={test.title}
-          />
+          {isExamStarted && (
+            <iframe
+              ref={iframeRef}
+              src={`${window.location.origin}${test.listening_data.iframeUrl}?studentId=${encodeURIComponent(user.id)}&testId=${testId}`}
+              style={{ width: '100%', height: '100%', border: 'none' }}
+              title={test.title}
+            />
+          )}
         </div>
       ) : (
         <div className="ielts-simulator">
@@ -748,7 +803,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
               and your Writing answers will be sent to the review desk.
             </p>
             <div style={styles.confirmActions}>
-              <button className="btn btn-primary" onClick={submitTestAnswers}>
+              <button className="btn btn-primary" onClick={submitTestAnswers} disabled={submitting}>
                 Yes, Submit Test 📥
               </button>
               <button className="btn btn-secondary" onClick={() => setShowSubmitConfirm(false)}>

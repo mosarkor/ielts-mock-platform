@@ -263,13 +263,13 @@
 </style>
 
       <style>
-        .brand-badge, 
-        .brand, 
-        .gate-footer, 
-        .tg-circle, 
-        [title*="Telegram"], 
-        [title*="blog"], 
-        [alt*="IELTS Mock Team"], 
+        .brand-badge,
+        .brand,
+        .gate-footer,
+        .tg-circle,
+        [title*="Telegram"],
+        [title*="blog"],
+        [alt*="IELTS Mock Team"],
         a[href*="t.me"] {
           display: none !important;
           opacity: 0 !important;
@@ -277,8 +277,47 @@
           pointer-events: none !important;
         }
       </style>
-      </head>
-      
+
+<script>
+// Auto-bypass password/ID gate when loaded inside platform iframe
+(function() {
+  if (window === window.top) return; // Only bypass in iframe context
+  // Wait for DOM to be ready, then bypass
+  function bypassGate() {
+    var params = new URLSearchParams(window.location.search);
+    var studentId = params.get('studentId') || 'STUDENT';
+
+    // Hide password screen if present
+    var pwdScreen = document.getElementById('screen-password');
+    if (pwdScreen) pwdScreen.style.display = 'none';
+
+    // Hide ID screen if present
+    var idScreen = document.getElementById('screen-id');
+    if (idScreen) idScreen.style.display = 'none';
+
+    // Set the student ID input if present
+    var idInput = document.getElementById('id-input');
+    if (idInput) { idInput.value = studentId; }
+
+    // Show the test screen
+    var testScreen = document.getElementById('screen-test');
+    if (testScreen) testScreen.style.display = 'flex';
+
+    // Trigger start by simulating id-submit click (starts timer, renders parts)
+    var idSubmit = document.getElementById('id-submit');
+    if (idSubmit) {
+      setTimeout(function() { idSubmit.click(); }, 50);
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bypassGate);
+  } else {
+    bypassGate();
+  }
+})();
+</script>
+</head>
+
 <body>
 <div id="app">
 
@@ -507,6 +546,55 @@
   const passage2 = {"title": "READING PASSAGE 2", "sub": "Translating: a key to international understanding?", "paras": [["A", "The term 'translation' is used for all cases where the meaning of expressions in one language (the 'source' language) is turned into the meaning in another (the target language), whether the medium is spoken, written, or signed. In specific professional contexts, however, a distinction is drawn between work with the spoken or signed language (interpreting), and work with the written language (translating), although certain tasks blur this distinction."], ["B", "It is sometimes said that there is no task more complex than translation — a claim that can be readily believed when all the variables involved are taken into account. Translators not only need to know their source language well; they must also have a thorough understanding in the field of knowledge covered by the source text, and of any social, cultural, or emotional connotations that need to be specified in the target language if the intended effect is to be conveyed. The same special awareness needs to be present for the target language, so that points of special phrasing, contemporary fashions in expression, local expectations, and so on, can all be taken into account. On the whole, translators work into their mother tongue (or language of habitual use), to ensure a result that sounds as natural as possible though some translators have argued that, for certain types of text (e.g., scientific material) where translation accuracy is more crucial than naturalness, it makes more sense for the translators to be more fluent in the source language."], ["C", "The aim of translation is to provide semantic equivalence between source and target language. This is what makes translation different from other linguistic activities, such as adapting, precise writing, and abstracting. However, there are many problems hidden within this apparently simple statement, all to do with what standards of 'equivalence' should be expected and accepted."], ["D", "Exact equivalence is of course impossible: no translator could provide a translation that was a perfect parallel to the source text, in such respects as rhythm, puns and cultural allusions. Such a parallel is not even possible when paraphrasing within a single language: there is always some loss of information."], ["E", "On the other hand, there are many kinds of inexact equivalence, any of which can be successful at a certain level of practical functioning. It therefore follows that there is no such thing as a best translation. The success of translation depends on the purpose for which it was made, which in turn reflects the needs of the people for whom it was made. A rough-and-ready translation of a letter can suffice to inform a firm of the nature of an enquiry. A translation of a scientific article requires careful attention to meaning but little attention to stylistic features. The provision of a dubbed film script will warrant scrupulous care over the synchronisation of lip movements, often at the expense of content. Literary work requires a sensitive consideration of form as well as content, and may prompt several translations, each of which emphasises a different aspect of the original. It is easy to see what might be 'best' for one set of circumstances may be entirely unsuitable for another."], ["F", "Several different kinds of translation have been proposed to allow for this range of possibilities. A pragmatic translation emphasises accuracy and knowledge of the subject, required for instruction manuals and much scientific research. In an aesthetic translation, important for literary material, the focus is on preserving the emotional as well as the cognitive content of the work, and on maintaining some level of stylistic equivalence. Ethnographic or sociolinguistic translations aim to pay full attention to the cultural backgrounds of the authors and the recipients, and take into account differences between source and target language, and the ways of life in which they are embedded. And there are various kinds of linguistic translation, where the aim is to convey the structural flavour of the original text, often in quite a literal manner, emphasising such features as archaisms, dialecticisms, and levels of formality. Most translations, of course, are mixtures of these theoretical types, reflecting the complex reality of language in use."], ["G", "At another level, in a word-for-word translation each word in the source language is translated by a word in the target language. The result often makes no sense, especially when idiomatic constructions are used. In a literal translation the linguistic structure of the source text is followed, but is normalised according to the rules of the target language. In a free translation the linguistic structure of the source language is ignored, and an equivalent is found based on the meaning it conveys."], ["H", "Translators aim to produce a text that is as faithful to the original as circumstances require or permit, and yet that reads as if it were written originally in the target language. They aim to be 'invisible people' — transferring content without drawing attention to the considerable artistic and technical skills involved in the process. The complexity of the task is apparent, but its importance is often underestimated, and its practitioners' social status and legal rights undervalued. Some countries view translation as a menial, clerical task, and pay their translators accordingly, while others regard it as a major intellectual discipline in its own right. The question of status is currently much debated, particularly in Europe, where demand for translators is rocketing, especially in relation to the European Union."]]};
 
   const passage3 = {"title": "READING PASSAGE 3", "sub": "The mystery of Easter Island — What could possibly explain the lack of vegetation on Easter Island?", "paras": [["", "The giant stone statues of Easter Island in the Pacific Ocean have perplexed archaeologists ever since European explorers first witnessed them three centuries ago. Jacob Roggeveen, the Dutch seaman who gave the island its name in 1722, was amazed by the statues, each of which clearly weighed several tonnes. But as there were no forests on the island, he could not comprehend how people devoid of heavy timber could build and erect something that size. It was also remarkable considering the absence of metal objects for carving and cutting, and the reliance on mere human strength as no draught animals could be seen either. Roggeveen was equally amazed as to how the islanders could have come to colonise such a remote place. Their canoes were leaky and frail, not the sort of ocean-going craft that could survive a three-week sea journey. At the time of his visit, it seemed evident the islanders were living in extremely poor conditions and that there was no cultivation of crops."], ["", "What was the mystery behind the statues? In the 1970s, the author Erich von Däniken suggested the statues were the work of extraterrestrial beings. It was hard to believe the stones were the work of humans who were more than 2,000 miles from the nearest mainland, so for a short period of time his theory appealed to those fascinated with space travel. But for serious academics, the puzzle of the statues has caused a deep divide. Some archaeologists see Easter Island as an example of what can happen when the lust for material splendour — ever bigger stone carvings in this case — is satisfied at the expense of the environment. Others, meanwhile, take a different view. The island, these scholars argue, suffered at the hands of introduced diseases, notably smallpox, and a slave trade that stole a huge proportion of its indigenous population. At the heart of the debate is the issue of the island's deforestation. There is no doubt that the island was once covered in palm trees. There is also no doubt that something happened that caused the island to become completely denuded over a short period of time. But was it the islanders who triggered this environmental degradation or another event beyond their control, such as the introduction of rats? It is an indisputable fact that rats found their way to the island, although exactly how is a matter of debate."], ["", "In 2005, the anthropologist Jared Diamond claimed the islanders started building ceremonial statues in an atmosphere of rivalry between the many clans. To move the statues from the island's quarry in the south-east, they needed to cut large logs for the construction of long 'canoe ladders' to carry them to the coast. For its transport alone, each statue would have required several trees to be cut down. As a result of the deforestation, Diamond believes food production fell dramatically. Consequently the population collapsed from perhaps as many as 15,000 to the few thousand that were eking out a living by the time Roggeveen arrived. Smallpox and slavery killed off those who remained, but the islanders were on the way to total collapse even without any European contact, says Diamond."], ["", "But not everyone is convinced. Professor Terry Hunt, an anthropologist at the University of Hawaii, says: 'There is no evidence that a population collapse occurred before European contact.' He is supported by Professor Carl Lipo of California State University. They argue that Easter Island was colonised by the first Polynesian seafarers nowhere near as early as supposed. They say the first people to arrive came around AD1200, about 400 years later than other scientists have suggested from radio-carbon dating. This makes it implausible for the population to have reached the 15,000 figure that would have caused such a fast ecocide. They also believe the deforestation occurred over a longer period as a result of climate change, and rats probably also played a part. The islanders did not go through a population collapse until after the arrival of Europeans, they say."], ["", "Hunt has examined new data from the Hawaiian and other Pacific islands that shows that by early historic times the deforestation of Easter Island was already complete, or nearly so. A dense forest of palm trees and shrubs had mostly disappeared and as a result, as many as six land bird species had also become extinct. Crucially, much of the forest damage appears to have been done before evidence of fires on the island. However, almost all of the palm seed shells discovered on the island were found to have been gnawed by rats which would have made them unable to germinate. Evidence from other Pacific islands also confirms how destructive rats can be. However, John Flenley of New Zealand's Massey University, who carried out much of the radio-carbon work on Easter Island, says there is ample evidence for a much earlier arrival of Polynesian settlers. He refutes the arguments of the sceptics: whilst admitting that the Europeans did bring certain disasters, he maintains that Hunt and Lipo are ignoring archaeological, botanical and sedimentological evidence proving the island was transformed from a subtropical rainforest to a treeless landscape. The radio-carbon dating points to an initial colonisation before AD900, Flenley argues. This was ample time for the rapid deforestation, environmental collapse and a population crash, he insists."], ["", "Why all this is important today is not, of course, lost in the age of globalisation, climate change and a rapidly growing world population in the billions. As Diamond says: 'The parallels between Easter Island and the whole of the modern world are chillingly obvious.'"]]};
+
+  // ================= RELIABLE PROGRESS STORAGE =================
+  function progressStorageKey(){
+    const params = new URLSearchParams(window.location.search);
+    const studentId = params.get("studentId") || state.takerId || "STUDENT";
+    const testId = params.get("testId") || "8";
+    return `ielts_progress_${testId}_${studentId}`;
+  }
+  function saveProgressToStorage(){
+    if (state.submitted) return;
+    try {
+      const audio = document.getElementById("test-audio");
+      localStorage.setItem(progressStorageKey(), JSON.stringify({
+        lAnswers: state.lAnswers || {}, rAnswers: state.rAnswers || {}, wAnswers: state.wAnswers || {},
+        stage: state.stage || "listening", lCurrentPart: state.lCurrentPart || 1,
+        rCurrentPart: state.rCurrentPart || 1, wCurrentTask: state.wCurrentTask || 1,
+        rTimeLeft: state.rTimeLeft, wTimeLeft: state.wTimeLeft,
+        audioTime: audio && Number.isFinite(audio.currentTime) ? audio.currentTime : 0,
+        timestamp: Date.now()
+      }));
+    } catch (_) {}
+  }
+  function restoreProgressFromStorage(){
+    try {
+      const raw = localStorage.getItem(progressStorageKey());
+      if (!raw) return false;
+      const saved = JSON.parse(raw);
+      if (saved.lAnswers && typeof saved.lAnswers === "object") state.lAnswers = {...saved.lAnswers};
+      if (saved.rAnswers && typeof saved.rAnswers === "object") state.rAnswers = {...saved.rAnswers};
+      if (saved.wAnswers && typeof saved.wAnswers === "object") state.wAnswers = {...saved.wAnswers};
+      if (["listening","reading","writing"].includes(saved.stage)) state.stage = saved.stage;
+      if (Number.isInteger(saved.lCurrentPart)) state.lCurrentPart = Math.min(4, Math.max(1, saved.lCurrentPart));
+      if (Number.isInteger(saved.rCurrentPart)) state.rCurrentPart = Math.min(3, Math.max(1, saved.rCurrentPart));
+      if (Number.isInteger(saved.wCurrentTask)) state.wCurrentTask = Math.min(2, Math.max(1, saved.wCurrentTask));
+      if (Number.isFinite(saved.rTimeLeft) && saved.rTimeLeft > 0) state.rTimeLeft = saved.rTimeLeft;
+      if (Number.isFinite(saved.wTimeLeft) && saved.wTimeLeft > 0) state.wTimeLeft = saved.wTimeLeft;
+      state.audioTime = Number.isFinite(saved.audioTime) ? Math.max(0, saved.audioTime) : 0;
+      return true;
+    } catch (_) { return false; }
+  }
+  function clearProgressStorage(){
+    try { localStorage.removeItem(progressStorageKey()); } catch (_) {}
+  }
+  function startRestoredStage(){
+    if (state.stage === "writing") startWritingStage();
+    else if (state.stage === "reading") startReadingStage();
+    else startListeningStage();
+  }
+  window.addEventListener("pagehide", saveProgressToStorage);
 
   // ================= SHARED HELPERS =================
   function inputBlank(qnum, answersObj, width){
@@ -1030,7 +1118,9 @@
     $("taker-id-display-t").textContent = val;
     $("results-taker-id").textContent = val;
     hide($("screen-id")); show($("screen-test"));
-    restoreProgressFromStorage(); startListeningStage();
+    if (state.testStarted) return;
+    state.testStarted = true;
+    restoreProgressFromStorage(); startRestoredStage();
     enterFullscreen();
   });
   $("id-input").addEventListener("keydown", (e) => { if (e.key==="Enter") $("id-submit").click(); });
@@ -1047,7 +1137,7 @@
     state.blurAutoSubmitEnabled = false;
     state.autoHandled = false;
     refreshTopbarForStage();
-    renderListeningStage(1);
+    renderListeningStage(state.lCurrentPart || 1);
     startListeningAudio(true);
   }
   function startReadingStage(){
@@ -1055,7 +1145,7 @@
     state.blurAutoSubmitEnabled = false; // reading: no auto-submit on leaving window
     state.autoHandled = false;
     refreshTopbarForStage();
-    renderReadingStage(1);
+    renderReadingStage(state.rCurrentPart || 1);
     startReadingTimer();
   }
   function startWritingStage(){
@@ -1063,7 +1153,7 @@
     state.blurAutoSubmitEnabled = false;
     state.autoHandled = false;
     refreshTopbarForStage();
-    renderWritingStage(1);
+    renderWritingStage(state.wCurrentTask || 1);
     startWritingTimer();
   }
 
@@ -1072,9 +1162,9 @@
   function startListeningAudio(autoAttempt=false){
     const btn = $("play-audio-btn");
     if (btn){ btn.disabled = false; btn.textContent = "▶ Play"; }
-    try { audioEl.currentTime = 0; } catch(e){}
-    const proceed = () => { hide($("audio-gate-overlay")); state.audioStarted = true; refreshTopbarForStage(); };
-    const fallback = () => { if (autoAttempt){ show($("audio-gate-overlay")); } else { proceed(); } };
+    try { audioEl.currentTime = Number.isFinite(state.audioTime) ? state.audioTime : 0; } catch(e){}
+    const proceed = () => { $("audio-gate-overlay").classList.remove("show"); state.audioStarted = true; refreshTopbarForStage(); };
+    const fallback = () => { if (autoAttempt){ $("audio-gate-overlay").classList.add("show"); } else { proceed(); } };
     const p = audioEl.play();
     if (p && p.then) { p.then(proceed).catch(fallback); } else { proceed(); }
   }
@@ -1140,7 +1230,7 @@
   function finishWriting(){
           clearInterval(state.wTimerInterval);
           hide($("screen-test")); hide($("screen-transition"));
-          
+
           const resultsScreen = $("screen-results");
           if (resultsScreen) {
             resultsScreen.innerHTML = `
@@ -1197,51 +1287,11 @@
             return 4.0;
           };
 
-          
-          
-  // LocalStorage Progress Auto-Save & Recovery
-  function saveProgressToStorage() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sId = params.get('studentId') || state.takerId || 'STUDENT';
-      const key = 'ielts_progress_' + tId + '_' + sId;
-      localStorage.setItem(key, JSON.stringify({
-        lAnswers: state.lAnswers || {},
-        rAnswers: state.rAnswers || {},
-        wAnswers: state.wAnswers || {},
-        stage: state.stage || 'listening',
-        timestamp: Date.now()
-      }));
-    } catch (_) {}
-  }
 
-  function restoreProgressFromStorage() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sId = params.get('studentId') || state.takerId || 'STUDENT';
-      const key = 'ielts_progress_' + tId + '_' + sId;
-      const data = localStorage.getItem(key);
-      if (data) {
-        const p = JSON.parse(data);
-        if (p.lAnswers && state.lAnswers) Object.assign(state.lAnswers, p.lAnswers);
-        if (p.rAnswers && state.rAnswers) Object.assign(state.rAnswers, p.rAnswers);
-        if (p.wAnswers && state.wAnswers) Object.assign(state.wAnswers, p.wAnswers);
-      }
-    } catch (_) {}
-  }
 
-  function clearProgressStorage() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sId = params.get('studentId') || state.takerId || 'STUDENT';
-      localStorage.removeItem('ielts_progress_' + tId + '_' + sId);
-    } catch (_) {}
-  }
-
-          clearProgressStorage();
           const sendSubmitMessage = () => {
             if (window.parent) {
-              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, window.location.origin);
             }
           };
 
@@ -1258,21 +1308,21 @@
               violationsCount: parseInt(sessionStorage.getItem('violations_' + tId) || '0')
             })
           })
-          .then(res => res.json())
+          .then(async res => { const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.error || 'Submission was not accepted'); return data; })
           .then(data => {
             console.log('Submission synced successfully:', data);
+            state.submitted = true;
+            clearProgressStorage();
             sendSubmitMessage();
           })
           .catch(err => {
             console.error('Submission catch error:', err);
-            sendSubmitMessage();
+            alert('Submission was not confirmed. Your saved answers are still available; check your connection and try again.');
           });
 
-          setTimeout(sendSubmitMessage, 1500);
-    
           return;
         }
-        
+
 
   // ================= AUTO-SUBMIT ON LEAVING WINDOW (Listening & Writing only) =================
   function autoSubmitIfActive(){ return; }
@@ -1462,6 +1512,9 @@
     state.blurAutoSubmitEnabled = false; state.autoHandled = false;
     document.body.className = ""; $("app").className = ""; $("app").classList.add("textsize-regular");
     hide($("screen-results")); hide($("screen-transition")); hide($("screen-test"));
+    state.testStarted = false;
+    state.submitted = false;
+    clearProgressStorage();
     show($("screen-password"));
     $("pwd-input").value=""; $("id-input").value="";
     $("pwd-error").textContent=""; $("id-error").textContent="";
@@ -1478,30 +1531,34 @@
           const params = new URLSearchParams(window.location.search);
           const sId = params.get('studentId');
           const tId = params.get('testId') || '8';
-          
+
           if (sId) {
             state.takerId = sId;
-            
+
             const pwdScreen = document.getElementById("screen-password");
             const idScreen = document.getElementById("screen-id");
             if (pwdScreen) pwdScreen.classList.add("hidden");
             if (idScreen) idScreen.classList.add("hidden");
-            
+
             const takerDisplay = document.getElementById("taker-id-display");
             const takerDisplayT = document.getElementById("taker-id-display-t");
             const resultsTaker = document.getElementById("results-taker-id");
-            
+
             if (takerDisplay) takerDisplay.textContent = sId;
             if (takerDisplayT) takerDisplayT.textContent = sId;
             if (resultsTaker) resultsTaker.textContent = sId;
-            
+
             const testScreen = document.getElementById("screen-test");
             if (testScreen) testScreen.classList.remove("hidden");
-            
-            startListeningStage();
+
+            if (!state.testStarted) {
+              state.testStarted = true;
+              restoreProgressFromStorage();
+              startRestoredStage();
+            }
           }
         });
-        
+
 })();
 </script>
 </body>

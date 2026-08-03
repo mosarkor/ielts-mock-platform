@@ -240,13 +240,13 @@ body.text-xlarge #exam { zoom:1.3; }
 </style>
 
       <style>
-        .brand-badge, 
-        .brand, 
-        .gate-footer, 
-        .tg-circle, 
-        [title*="Telegram"], 
-        [title*="blog"], 
-        [alt*="IELTS Mock Team"], 
+        .brand-badge,
+        .brand,
+        .gate-footer,
+        .tg-circle,
+        [title*="Telegram"],
+        [title*="blog"],
+        [alt*="IELTS Mock Team"],
         a[href*="t.me"] {
           display: none !important;
           opacity: 0 !important;
@@ -255,7 +255,7 @@ body.text-xlarge #exam { zoom:1.3; }
         }
       </style>
       </head>
-      
+
 <body>
 
 <div id="login">
@@ -472,7 +472,7 @@ body.text-xlarge #exam { zoom:1.3; }
   </div>
 </section>
 </div>
-    
+
     </div>
     <div class="bottom-submit sticky-low">
       <div class="qnav" id="qnavListening"></div>
@@ -630,7 +630,7 @@ body.text-xlarge #exam { zoom:1.3; }
     <div class="result-actions">
       <button class="main-btn" onclick="downloadPDF()">Save PDF Report</button>
       <button class="secondary-btn" onclick="toggleReview()">Check Answers</button>
-      <button class="secondary-btn" onclick="location.reload()">Restart</button>
+      <button class="secondary-btn" onclick="restartFullMock()">Restart</button>
     </div>
     <div id="reviewBox" class="review-box"></div>
   </div>
@@ -767,10 +767,57 @@ function submitSection(sec, auto=false){
   else if(sec==='reading') switchSection('writing', 60*60);
   else finishTest();
 }
+// Reliable form progress storage
+let progressSubmissionComplete = false;
+function progressStorageKey(){
+  const params = new URLSearchParams(window.location.search);
+  const studentId = params.get('studentId') || candidate || 'STUDENT';
+  const testId = params.get('testId') || '3';
+  return 'ielts_progress_' + testId + '_' + studentId;
+}
+function saveProgressToStorage(){
+  if (progressSubmissionComplete) return;
+  try {
+    const controls = [...document.querySelectorAll('#exam input, #exam select, #exam textarea')];
+    localStorage.setItem(progressStorageKey(), JSON.stringify({
+      controls: controls.map(el => ({ value: el.value, checked: !!el.checked })),
+      timestamp: Date.now()
+    }));
+  } catch (_) {}
+}
+function restoreProgressFromStorage(){
+  try {
+    const raw = localStorage.getItem(progressStorageKey());
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    const controls = [...document.querySelectorAll('#exam input, #exam select, #exam textarea')];
+    (saved.controls || []).forEach((item, index) => {
+      const el = controls[index];
+      if (!el) return;
+      if (el.type === 'checkbox' || el.type === 'radio') el.checked = !!item.checked;
+      else el.value = item.value == null ? '' : item.value;
+    });
+    if (typeof updateWords === 'function') updateWords();
+    if (typeof refreshPalettes === 'function') refreshPalettes();
+  } catch (_) {}
+}
+function clearProgressStorage(){
+  try { localStorage.removeItem(progressStorageKey()); } catch (_) {}
+}
+function restartFullMock(){
+  clearProgressStorage();
+  progressSubmissionComplete = false;
+  location.reload();
+}
+document.addEventListener('input', event => { if (event.target.closest('#exam')) saveProgressToStorage(); });
+document.addEventListener('change', event => { if (event.target.closest('#exam')) saveProgressToStorage(); });
+document.addEventListener('DOMContentLoaded', restoreProgressFromStorage);
+window.addEventListener('pagehide', saveProgressToStorage);
+
 function finishTest(){
           clearInterval(timerInt);
           document.getElementById('exam').classList.add('hidden');
-          
+
           const resultCard = document.querySelector('#result .result-card');
           if (resultCard) {
             resultCard.innerHTML = `
@@ -828,51 +875,11 @@ function finishTest(){
           const sId = params.get('studentId') || candidate;
           const tId = params.get('testId') || '3';
 
-          
-          
-  // LocalStorage Progress Auto-Save & Recovery
-  function saveProgressToStorage() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sId = params.get('studentId') || state.takerId || 'STUDENT';
-      const key = 'ielts_progress_' + tId + '_' + sId;
-      localStorage.setItem(key, JSON.stringify({
-        lAnswers: state.lAnswers || {},
-        rAnswers: state.rAnswers || {},
-        wAnswers: state.wAnswers || {},
-        stage: state.stage || 'listening',
-        timestamp: Date.now()
-      }));
-    } catch (_) {}
-  }
 
-  function restoreProgressFromStorage() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sId = params.get('studentId') || state.takerId || 'STUDENT';
-      const key = 'ielts_progress_' + tId + '_' + sId;
-      const data = localStorage.getItem(key);
-      if (data) {
-        const p = JSON.parse(data);
-        if (p.lAnswers && state.lAnswers) Object.assign(state.lAnswers, p.lAnswers);
-        if (p.rAnswers && state.rAnswers) Object.assign(state.rAnswers, p.rAnswers);
-        if (p.wAnswers && state.wAnswers) Object.assign(state.wAnswers, p.wAnswers);
-      }
-    } catch (_) {}
-  }
 
-  function clearProgressStorage() {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const sId = params.get('studentId') || state.takerId || 'STUDENT';
-      localStorage.removeItem('ielts_progress_' + tId + '_' + sId);
-    } catch (_) {}
-  }
-
-          clearProgressStorage();
           const sendSubmitMessage = () => {
             if (window.parent) {
-              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+              window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, window.location.origin);
             }
           };
 
@@ -884,26 +891,26 @@ function finishTest(){
               listeningAnswers,
               readingAnswers,
               writingAnswers,
-              listeningScore: typeof getIeltsBand === 'function' ? getIeltsBand(lRes?.correctCount || 0) : undefined,
-              readingScore: typeof getIeltsBand === 'function' ? getIeltsBand(rRes?.correctCount || 0) : undefined,
+              listeningScore: getIeltsBand(lScore),
+              readingScore: getIeltsBand(rScore),
               violationsCount: parseInt(sessionStorage.getItem('violations_' + tId) || '0')
             })
           })
-          .then(res => res.json())
+          .then(async res => { const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.error || 'Submission was not accepted'); return data; })
           .then(data => {
             console.log('Submission synced successfully:', data);
+            progressSubmissionComplete = true;
+            clearProgressStorage();
             sendSubmitMessage();
           })
           .catch(err => {
             console.error('Submission catch error:', err);
-            sendSubmitMessage();
+            alert('Submission was not confirmed. Your saved answers are still available; check your connection and try again.');
           });
 
-          setTimeout(sendSubmitMessage, 1500);
-    
           return;
         }
-        
+
 function countAnswered(prefix,total){
   let n=0;
   for(let i=1;i<=total;i++){ if(getAnswer(prefix+i).length) n++; }
@@ -1387,14 +1394,14 @@ function setTextSize(t){
           const params = new URLSearchParams(window.location.search);
           const sId = params.get('studentId') || 'STUDENT';
           const tId = params.get('testId') || '3';
-          
+
           candidate = sId;
           const loginScreen = document.getElementById('login');
           if (loginScreen) loginScreen.classList.add('hidden');
-          
+
           const introScreen = document.getElementById('intro');
           if (introScreen) introScreen.classList.remove('hidden');
-          
+
           const welcomeName = document.getElementById('welcomeName');
           if (welcomeName) welcomeName.textContent = 'Candidate ID: ' + candidate;
         }

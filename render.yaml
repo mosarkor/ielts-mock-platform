@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: ielts-mock-platform
+    env: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.5.0
+      - key: PORT
+        value: 10000
+
+databases:
+  - name: ielts-db
+    plan: free
+    databaseName: ielts_mock_db
+    user: ielts_user

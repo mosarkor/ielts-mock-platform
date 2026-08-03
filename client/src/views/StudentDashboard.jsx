@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
 
 export default function StudentDashboard({ user, onLogout, onStartTest, onStartSpeaking, theme, toggleTheme }) {
@@ -86,11 +86,7 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [user.id]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/student/dashboard/${user.id}`);
@@ -111,7 +107,11 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.id]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const handleStartTestClick = async (testId) => {
     try {
@@ -1051,11 +1051,7 @@ const styles = {
   headerTitle: {
     display: 'flex',
     alignItems: 'center',
-    gap: '1rem',
-    h2: {
-      fontSize: '1.5rem',
-      fontWeight: '700',
-    }
+    gap: '1rem'
   },
   badge: {
     fontSize: '0.75rem',
@@ -1228,11 +1224,7 @@ const styles = {
     borderBottom: '1px solid var(--glass-border)',
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    h3: {
-      fontSize: '1.25rem',
-      fontWeight: '600',
-    }
+    alignItems: 'center'
   },
   closeBtn: {
     background: 'none',
@@ -1277,11 +1269,7 @@ const styles = {
     border: '1px solid var(--glass-border)',
     borderRadius: '8px',
     padding: '1rem 1.25rem',
-    marginBottom: '1.5rem',
-    h5: {
-      fontWeight: '600',
-      marginBottom: '0.75rem',
-    }
+    marginBottom: '1.5rem'
   },
   rubricsGrid: {
     display: 'grid',
@@ -1301,33 +1289,19 @@ const styles = {
     border: '1px solid rgba(16, 185, 129, 0.2)',
     borderRadius: '8px',
     padding: '1.25rem',
-    marginBottom: '1.5rem',
-    h5: {
-      color: '#10b981',
-      fontWeight: '600',
-      marginBottom: '0.5rem',
-    }
+    marginBottom: '1.5rem'
   },
   feedbackText: {
     fontSize: '0.95rem',
     lineHeight: '1.5',
     color: '#e2e8f0',
   },
-  essaysSection: {
-    h5: {
-      fontWeight: '600',
-      marginBottom: '0.75rem',
-    }
-  },
+  essaysSection: {},
   essayBox: {
     backgroundColor: '#151c2c',
     border: '1px solid var(--glass-border)',
     borderRadius: '8px',
-    padding: '1rem',
-    h6: {
-      color: '#94a3b8',
-      marginBottom: '0.5rem',
-    }
+    padding: '1rem'
   },
   essayText: {
     fontSize: '0.9rem',

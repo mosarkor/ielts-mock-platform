@@ -136,59 +136,78 @@ export default function TeacherDashboard({ user, onLogout, theme, toggleTheme })
   const loadAnswerKey = async (sub) => {
     setLoadingKey(true);
     try {
-      let iframeUrl = `/tests/mock${sub.test_id}.html`;
-      if (sub.listening_data) {
-        try {
-          const lData = JSON.parse(sub.listening_data);
-          if (lData.iframeUrl) {
-            iframeUrl = lData.iframeUrl;
-          }
-        } catch(e) {}
-      }
-      
-      const res = await fetch(iframeUrl);
-      if (!res.ok) throw new Error('Answer key not found');
-      const html = await res.text();
-      
       let answersObj = {};
       let displayObj = {};
 
-      const answersMatch = html.match(/const\s+ANSWERS\s*=\s*({[\s\S]*?});/);
-      const displayAnswersMatch = html.match(/const\s+DISPLAY_ANSWERS\s*=\s*({[\s\S]*?});/);
+      if (sub.listening_data) {
+        try {
+          const lData = typeof sub.listening_data === 'string' ? JSON.parse(sub.listening_data) : sub.listening_data;
+          if (lData.sections) {
+            lData.sections.forEach(sec => {
+              (sec.questions || []).forEach(q => {
+                if (q.id && q.answer !== undefined) {
+                  const val = Array.isArray(q.answer) ? q.answer : [String(q.answer)];
+                  answersObj['l' + q.id] = val;
+                  displayObj['l' + q.id] = Array.isArray(q.answer) ? q.answer.join(' / ') : String(q.answer);
+                }
+              });
+            });
+          }
+        } catch {}
+      }
 
-      if (answersMatch) {
-        answersObj = JSON.parse(answersMatch[1]);
-        displayObj = displayAnswersMatch ? JSON.parse(displayAnswersMatch[1]) : {};
-      } else {
-        const lMatch = html.match(/const\s+listeningAnswerKey\s*=\s*({[\s\S]*?});/);
-        const rMatch = html.match(/const\s+readingAnswerKey\s*=\s*({[\s\S]*?});/);
+      if (sub.reading_data) {
+        try {
+          const rData = typeof sub.reading_data === 'string' ? JSON.parse(sub.reading_data) : sub.reading_data;
+          if (rData.passages) {
+            rData.passages.forEach(pass => {
+              (pass.questions || []).forEach(q => {
+                if (q.id && q.answer !== undefined) {
+                  const val = Array.isArray(q.answer) ? q.answer : [String(q.answer)];
+                  answersObj['r' + q.id] = val;
+                  displayObj['r' + q.id] = Array.isArray(q.answer) ? q.answer.join(' / ') : String(q.answer);
+                }
+              });
+            });
+          }
+        } catch {}
+      }
 
-        if (lMatch) {
-          try {
-            const lKey = JSON.parse(lMatch[1]);
-            for (let q = 1; q <= 40; q++) {
-              const val = lKey[q] || lKey[String(q)];
-              if (val !== undefined) {
-                const arr = Array.isArray(val) ? val : [String(val)];
-                answersObj['l' + q] = arr;
-                displayObj['l' + q] = Array.isArray(val) ? val.join(' / ') : String(val);
+      if (Object.keys(answersObj).length === 0) {
+        let iframeUrl = `/tests/mock${sub.test_id}.html`;
+        const res = await fetch(iframeUrl);
+        if (res.ok) {
+          const html = await res.text();
+          const lMatch = html.match(/const\s+listeningAnswerKey\s*=\s*({[\s\S]*?});/);
+          const rMatch = html.match(/const\s+readingAnswerKey\s*=\s*({[\s\S]*?});/);
+
+          if (lMatch) {
+            try {
+              const lKey = JSON.parse(lMatch[1]);
+              for (let q = 1; q <= 40; q++) {
+                const val = lKey[q] || lKey[String(q)];
+                if (val !== undefined) {
+                  const arr = Array.isArray(val) ? val : [String(val)];
+                  answersObj['l' + q] = arr;
+                  displayObj['l' + q] = Array.isArray(val) ? val.join(' / ') : String(val);
+                }
               }
-            }
-          } catch(e) { console.warn('Failed to parse listeningAnswerKey:', e); }
-        }
+            } catch(e) {}
+          }
 
-        if (rMatch) {
-          try {
-            const rKey = JSON.parse(rMatch[1]);
-            for (let q = 1; q <= 40; q++) {
-              const val = rKey[q] || rKey[String(q)];
-              if (val !== undefined) {
-                const arr = Array.isArray(val) ? val : [String(val)];
-                answersObj['r' + q] = arr;
-                displayObj['r' + q] = Array.isArray(val) ? val.join(' / ') : String(val);
+          if (rMatch) {
+            try {
+              const rKey = JSON.parse(rMatch[1]);
+              for (let q = 1; q <= 40; q++) {
+                const val = rKey[q] || rKey[String(q)];
+                if (val !== undefined) {
+                  const arr = Array.isArray(val) ? val : [String(val)];
+                  answersObj['r' + q] = arr;
+                  displayObj['r' + q] = Array.isArray(val) ? val.join(' / ') : String(val);
+                }
               }
-            }
-          } catch(e) { console.warn('Failed to parse readingAnswerKey:', e); }
+            } catch(e) {}
+          }
         }
       }
 
@@ -1692,11 +1711,7 @@ const styles = {
   headerTitle: {
     display: 'flex',
     alignItems: 'center',
-    gap: '1rem',
-    h2: {
-      fontSize: '1.5rem',
-      fontWeight: '700',
-    }
+    gap: '1rem'
   },
   badge: {
     fontSize: '0.75rem',
@@ -1875,11 +1890,7 @@ const styles = {
     alignItems: 'center',
     borderBottom: '1px solid var(--glass-border)',
     paddingBottom: '0.5rem',
-    marginBottom: '0.75rem',
-    h5: {
-      color: 'var(--text-primary)',
-      fontWeight: '600',
-    }
+    marginBottom: '0.75rem'
   },
   writingPrompt: {
     fontSize: '0.85rem',

@@ -312,23 +312,23 @@
   function bypassGate() {
     var params = new URLSearchParams(window.location.search);
     var studentId = params.get('studentId') || 'STUDENT';
-    
+
     // Hide password screen if present
     var pwdScreen = document.getElementById('screen-password');
     if (pwdScreen) pwdScreen.style.display = 'none';
-    
+
     // Hide ID screen if present
     var idScreen = document.getElementById('screen-id');
     if (idScreen) idScreen.style.display = 'none';
-    
+
     // Set the student ID input if present
     var idInput = document.getElementById('id-input');
     if (idInput) { idInput.value = studentId; }
-    
+
     // Show the test screen
     var testScreen = document.getElementById('screen-test');
     if (testScreen) testScreen.style.display = 'flex';
-    
+
     // Trigger start by simulating id-submit click (starts timer, renders parts)
     var idSubmit = document.getElementById('id-submit');
     if (idSubmit) {
@@ -348,8 +348,8 @@
 
   <!-- PASSWORD -->
   <div class="gate-screen" id="screen-password" class="gate-screen hidden">
-    
-      
+
+
     </div>
     <div class="gate-card">
       <div class="gate-brand-row">
@@ -366,8 +366,8 @@
 
   <!-- ID -->
   <div class="gate-screen hidden" id="screen-id">
-    
-      
+
+
     </div>
     <div class="gate-card">
       <div class="gate-brand-row">
@@ -384,8 +384,8 @@
 
   <!-- TEST SHELL (shared by Listening / Reading / Writing) -->
   <div class="hidden" id="screen-test" style="height:100%;display:flex;flex-direction:column;">
-    
-      
+
+
     </div>
     <div class="topbar">
       <div class="topbar-left">
@@ -455,8 +455,8 @@
 
   <!-- TRANSITION (reused between Listening→Reading and Reading→Writing) -->
   <div class="hidden" id="screen-transition" style="height:100%;display:flex;flex-direction:column;position:relative;">
-    
-      
+
+
     </div>
     <div class="topbar">
       <div class="topbar-left">
@@ -563,6 +563,55 @@
   const passage1 = {"title": "The Importance of Business Cards", "sub": "The exchanging of business cards is as close to a universal ritual as you can find in the business world.", "paras": [["", "The ritual may be universal, but the details of business cards and how they are swapped vary across countries. Americans throw their cards casually across a table; the Japanese make the exchange of cards a formal ceremony. While there are cards that are discreet and understated, others are crammed full of details and titles. Some businesspeople hand out 24-carat gold cards, and there are kindergarten children who have cards with not only their own contact details, but also with the job descriptions of their parents and even grandparents. This practice has become so common in parts of New York, for example, that the use of such cards is now prohibited by some of these institutions."], ["", "Cards have been around a long time in one form or another. The Chinese invented calling cards in the 15th century to give people notice that they intended to pay them a visit, but these were for social purposes only. Then, in the 17th century, European businesspeople invented a new type of card to act as miniature advertisements, signalling the advent of the business card. In today's world, business cards can cause people to have strong emotional reactions. According to one experienced company director, very few things can provoke more heated discussion at a board meeting than the composition of the company's business cards."], ["", "Lots of companies try to promote themselves by altering the form of the card. Employees at one famous toy company give out little plastic figures with their contact details stamped on them. One fast food company has business cards which are shaped like a portion of French fries. A Canadian divorce lawyer once gave out cards that could be torn in two - one half for each of the spouses. For many business commentators, such gimmicky business cards prove that the use of a physical business card is nearly at an end. After all, why bother exchanging bits of thick paper at all when you can simply swap electronic versions by smartphone?"], ["", "However, one can just as well argue the opposite: that business cards are here to stay, and in a business world full of meetings and correspondence, it is more important than ever that your card is unique. Attempts to reinvent business cards for the digital age have not been successful. Even at the latest technology conferences, people still greet each other by handing out little rectangles made from paper rather than using a digital alternative."], ["", "To understand business cards, it is necessary to understand how business works. That business cards are thriving in a digital age is a forceful reminder that there is much about business that is timeless. According to Kate Jones, a business lecturer, there is one eternal and inescapable issue. Her 2006 study of more than 200 business executives in North America found that trust was the key element for running a successful business. It is vital to be able to look someone in the eye and decide what sort of person they are. In this way, you can transform acquaintanceships into relationships. A good proportion of business life will always be about building social connections - having dinner or playing sport with clients and colleagues - and while computers can deal with administrative tasks, it is still human beings that have to focus on the emotional."], ["", "The rapid advance of globalisation means that this relationship-building process is becoming ever more demanding. Managers have to put more effort in when dealing with international counterparts, especially when there is not a common language, which is so often the case these days. A recent UK survey showed that chief executives of global organisations now routinely spend three out of every four weeks on international travel. It is in these situations that business cards are doubly useful, as they are a quick way of establishing connections. Cards can also remind you that you have actually met someone in a face-to-face meeting rather than just searched for them on the internet. Looking through piles of different cards can enhance your memory in ways that simply looking through uniform electronic lists would never do."], ["", "Janet McIntyre is a leading expert on business cards in today's world. She maintains that as companies become more complex, cards are essential in determining the exact status of every contact you meet in multinational corporations. Janet also explains how exchanging business cards can be an effective way of initiating a conversation, because it gives people a ritual to follow when they first meet a new business contact."], ["", "The business world is obsessed with the idea of creating and inventing new things that will change the way we do everything, and this does lead to progress. But there are lots of things that do not need to be changed and, in Janet McIntyre's view, tradition also has an equally valuable role to play. Therefore the practice of exchanging business cards is likely to continue in the business world."]]};
   const passage2 = {"title": "Classical music over the centuries", "sub": "", "paras": [["A", "The production of any great art form, and classical music is no exception, does not usually occur in a society dominated by the basic material demands of food and shelter. Art and music have flourished in those periods of history, and those parts of society, in which the luxury of free time and material wealth has allowed such a culture to take precedence over more material matters. In the medieval European world, it was thus primarily in the closed communities of the church and monastery, and royal courts that music, literature and learning were able to flourish."], ["B", "It was not until the 18th century that this situation changed to any great extent, and the rise of an economically independent middle class meant that concert-going became a public activity for anyone who cared to buy a ticket. It is worth remembering that the idea of classical music widely accepted today did not exist until about 300 years ago. Performing music in concert halls to a paying audience, as something inherently pleasurable and significant, was pretty much unheard of until the 18th century, and not widely established until the 19th. The concert venue, the audience, and the idea of the 'masterpieces' of classical music, were all effectively invented during the course of the 18th century - in London, Paris, Vienna, Berlin and other European cities where the arts in general were blossoming."], ["C", "Today, music that was originally written for a concert venue may appear, out of its original context, in an advert or film. Conversely, music written specifically for films is sometimes performed live. But nothing has changed music over the last century more radically than the invention and dissemination of recording technologies. However, although Thomas Edison originally developed the phonograph in 1877, and wax cylinders were used as early as the 1880s for recording music, commercial recordings of music were not generally available to the majority until the 1920s. From the mid-1980s onwards, the vinyl disc gradually gave way to the new technology of the CD, but just a decade later, the digital MP3 file was already displacing the CD as the favoured way to produce recorded music. Yet now, people have more music stored on their phones or computers - which they can call up with the touch of a finger - than would have been contained on all the metres of library shelves of a proud 'record collector' of the 20th century."], ["D", "Before recording, music was a social event - it involved one or more people coming together to make music. The music lasted for as long as the musicians sang or played and then it was over. Therefore, the only music that was heard tended to be compositions by recent or living musicians, probably working in the locality; it was rare to hear music from a past generation, distant place or culture. Even when music became more professionalised, people who wanted to listen to music went to a specific venue, at a specific time, to hear musicians create a one-off event."], ["E", "These days, however, technology makes almost all the world's music instantly and constantly available to anyone with access to simple and cheap gadgets designed for playing it. Music thus floats free of any specific occasion or venue. It is no longer restricted to a particular audience or group of musicians. For the first time, music (any music) can be an entirely personal affair. This is one of the reasons that the 'classical' label becomes harder to pin down. One of its distinctive aspects - a performance defined by concert halls and opera houses - is dissolved by digital recording formats. As a consequence all music, classical music included, can become any person's soundtrack for activities such as commuting, exercising or shopping."], ["F", "The ubiquity of music as recorded sound means that it is very easy to overlook perhaps the most definitive aspect of the classical music tradition - the fact that it is a written or notated music. Though classical music may lack a precise definition today and mean quite different things to different people, at its heart is the idea of a music that has remained viable over the years because it was written down in some form. The origins of what music historians think of as classical music dates from the ninth century, when a system of musical notation was first developed. Before this time, singers in religious services in cathedrals or monasteries had to learn by heart a huge repertory of chants. The first attempts to notate music were intended to help them remember these. Over the next thousand years, notation became more complex, incorporating such aspects as rhythm and pitch, allowing composers to rework and refine their musical ideas. Put very simply, the history of classical music, in all its varied forms, is the history of a tradition that grew out of the possibilities of musical notation."]]};
   const passage3 = {"title": "Redesigning the Cleveland Museum of Art", "sub": "", "paras": [["A", "Most great art museums have personalities based on the combined effect of their permanent collections and the buildings they occupy, and the Cleveland Museum of Art is no exception. The museum's $320 million expansion and renovation project gave the institution a fresh, innovative quality that has gained much attention. And that change, which focuses on social equality, can be summed up in two words: cultural parity."], ["B", "America's large art museums tend to segregate their collections in self-contained departments, treating art history as a straight-line chronology, grouped by Western notions of scientific and technological progress. They begin with the ancient past and proceed up to the present. At the renovated Cleveland museum, where permanent collection galleries surround a big central atrium, art history now unfolds as a 5,000-year global dialogue among civilizations, without a sense of hierarchy. The museum's new layout emphasizes a sense of balance and connection among global cultures, and especially between Asian and Western art. You can cruise from ancient Greece or medieval France to 16th-century Japan or seventh-century Cambodia with ease, and with the ever-visible atrium in the heart of the museum layout as a useful central point of orientation. The overall message is that all world cultures have something to teach one another. It is a take-away that could be embraced by any lover of art or anyone curious about what it means to be human."], ["C", "Chronology has not vanished, however. Broad sections of the museum, particularly those dealing with Western art inside the museum's renovated 1916 building and its new East Wing, are organized according to both geography and the march of time. But before its renovation and expansion, the museum more or less forced visitors to follow a strict linear framework. Once you started, it was hard to bail out in the middle. Former Director Katharine Lee Reid called the gallery sequence 'the snake', an aptly unattractive description. Cultures or civilizations that fell outside the framework seemed shunted aside. The museum's acclaimed Asian collection, for example, used to occupy galleries on the lower two levels of the 1916 building - areas that felt as if they were cut off in a deep, dark basement."], ["D", "Today, the ease of moving from one part of the museum to another makes it possible to dip into or out of the flow wherever you like, and to make cross-cultural comparisons. Finding one's way has also been facilitated by the museum's ArtLens mobile app and the 40-foot-long 'Collection Wall', an interactive screen that enables visitors to access audio tours or create their own tour and transfer the information to their smartphone. By capitalizing on mobile devices, the museum has kept its gallery installations free of explanatory video screens or digital interfaces that would distract from the art on view. The overall philosophy of the museum's gallery installations is to keep things simple, to get out of the way, and to let the art speak for itself."], ["E", "Designed by architect Rafael Viñoly, the eight-year expansion and renovation increased gallery space by 32 percent, to 133,599 square feet. Roughly the same number of objects are on view now as before the expansion and renovation. The goal of the project was not just to significantly expand the display area within the museum. Jeffrey Strean, the museum's director of design and architecture, says, 'We wanted to show approximately the same amount [of art] but give it breathing room.' By virtue of its relatively manageable size and vastly improved interior layout, the Cleveland museum has a clarity and intimacy that might be envied by its larger peers, including the Metropolitan Museum of Art in New York, the Museum of Fine Arts, Boston, and the Philadelphia Museum of Art. The sense of focus in Cleveland stems not just from the museum's new layout but also from the general nature of their permanent collection as an assembly of singular objects selected as examples of their kind. In Cleveland, you can slide up close to an exquisite fifth-century B.C. Atalanta lekythos, an ancient Greek oil jug that depicts the mythical story of a virgin huntress who promised to marry the man who could outrun her. Display cases at the Metropolitan Museum of Art hold dozens of pieces from the same period as the Cleveland example, but the effect of seeing so many in New York is completely different from seeing a single example, up close, in Cleveland. At a certain point at the Metropolitan Museum of Art, exhaustion sets in."], ["F", "Individual galleries within the Cleveland museum all have specific hierarchies which guide how their collection is displayed, based on the comparative significance of the works on view. Virtually every gallery is organized around key works of art displayed in centrally located cases or on walls where there is open space to stand back and see the art. These touchstone artworks include Pablo Picasso's seminal Blue Period depiction of human misery, La Vie, on view in the East Wing modern art galleries. On the opposite side of the museum in the West Wing, there is a monumental seventh-century Cambodian statue of the Hindu god Krishna who saved the Earth from a flood by raising a mountain over his head. The prominence accorded to these and other highlights in the collection reinforces the museum's newfound sense of a more equitable depiction of art through the ages. The message is subtle, pervasive and deeply thought-provoking. And in a melting-pot city composed of scores of ethnic immigrant populations from around the world, the museum's new perspective on ethnic inclusion feels right on target."]]};
+
+  // ================= RELIABLE PROGRESS STORAGE =================
+  function progressStorageKey(){
+    const params = new URLSearchParams(window.location.search);
+    const studentId = params.get("studentId") || state.takerId || "STUDENT";
+    const testId = params.get("testId") || "21";
+    return `ielts_progress_${testId}_${studentId}`;
+  }
+  function saveProgressToStorage(){
+    if (state.submitted) return;
+    try {
+      const audio = document.getElementById("test-audio");
+      localStorage.setItem(progressStorageKey(), JSON.stringify({
+        lAnswers: state.lAnswers || {}, rAnswers: state.rAnswers || {}, wAnswers: state.wAnswers || {},
+        stage: state.stage || "listening", lCurrentPart: state.lCurrentPart || 1,
+        rCurrentPart: state.rCurrentPart || 1, wCurrentTask: state.wCurrentTask || 1,
+        rTimeLeft: state.rTimeLeft, wTimeLeft: state.wTimeLeft,
+        audioTime: audio && Number.isFinite(audio.currentTime) ? audio.currentTime : 0,
+        timestamp: Date.now()
+      }));
+    } catch (_) {}
+  }
+  function restoreProgressFromStorage(){
+    try {
+      const raw = localStorage.getItem(progressStorageKey());
+      if (!raw) return false;
+      const saved = JSON.parse(raw);
+      if (saved.lAnswers && typeof saved.lAnswers === "object") state.lAnswers = {...saved.lAnswers};
+      if (saved.rAnswers && typeof saved.rAnswers === "object") state.rAnswers = {...saved.rAnswers};
+      if (saved.wAnswers && typeof saved.wAnswers === "object") state.wAnswers = {...saved.wAnswers};
+      if (["listening","reading","writing"].includes(saved.stage)) state.stage = saved.stage;
+      if (Number.isInteger(saved.lCurrentPart)) state.lCurrentPart = Math.min(4, Math.max(1, saved.lCurrentPart));
+      if (Number.isInteger(saved.rCurrentPart)) state.rCurrentPart = Math.min(3, Math.max(1, saved.rCurrentPart));
+      if (Number.isInteger(saved.wCurrentTask)) state.wCurrentTask = Math.min(2, Math.max(1, saved.wCurrentTask));
+      if (Number.isFinite(saved.rTimeLeft) && saved.rTimeLeft > 0) state.rTimeLeft = saved.rTimeLeft;
+      if (Number.isFinite(saved.wTimeLeft) && saved.wTimeLeft > 0) state.wTimeLeft = saved.wTimeLeft;
+      state.audioTime = Number.isFinite(saved.audioTime) ? Math.max(0, saved.audioTime) : 0;
+      return true;
+    } catch (_) { return false; }
+  }
+  function clearProgressStorage(){
+    try { localStorage.removeItem(progressStorageKey()); } catch (_) {}
+  }
+  function startRestoredStage(){
+    if (state.stage === "writing") startWritingStage();
+    else if (state.stage === "reading") startReadingStage();
+    else startListeningStage();
+  }
+  window.addEventListener("pagehide", saveProgressToStorage);
 
   // ================= SHARED HELPERS =================
   function inputBlank(qnum, answersObj, width){
@@ -1094,7 +1143,9 @@
     $("taker-id-display-t").textContent = val;
     $("results-taker-id").textContent = val;
     hide($("screen-id")); show($("screen-test"));
-    restoreProgressFromStorage(); startListeningStage();
+    if (state.testStarted) return;
+    state.testStarted = true;
+    restoreProgressFromStorage(); startRestoredStage();
     enterFullscreen();
   });
   $("id-input").addEventListener("keydown", (e) => { if (e.key==="Enter") $("id-submit").click(); });
@@ -1111,7 +1162,7 @@
     state.blurAutoSubmitEnabled = false;
     state.autoHandled = false;
     refreshTopbarForStage();
-    renderListeningStage(1);
+    renderListeningStage(state.lCurrentPart || 1);
     startListeningAudio(true);
   }
   function startReadingStage(){
@@ -1119,7 +1170,7 @@
     state.blurAutoSubmitEnabled = false; // reading: no auto-submit on leaving window
     state.autoHandled = false;
     refreshTopbarForStage();
-    renderReadingStage(1);
+    renderReadingStage(state.rCurrentPart || 1);
     startReadingTimer();
   }
   function startWritingStage(){
@@ -1127,7 +1178,7 @@
     state.blurAutoSubmitEnabled = false;
     state.autoHandled = false;
     refreshTopbarForStage();
-    renderWritingStage(1);
+    renderWritingStage(state.wCurrentTask || 1);
     startWritingTimer();
   }
 
@@ -1136,9 +1187,9 @@
   function startListeningAudio(autoAttempt=false){
     const btn = $("play-audio-btn");
     if (btn){ btn.disabled = false; btn.textContent = "▶ Play"; }
-    try { audioEl.currentTime = 0; } catch(e){}
-    const proceed = () => { hide($("audio-gate-overlay")); state.audioStarted = true; refreshTopbarForStage(); };
-    const fallback = () => { if (autoAttempt){ show($("audio-gate-overlay")); } else { proceed(); } };
+    try { audioEl.currentTime = Number.isFinite(state.audioTime) ? state.audioTime : 0; } catch(e){}
+    const proceed = () => { $("audio-gate-overlay").classList.remove("show"); state.audioStarted = true; refreshTopbarForStage(); };
+    const fallback = () => { if (autoAttempt){ $("audio-gate-overlay").classList.add("show"); } else { proceed(); } };
     const p = audioEl.play();
     if (p && p.then) { p.then(proceed).catch(fallback); } else { proceed(); }
   }
@@ -1205,7 +1256,7 @@
   function finishWriting(){
     clearInterval(state.wTimerInterval);
     hide($("screen-test")); hide($("screen-transition"));
-    
+
     // Compute scores
     const lRes = buildReviewRows(state.lAnswers, listeningAnswerKey, "listening");
     const rRes = buildReviewRows(state.rAnswers, readingAnswerKey, "reading");
@@ -1258,14 +1309,16 @@
         readingScore: rScore
       })
     })
-    .then(res => res.json())
+    .then(async res => { const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.error || 'Submission was not accepted'); return data; })
     .then(data => {
       console.log('Synced to platform backend:', data);
+      state.submitted = true;
+      clearProgressStorage();
       if (window.parent) {
-        window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+        window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, window.location.origin);
       }
     })
-    .catch(err => { console.error('Submission sync error:', err); if (window.parent) window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*'); }); setTimeout(() => { if (window.parent) window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*'); }, 1500);
+    .catch(err => { console.error('Submission sync error:', err); alert('Submission was not confirmed. Check your connection and try again.'); });
   }
 
   // ================= AUTO-SUBMIT ON LEAVING WINDOW (Listening & Writing only) =================
@@ -1462,6 +1515,9 @@
     state.blurAutoSubmitEnabled = false; state.autoHandled = false; state.reviewMode=false;
     document.body.className = ""; $("app").className = ""; $("app").classList.add("textsize-regular");
     hide($("screen-results")); hide($("screen-transition")); hide($("screen-test"));
+    state.testStarted = false;
+    state.submitted = false;
+    clearProgressStorage();
     show($("screen-password"));
     $("pwd-input").value=""; $("id-input").value="";
     $("pwd-error").textContent=""; $("id-error").textContent="";

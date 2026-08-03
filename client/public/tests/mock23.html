@@ -416,11 +416,11 @@ function submitTest(){
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-      .then(res => res.json())
+      .then(async res => { const data = await res.json().catch(() => ({})); if (!res.ok) throw new Error(data.error || 'Submission was not accepted'); return data; })
       .then(data => {
         console.log('Synced score:', data);
         if (window.parent) {
-          window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+          window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, window.location.origin);
         }
       })
       .catch(err => console.error('Error submitting test:', err));
@@ -444,11 +444,11 @@ document.addEventListener('DOMContentLoaded',()=>{buildTabs();updateArrows();});
             readingScore: rScore
           })
         })
-        .then(r => r.json())
+        .then(async r => { const data = await r.json().catch(() => ({})); if (!r.ok) throw new Error(data.error || 'Submission was not accepted'); return data; })
         .then(d => {
           console.log('Score synced to platform:', d);
           if (window.parent) {
-            window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, '*');
+            window.parent.postMessage({ type: 'IELTS_TEST_SUBMITTED', testId: tId }, window.location.origin);
           }
         })
         .catch(e => console.error('Sync error:', e));

@@ -1,0 +1,618 @@
+{
+  "id": 3,
+  "title": "IELTS Academic Mock Test 3",
+  "listening_data": {
+    "isIframe": false,
+    "audioUrl": "https://files.catbox.moe/hp82vm.mp3",
+    "sections": [
+      {
+        "title": "Listening Part 1: Social Context",
+        "instructions": "Listen carefully and answer questions 1 to 10. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 1,
+            "label": "Question 1",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q1",
+            "text": "Question 1",
+            "options": [],
+            "answer": "FALSE"
+          },
+          {
+            "id": 2,
+            "label": "Question 2",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q2",
+            "text": "Question 2",
+            "options": [],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 3,
+            "label": "Question 3",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q3",
+            "text": "Question 3",
+            "options": [],
+            "answer": "TRUE"
+          },
+          {
+            "id": 4,
+            "label": "Question 4",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q4",
+            "text": "Question 4",
+            "options": [],
+            "answer": "FALSE"
+          },
+          {
+            "id": 5,
+            "label": "Question 5",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q5",
+            "text": "Question 5",
+            "options": [],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 6,
+            "label": "Question 6",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q6",
+            "text": "Question 6",
+            "options": [],
+            "answer": "FALSE"
+          },
+          {
+            "id": 7,
+            "label": "Question 7",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q7",
+            "text": "Question 7",
+            "options": [],
+            "answer": "His diaries, diaries"
+          },
+          {
+            "id": 8,
+            "label": "Question 8",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q8",
+            "text": "Question 8",
+            "options": [],
+            "answer": "3 years, Three years, 3, three"
+          },
+          {
+            "id": 9,
+            "label": "Question 9",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q9",
+            "text": "Question 9",
+            "options": [],
+            "answer": "Chains, chain"
+          },
+          {
+            "id": 10,
+            "label": "Question 10",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q10",
+            "text": "Question 10",
+            "options": [],
+            "answer": "Governor Philip, Governor, Philip"
+          }
+        ]
+      },
+      {
+        "title": "Listening Part 2: Monologue / Guide",
+        "instructions": "Listen carefully and answer questions 11 to 20. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 11,
+            "label": "Question 11",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q11",
+            "text": "Select the correct option for question 11:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "June 1789"
+          },
+          {
+            "id": 12,
+            "label": "Question 12",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q12",
+            "text": "Select the correct option for question 12:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "China"
+          },
+          {
+            "id": 13,
+            "label": "Question 13",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q13",
+            "text": "Select the correct option for question 13:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "Botany Bay"
+          },
+          {
+            "id": 14,
+            "label": "Question 14",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q14",
+            "text": "Select the correct option for question 14:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "A"
+          },
+          {
+            "id": 15,
+            "label": "Question 15",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q15",
+            "text": "Question 15",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 16,
+            "label": "Question 16",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q16",
+            "text": "Question 16",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 17,
+            "label": "Question 17",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q17",
+            "text": "Question 17",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 18,
+            "label": "Question 18",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q18",
+            "text": "Question 18",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 19,
+            "label": "Question 19",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q19",
+            "text": "Question 19",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 20,
+            "label": "Question 20",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q20",
+            "text": "Question 20",
+            "options": [],
+            "answer": "D"
+          }
+        ]
+      },
+      {
+        "title": "Listening Part 3: Academic Discussion",
+        "instructions": "Listen carefully and answer questions 21 to 30. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 21,
+            "label": "Question 21",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q21",
+            "text": "Select the correct option for question 21:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "A"
+          },
+          {
+            "id": 22,
+            "label": "Question 22",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q22",
+            "text": "Select the correct option for question 22:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "workplace injury"
+          },
+          {
+            "id": 23,
+            "label": "Question 23",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q23",
+            "text": "Select the correct option for question 23:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "16.6 weeks"
+          },
+          {
+            "id": 24,
+            "label": "Question 24",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q24",
+            "text": "Select the correct option for question 24:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "7%, 7 percent"
+          },
+          {
+            "id": 25,
+            "label": "Question 25",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q25",
+            "text": "Select the correct option for question 25:",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "golf"
+          },
+          {
+            "id": 26,
+            "label": "Question 26",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q26",
+            "text": "Question 26",
+            "options": [],
+            "answer": "massage"
+          },
+          {
+            "id": 27,
+            "label": "Question 27",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q27",
+            "text": "Question 27",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 28,
+            "label": "Question 28",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q28",
+            "text": "Question 28",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 29,
+            "label": "Question 29",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q29",
+            "text": "Question 29",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 30,
+            "label": "Question 30",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q30",
+            "text": "Question 30",
+            "options": [],
+            "answer": "A"
+          }
+        ]
+      },
+      {
+        "title": "Listening Part 4: Academic Lecture",
+        "instructions": "Listen carefully and answer questions 31 to 40. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+        "questions": [
+          {
+            "id": 31,
+            "label": "Question 31",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q31",
+            "text": "Question 31",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 32,
+            "label": "Question 32",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q32",
+            "text": "Question 32",
+            "options": [],
+            "answer": "C"
+          },
+          {
+            "id": 33,
+            "label": "Question 33",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q33",
+            "text": "Question 33",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 34,
+            "label": "Question 34",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q34",
+            "text": "Question 34",
+            "options": [],
+            "answer": "D"
+          },
+          {
+            "id": 35,
+            "label": "Question 35",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q35",
+            "text": "Question 35",
+            "options": [],
+            "answer": "A"
+          },
+          {
+            "id": 36,
+            "label": "Question 36",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q36",
+            "text": "Question 36",
+            "options": [],
+            "answer": "E"
+          },
+          {
+            "id": 37,
+            "label": "Question 37",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q37",
+            "text": "Question 37",
+            "options": [],
+            "answer": "F"
+          },
+          {
+            "id": 38,
+            "label": "Question 38",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q38",
+            "text": "Question 38",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 39,
+            "label": "Question 39",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q39",
+            "text": "Question 39",
+            "options": [],
+            "answer": "B"
+          },
+          {
+            "id": 40,
+            "label": "Question 40",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q40",
+            "text": "Question 40",
+            "options": [],
+            "answer": "A"
+          }
+        ]
+      }
+    ]
+  },
+  "reading_data": {
+    "passages": [
+      {
+        "title": "The Extraordinary Watkin Tench",
+        "text": "\r\n<h2>The Extraordinary Watkin Tench</h2>\r\n<p>At the end of 18th century, life for the average British citizen was changing. The population grew as health and industrialisation took hold of the country. However, land and resources were limited. Families could not guarantee jobs for all of their children. People who were poor or destitute had little option. To make things worse, the rate of people who turned to crime to make a living increased. In Britain, the prisons were no longer large enough to hold the convicted people of this growing criminal class. Many towns and governments were at a loss as to what to do. However, another phenomenon that was happening in the 18th century was exploration of other continents. There were many ships looking for crew members who would risk a month-long voyage across a vast ocean. This job was risky and dangerous, so few would willingly choose it. However, with so many citizens without jobs or with criminal convictions, they had little choice. One such member of this new lower class of British citizens was Watkin Tench.</p>\r\n<p>Between 1788 and 1868, approximately 161,700 convicts were transported to the Australian colonies of New South Wales, Van Diemen’s Land and Western Australia. Tench was one of these unlucky convicts to sign onto a dangerous journey. When his ship set out in 1788, he signed a three years’ service to the First Fleet. Apart from his years in Australia, people knew little about his life back in Britain. It was said he was born on 6 October 1758 at Chester in the county of Cheshire in England. He came from a decent background. Tench was a son of Fisher Tench, a dancing master who ran a boarding school in the town, and Margaritta Tarleton of the Liverpool Tarletons.</p>\r\n<p>He grew up around a finer class of British citizens, and his family helped instruct the children of the wealthy in formal dance lessons. Though we don’t know for sure how Tench was educated in this small British town, we do know that he was well educated. His diaries from his travels to Australia are written in excellent English, a skill that not everyone was lucky to possess in the 18th century. Aside from this, we know little of Tench’s beginnings. We don’t know how he ended up convicted of a crime. But after he started his voyage, his life changed dramatically.</p>\r\n<p>During the voyage, which was harsh and took many months, Tench described landscape of different places. While sailing to Australia, Tench saw landscapes that were unfamiliar and new to him. Arriving in Australia, the entire crew was uncertain of what was to come in their new life. When they arrived in Australia, they established a British colony. Governor Philip was vested with complete authority over the inhabitants of the colony. Though still a young man, Philip was enlightened for his age. From stories of other British colonies, Philip learnt that conflict with the original peoples of the land was often a source of strife and difficulties. To avoid this, Philip’s personal intent was to establish harmonious relations with local Aboriginal people. But Philip’s job was even more difficult considering his crew. Other colonies were established with middle-class merchants and craftsmen. His crew were convicts, who had few other skills outside of their criminal histories. Along with making peace with the Aboriginal people, Philip also had to try to reform as well as discipline the convicts of the colony.</p>\r\n<p>From the beginning, Tench stood out as different from the other convicts. During his initial time in Australia, he quickly rose in his rank, and was given extra power and responsibility over the convicted crew members. However, he was also still very different from the upper-class rulers who came to rule over the crew. He showed humanity towards the convicted workers. He didn’t want to treat them as common criminals, but as trained military men. Under Tench’s authority, he released the convicts’ chains which were used to control them during the voyage. Tench also showed mercy towards the Aboriginal people. Governor Philip often pursued violent solutions to conflicts with the Aboriginal peoples. Tench disagreed strongly with this method. At one point, he was unable to follow the order given by Governor Philip to punish the ten Aboriginals.</p>\r\n<p>When they first arrived, Tench was fearful and contemptuous towards the Aboriginals, because the two cultures did not understand each other. However, gradually he got to know them individually and became close friends with them. Tench knew that the Aboriginal people would not cause them conflict if they looked for a peaceful solution. Though there continued to be conflict and violence, Tench’s efforts helped establish a more peaceful negotiation between the two groups when they settled territory and land-use issues.</p>\r\n<p>Meanwhile, many changes were made to the new colony. The Hawkesbury River was named by Governor Philip in June 1789. Many native bird species to the river were hunted by travelling colonists. The colonists were having a great impact on the land and natural resources. Though the colonists had made a lot of progress in the untamed lands of Australia, there were still limits. The convicts were notoriously ill-informed about Australian geography, as was evident in the attempt by twenty absconders to walk from Sydney to China in 1791, believing: “China might be easily reached, being not more than a hundred miles distant, and separated only by a river.” In reality, miles of ocean separated the two.</p>\r\n<p>Much of Australia was unexplored by the convicts. Even Tench had little understanding of what existed beyond the established lines of their colony. Slowly, but surely, the colonists expanded into the surrounding area. A few days after arrival at Botany Bay, their original location, the fleet moved to the more suitable Port Jackson where a settlement was established at Sydney Cove on 26 January 1788. This second location was strange and unfamiliar, and the fleet was on alert for any kind of suspicious behaviours. Though Tench had made friends in Botany Bay with Aboriginal peoples, he could not be sure this new land would be uninhabited. He recalled the first time he stepped into this unfamiliar ground with a boy who helped Tench navigate. In these new lands, he met an old Aboriginal.</p>\r\n",
+        "questions": [
+          {
+            "id": 1,
+            "label": "Question 1",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q1",
+            "text": "Question 1 regarding The Extraordinary Watkin Tench",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "FALSE"
+          },
+          {
+            "id": 2,
+            "label": "Question 2",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q2",
+            "text": "Question 2 regarding The Extraordinary Watkin Tench",
+            "options": [],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 3,
+            "label": "Question 3",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q3",
+            "text": "Question 3 regarding The Extraordinary Watkin Tench",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "TRUE"
+          },
+          {
+            "id": 4,
+            "label": "Question 4",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q4",
+            "text": "Question 4 regarding The Extraordinary Watkin Tench",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "FALSE"
+          },
+          {
+            "id": 5,
+            "label": "Question 5",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q5",
+            "text": "Question 5 regarding The Extraordinary Watkin Tench",
+            "options": [],
+            "answer": "NOT GIVEN"
+          },
+          {
+            "id": 6,
+            "label": "Question 6",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q6",
+            "text": "Question 6 regarding The Extraordinary Watkin Tench",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "FALSE"
+          },
+          {
+            "id": 7,
+            "label": "Question 7",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q7",
+            "text": "Question 7 regarding The Extraordinary Watkin Tench",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "His diaries, diaries"
+          },
+          {
+            "id": 8,
+            "label": "Question 8",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q8",
+            "text": "Question 8 regarding The Extraordinary Watkin Tench",
+            "options": [],
+            "answer": "3 years, Three years, 3, three"
+          },
+          {
+            "id": 9,
+            "label": "Question 9",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q9",
+            "text": "Question 9 regarding The Extraordinary Watkin Tench",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "Chains, chain"
+          },
+          {
+            "id": 10,
+            "label": "Question 10",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q10",
+            "text": "Question 10 regarding The Extraordinary Watkin Tench",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "Governor Philip, Governor, Philip"
+          },
+          {
+            "id": 11,
+            "label": "Question 11",
+            "type": "fill-in-the-blank",
+            "placeholder": "Answer for Q11",
+            "text": "Question 11 regarding The Extraordinary Watkin Tench",
+            "options": [],
+            "answer": "June 1789"
+          },
+          {
+            "id": 12,
+            "label": "Question 12",
+            "type": "true-false-notgiven",
+            "placeholder": "Answer for Q12",
+            "text": "Question 12 regarding The Extraordinary Watkin Tench",
+            "options": [
+              "TRUE",
+              "FALSE",
+              "NOT GIVEN"
+            ],
+            "answer": "China"
+          },
+          {
+            "id": 13,
+            "label": "Question 13",
+            "type": "multiple-choice",
+            "placeholder": "Answer for Q13",
+            "text": "Question 13 regarding The Extraordinary Watkin Tench",
+            "options": [
+              "A",
+              "B",
+              "C",
+              "D"
+            ],
+            "answer": "Botany Bay"
+          }
+        ]
+      }
+    ]
+  },
+  "writing_data": {
+    "task1": {
+      "prompt": "The table below gives information about employment patterns for men and women in New Zealand in two separate years. Provide an overview of the information by identifying and describing the key details, and include comparisons where appropriate.",
+      "imageUrl": "https://engnovatewebsitestorage.blob.core.windows.net/ielts-writing-task-1-images/c51f8a47aa62aacc",
+      "minWords": 150
+    },
+    "task2": {
+      "prompt": "Some people believe that modern technology has made life easier, while others argue it creates more problems. Discuss both views and give your own opinion.",
+      "minWords": 250
+    }
+  }
+}
