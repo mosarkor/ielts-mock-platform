@@ -1711,11 +1711,7 @@ const styles = {
   headerTitle: {
     display: 'flex',
     alignItems: 'center',
-    gap: '1rem',
-    h2: {
-      fontSize: '1.5rem',
-      fontWeight: '700',
-    }
+    gap: '1rem'
   },
   badge: {
     fontSize: '0.75rem',
@@ -1894,11 +1890,7 @@ const styles = {
     alignItems: 'center',
     borderBottom: '1px solid var(--glass-border)',
     paddingBottom: '0.5rem',
-    marginBottom: '0.75rem',
-    h5: {
-      color: 'var(--text-primary)',
-      fontWeight: '600',
-    }
+    marginBottom: '0.75rem'
   },
   writingPrompt: {
     fontSize: '0.85rem',

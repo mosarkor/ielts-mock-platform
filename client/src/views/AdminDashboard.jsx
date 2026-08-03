@@ -1335,11 +1335,7 @@ const styles = {
   headerTitle: {
     display: 'flex',
     alignItems: 'center',
-    gap: '1rem',
-    h2: {
-      fontSize: '1.5rem',
-      fontWeight: '700',
-    }
+    gap: '1rem'
   },
   badge: {
     fontSize: '0.75rem',
@@ -1465,11 +1461,7 @@ const styles = {
     border: '1px solid var(--glass-border)',
     borderRadius: '8px',
     padding: '1.25rem',
-    marginTop: '1rem',
-    h5: {
-      fontWeight: '600',
-      marginBottom: '0.25rem',
-    }
+    marginTop: '1rem'
   },
   testListItem: {
     display: 'flex',
