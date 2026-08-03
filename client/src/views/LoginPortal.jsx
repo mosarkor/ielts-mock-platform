@@ -274,21 +274,40 @@ export default function LoginPortal({ onLoginSuccess, theme, toggleTheme }) {
             </div>
           </div>
 
-          {roleMode === 'student' && new URLSearchParams(window.location.search).get('staff') === 'true' && (
-            <div style={styles.hintText}>
-              💡 Quick test: Use ID <strong>UNI2026A</strong> and passcode <strong>student123</strong>
-            </div>
-          )}
-          {roleMode === 'staff' && new URLSearchParams(window.location.search).get('staff') === 'true' && (
-            <div style={styles.hintText}>
-              💡 Staff roles: Use <strong>teacher</strong> (passcode: <strong>teacher123</strong>) or <strong>admin</strong> (passcode: <strong>admin123</strong>)
-            </div>
-          )}
+          <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', fontSize: '0.85rem' }}>
+            <p style={{ margin: '0 0 0.5rem 0', color: 'var(--text-secondary)', fontWeight: 'bold' }}>⚡ Demo Quick-Fill:</p>
+            {roleMode === 'student' ? (
+              <button
+                type="button"
+                onClick={() => { setUserId('UNI2026A'); setPasscode('student123'); setError(''); }}
+                style={{ background: 'rgba(37,99,235,0.1)', color: '#2563eb', border: '1px solid rgba(37,99,235,0.3)', borderRadius: '4px', padding: '0.35rem 0.75rem', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '600' }}
+              >
+                Fill Candidate (UNI2026A)
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => { setUserId('teacher'); setPasscode('teacher123'); setError(''); }}
+                  style={{ background: 'rgba(16,185,129,0.1)', color: '#059669', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '4px', padding: '0.35rem 0.75rem', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '600' }}
+                >
+                  Fill Teacher (teacher)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setUserId('admin'); setPasscode('admin123'); setError(''); }}
+                  style={{ background: 'rgba(225,29,72,0.1)', color: '#e11d48', border: '1px solid rgba(225,29,72,0.3)', borderRadius: '4px', padding: '0.35rem 0.75rem', fontSize: '0.8rem', cursor: 'pointer', fontWeight: '600' }}
+                >
+                  Fill Admin (admin)
+                </button>
+              </div>
+            )}
+          </div>
 
           <button 
             type="submit" 
             className="btn btn-primary" 
-            style={{ width: '100%', justifyContent: 'center', marginTop: '1rem' }}
+            style={{ width: '100%', justifyContent: 'center', marginTop: '1.25rem' }}
             disabled={loading}
           >
             {loading ? 'Processing...' : 'Continue'}

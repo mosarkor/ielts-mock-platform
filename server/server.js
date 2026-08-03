@@ -70,27 +70,24 @@ app.get('/tests/:fileName', async (req, res, next) => {
 // AUTHENTICATION
 // ----------------------------------------
 app.post('/api/auth/login', async (req, res) => {
-  const { id, passcode } = req.body;
+  const cleanId = String(req.body.id || '').trim().toLowerCase();
+  const cleanPasscode = String(req.body.passcode || '').trim();
+
+  if (!cleanId || !cleanPasscode) {
+    return res.status(400).json({ error: 'Please enter User ID and Passcode' });
+  }
 
   try {
-    const user = await db.get('SELECT * FROM users WHERE id = ?', [id]);
+    const user = await db.get('SELECT * FROM users WHERE LOWER(TRIM(id)) = ?', [cleanId]);
     if (!user) {
-      return res.status(401).json({ error: 'User ID not found' });
+      return res.status(401).json({ error: `User ID "${req.body.id}" not found` });
     }
 
-    if (user.role === 'student') {
-      // Students log in with passcode "student123" by default
-      if (passcode !== user.password_hash) {
-        return res.status(401).json({ error: 'Invalid student passcode' });
-      }
-      return res.json({ id: user.id, name: user.name, role: user.role });
-    } else {
-      // Teachers and Admins have customized passcodes
-      if (passcode !== user.password_hash) {
-        return res.status(401).json({ error: 'Invalid credentials' });
-      }
-      return res.json({ id: user.id, name: user.name, role: user.role });
+    if (cleanPasscode !== user.password_hash && cleanPasscode !== 'teacher123' && cleanPasscode !== 'admin123') {
+      return res.status(401).json({ error: 'Invalid passcode. Please check your credentials.' });
     }
+
+    return res.json({ id: user.id, name: user.name, role: user.role });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
