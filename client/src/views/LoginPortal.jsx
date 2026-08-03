@@ -191,34 +191,32 @@ export default function LoginPortal({ onLoginSuccess, theme, toggleTheme }) {
           <p>{new URLSearchParams(window.location.search).get('staff') === 'true' ? 'Access your student account or staff dashboards' : 'Access your candidate exam cabinet'}</p>
         </div>
 
-        {new URLSearchParams(window.location.search).get('staff') === 'true' && (
-          <div style={styles.tabContainer}>
-            <button 
-              style={{
-                ...styles.tabBtn,
-                ...(roleMode === 'student' ? styles.tabBtnActive : {})
-              }}
-              onClick={() => {
-                setRoleMode('student');
-                setError('');
-              }}
-            >
-              👨‍🎓 Candidate Login
-            </button>
-            <button 
-              style={{
-                ...styles.tabBtn,
-                ...(roleMode === 'staff' ? styles.tabBtnActive : {})
-              }}
-              onClick={() => {
-                setRoleMode('staff');
-                setError('');
-              }}
-            >
-              🏫 Staff Portal
-            </button>
-          </div>
-        )}
+        <div style={styles.tabContainer}>
+          <button 
+            style={{
+              ...styles.tabBtn,
+              ...(roleMode === 'student' ? styles.tabBtnActive : {})
+            }}
+            onClick={() => {
+              setRoleMode('student');
+              setError('');
+            }}
+          >
+            👨‍🎓 Candidate Login
+          </button>
+          <button 
+            style={{
+              ...styles.tabBtn,
+              ...(roleMode === 'staff' ? styles.tabBtnActive : {})
+            }}
+            onClick={() => {
+              setRoleMode('staff');
+              setError('');
+            }}
+          >
+            🏫 Staff & Teacher Portal
+          </button>
+        </div>
 
         {error && <div style={styles.errorAlert}>{error}</div>}
 
