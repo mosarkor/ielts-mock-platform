@@ -334,11 +334,7 @@ const styles = {
   },
   logoHeader: {
     textAlign: 'center',
-    marginBottom: '2rem',
-    h2: {
-      fontSize: '1.75rem',
-      fontWeight: '700',
-    }
+    marginBottom: '2rem'
   },
   tabContainer: {
     display: 'flex',
