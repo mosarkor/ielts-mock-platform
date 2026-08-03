@@ -394,7 +394,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
       return correctAnswersArr.some(ans => norm(ans) === sNorm);
     };
 
-    let report = `IELTS Mock Test Center тАФ Performance Report\n`;
+    let report = `IELTS Mock Test Center — Performance Report\n`;
     report += `==================================================\n`;
     report += `Candidate ID: ${selectedSub.student_id}\n`;
     report += `Candidate Name: ${selectedSub.student_name}\n`;
@@ -409,29 +409,29 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
     report += `- Exam Integrity: ${selectedSub.violations_count || 0} Tab switches / Fullscreen exits detected\n`;
     report += `\nINCORRECT & MISSED ANSWERS FEEDBACK:\n\n`;
     
-    report += `[ЁЯОз LISTENING SECTION ERRORS]\n`;
+    report += `[🎧 LISTENING SECTION ERRORS]\n`;
     let lErrors = 0;
     for (let i = 1; i <= 40; i++) {
       const studentAns = selectedSub.listening_answers[i] || '';
       const correctArr = answerKey.answers['l' + i] || [];
-      const correctText = answerKey.display['l' + i] || correctArr.join(' / ') || 'тАФ';
+      const correctText = answerKey.display['l' + i] || correctArr.join(' / ') || '—';
       if (!isCorrect(studentAns, correctArr)) {
         lErrors++;
-        report += `Q${i}: Student: "${studentAns || 'тАФ'}" | Correct: "${correctText}"\n`;
+        report += `Q${i}: Student: "${studentAns || '—'}" | Correct: "${correctText}"\n`;
       }
     }
     if (lErrors === 0) report += `Perfect score in Listening section!\n`;
     report += `\n`;
 
-    report += `[ЁЯУЦ READING SECTION ERRORS]\n`;
+    report += `[📖 READING SECTION ERRORS]\n`;
     let rErrors = 0;
     for (let i = 1; i <= 40; i++) {
       const studentAns = selectedSub.reading_answers[i] || '';
       const correctArr = answerKey.answers['r' + i] || [];
-      const correctText = answerKey.display['r' + i] || correctArr.join(' / ') || 'тАФ';
+      const correctText = answerKey.display['r' + i] || correctArr.join(' / ') || '—';
       if (!isCorrect(studentAns, correctArr)) {
         rErrors++;
-        report += `Q${i}: Student: "${studentAns || 'тАФ'}" | Correct: "${correctText}"\n`;
+        report += `Q${i}: Student: "${studentAns || '—'}" | Correct: "${correctText}"\n`;
       }
     }
     if (rErrors === 0) report += `Perfect score in Reading section!\n`;
@@ -443,7 +443,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   const handleCopyScoresOnly = () => {
     if (!selectedSub) return;
     
-    let report = `IELTS Mock Test Center тАФ Performance Report\n`;
+    let report = `IELTS Mock Test Center — Performance Report\n`;
     report += `==================================================\n`;
     report += `Candidate ID: ${selectedSub.student_id}\n`;
     report += `Candidate Name: ${selectedSub.student_name}\n`;
@@ -731,7 +731,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
               style={{ marginRight: '0.75rem', fontSize: '0.85rem', padding: '0.4rem 0.8rem' }}
               title="Switch to Admin Dashboard"
             >
-              ЁЯЫбя╕П Admin View
+              🛡️ Admin View
             </button>
           )}
           <button 
@@ -740,7 +740,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
             style={{ border: 'none', marginRight: '0.75rem' }}
             title="Change Password"
           >
-            ЁЯФС
+            🔑
           </button>
           <button 
             onClick={toggleTheme} 
@@ -748,10 +748,10 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
             style={{ border: 'none', marginRight: '0.75rem' }}
             title="Toggle Light/Dark Theme"
           >
-            {theme === 'dark' ? 'тШАя╕П' : 'ЁЯМЩ'}
+            {theme === 'dark' ? '☀️' : '🌙'}
           </button>
           <button onClick={onLogout} className="btn btn-danger" style={styles.logoutBtn}>
-            Logout ЁЯЪк
+            Logout 🚪
           </button>
         </div>
       </header>
@@ -767,18 +767,18 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
             <div style={styles.workspaceHeader}>
               <div>
                 <button onClick={() => setSelectedSub(null)} className="btn btn-secondary" style={{ marginBottom: '0.5rem' }}>
-                  тЖР Back to Submissions
+                  ← Back to Submissions
                 </button>
                 <h3 style={{ color: 'var(--text-primary)' }}>Grading: {selectedSub.student_name} ({selectedSub.student_id})</h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Test paper: {selectedSub.test_title}</span>
                   {selectedSub.violations_count > 0 ? (
                     <span style={{ backgroundColor: 'var(--color-rose)', color: '#ffffff', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.2rem 0.5rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                      тЪая╕П {selectedSub.violations_count} Tab Switches
+                      ⚠️ {selectedSub.violations_count} Tab Switches
                     </span>
                   ) : (
                     <span style={{ backgroundColor: 'var(--color-emerald)', color: '#ffffff', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.2rem 0.5rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                      ЁЯФТ Integrity Verified
+                      🔒 Integrity Verified
                     </span>
                   )}
                 </div>
@@ -801,7 +801,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   border: '1px solid var(--glass-border)',
                 }}
               >
-                тЬПя╕П Grade Writing Tasks
+                ✏️ Grade Writing Tasks
               </button>
               <button 
                 onClick={() => setViewMode('detailed_review')}
@@ -813,7 +813,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   border: '1px solid var(--glass-border)',
                 }}
               >
-                ЁЯУК Detailed Listening & Reading Review
+                📊 Detailed Listening & Reading Review
               </button>
             </div>
 
@@ -956,12 +956,12 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   </div>
 
                   <div className="form-group" style={{ marginTop: '1rem' }}>
-                    <label className="form-label">ЁЯОз Listening Calculated Band (Reference)</label>
+                    <label className="form-label">🎧 Listening Calculated Band (Reference)</label>
                     <input type="text" className="form-input" value={`Band ${fmtScore(selectedSub.listening_score)}`} disabled style={{ opacity: 0.6 }} />
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">ЁЯУЦ Reading Calculated Band (Reference)</label>
+                    <label className="form-label">📖 Reading Calculated Band (Reference)</label>
                     <input type="text" className="form-input" value={`Band ${fmtScore(selectedSub.reading_score)}`} disabled style={{ opacity: 0.6 }} />
                   </div>
 
@@ -993,7 +993,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                     className="btn btn-success" 
                     style={{ width: '100%', justifyContent: 'center', marginTop: '1.5rem' }}
                   >
-                    ЁЯТ╛ Save and Finalize Grades
+                    💾 Save and Finalize Grades
                   </button>
                 </form>
               </div>
@@ -1006,14 +1006,14 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                       checked={showOnlyMistakes} 
                       onChange={(e) => setShowOnlyMistakes(e.target.checked)} 
                     />
-                    <span>тЪая╕П Show only incorrect or empty answers</span>
+                    <span>⚠️ Show only incorrect or empty answers</span>
                   </label>
                 </div>
                 <div style={styles.workspaceGrid}>
                   {/* Listening Column */}
                   <div className="card" style={{ maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
                     <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h4 style={{ color: 'var(--text-primary)' }}>ЁЯОз Listening Overview</h4>
+                      <h4 style={{ color: 'var(--text-primary)' }}>🎧 Listening Overview</h4>
                       <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#6366f1' }}>
                         Band {fmtScore(selectedSub.listening_score)}
                       </span>
@@ -1039,7 +1039,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                               const qNum = idx + 1;
                               const studentAns = selectedSub.listening_answers[qNum] || '';
                               const correctArr = answerKey.answers['l' + qNum] || [];
-                              const displayCorrect = answerKey.display['l' + qNum] || correctArr.join(' / ') || 'тАФ';
+                              const displayCorrect = answerKey.display['l' + qNum] || correctArr.join(' / ') || '—';
                               const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
                               const sNorm = norm(studentAns);
                               const isOk = correctArr.some(ans => norm(ans) === sNorm);
@@ -1056,10 +1056,10 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                                       : 'rgba(148, 163, 184, 0.04)'
                                 }}>
                                   <td style={styles.reviewTd}><strong>{qNum}</strong></td>
-                                  <td style={styles.reviewTd}>{studentAns || 'тАФ'}</td>
+                                  <td style={styles.reviewTd}>{studentAns || '—'}</td>
                                   <td style={styles.reviewTd}>{displayCorrect}</td>
                                   <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
-                                    {isOk ? 'тЬУ Correct' : studentAns ? 'тЬЧ Wrong' : 'тАФ Empty'}
+                                    {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
                                   </td>
                                 </tr>
                               );
@@ -1073,7 +1073,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   {/* Reading Column */}
                   <div className="card" style={{ maxHeight: '78vh', display: 'flex', flexDirection: 'column' }}>
                     <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h4 style={{ color: 'var(--text-primary)' }}>ЁЯУЦ Reading Overview</h4>
+                      <h4 style={{ color: 'var(--text-primary)' }}>📖 Reading Overview</h4>
                       <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#10b981' }}>
                         Band {fmtScore(selectedSub.reading_score)}
                       </span>
@@ -1099,7 +1099,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                               const qNum = idx + 1;
                               const studentAns = selectedSub.reading_answers[qNum] || '';
                               const correctArr = answerKey.answers['r' + qNum] || [];
-                              const displayCorrect = answerKey.display['r' + qNum] || correctArr.join(' / ') || 'тАФ';
+                              const displayCorrect = answerKey.display['r' + qNum] || correctArr.join(' / ') || '—';
                               const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
                               const sNorm = norm(studentAns);
                               const isOk = correctArr.some(ans => norm(ans) === sNorm);
@@ -1116,10 +1116,10 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                                       : 'rgba(148, 163, 184, 0.04)'
                                 }}>
                                   <td style={styles.reviewTd}><strong>{qNum}</strong></td>
-                                  <td style={styles.reviewTd}>{studentAns || 'тАФ'}</td>
+                                  <td style={styles.reviewTd}>{studentAns || '—'}</td>
                                   <td style={styles.reviewTd}>{displayCorrect}</td>
                                   <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
-                                    {isOk ? 'тЬУ Correct' : studentAns ? 'тЬЧ Wrong' : 'тАФ Empty'}
+                                    {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
                                   </td>
                                 </tr>
                               );
@@ -1134,7 +1134,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                         className="btn btn-secondary"
                         style={{ width: '100%', justifyContent: 'center', backgroundColor: 'var(--text-secondary)', borderColor: 'var(--text-secondary)' }}
                       >
-                        ЁЯУЛ Copy Band Scores Summary
+                        📋 Copy Band Scores Summary
                       </button>
                       {answerKey && (
                         <button 
@@ -1142,7 +1142,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                           className="btn btn-success"
                           style={{ width: '100%', justifyContent: 'center' }}
                         >
-                          ЁЯФН Copy Detailed Report (with L & R Errors)
+                          🔍 Copy Detailed Report (with L & R Errors)
                         </button>
                       )}
                     </div>
@@ -1156,7 +1156,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
           <>
             {/* Section Tabs */}
             <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              {[['writing', 'тЬПя╕П Writing Submissions'], ['speaking', 'ЁЯОЩя╕П Speaking Submissions']].map(([key, label]) => (
+              {[['writing', '✏️ Writing Submissions'], ['speaking', '🎙️ Speaking Submissions']].map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setActiveSection(key)}
@@ -1188,7 +1188,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
               <div>
                 {speakingSubmissions.length === 0 ? (
                   <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
-                    <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>ЁЯОЩя╕П</div>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎙️</div>
                     <p>No speaking submissions yet. Assign speaking tests to students from the Admin Dashboard.</p>
                   </div>
                 ) : safeSpeakingSubmissions.map(ss => {
@@ -1203,11 +1203,11 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                             <strong style={{ color: 'var(--text-primary)', fontSize: '1rem' }}>{ss.student_name}</strong>
                             <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>({ss.student_id})</span>
                             <span style={{ backgroundColor: ss.is_revealed ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.15)', color: ss.is_revealed ? '#10b981' : '#6366f1', fontSize: '0.75rem', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: '700' }}>
-                              {ss.is_revealed ? 'тЬЕ Sent to Student' : 'тП│ Pending'}
+                              {ss.is_revealed ? '✅ Sent to Student' : '⏳ Pending'}
                             </span>
                           </div>
                           <div style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', marginTop: '0.25rem' }}>
-                            {ss.prompt_title} ┬╖ {new Date(ss.submitted_at).toLocaleDateString()} ┬╖ via {ss.ai_provider || 'AI'}
+                            {ss.prompt_title} · {new Date(ss.submitted_at).toLocaleDateString()} · via {ss.ai_provider || 'AI'}
                           </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -1236,13 +1236,13 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                             className="btn btn-secondary"
                             style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
                           >
-                            тЬПя╕П Grade / Edit
+                            ✏️ Grade / Edit
                           </button>
                           <button
                             onClick={() => setExpandedSpeaking(isExpanded ? null : ss.id)}
                             style={{ background: 'none', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '0.3rem 0.6rem', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.8rem' }}
                           >
-                            {isExpanded ? 'Hide тЦ▓' : 'Details тЦ╝'}
+                            {isExpanded ? 'Hide ▲' : 'Details ▼'}
                           </button>
                           {!ss.is_revealed && (
                             <button
@@ -1254,7 +1254,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                               className="btn btn-success"
                               style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
                             >
-                              ЁЯУд Send to Student
+                              📤 Send to Student
                             </button>
                           )}
                         </div>
@@ -1264,7 +1264,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                         <div style={{ marginTop: '1.25rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.25rem' }}>
                           {fb.overall && (
                             <div style={{ backgroundColor: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>
-                              <strong style={{ color: 'var(--text-primary)', fontStyle: 'normal' }}>ЁЯУЭ AI Overall Assessment:</strong><br/>{fb.overall}
+                              <strong style={{ color: 'var(--text-primary)', fontStyle: 'normal' }}>📝 AI Overall Assessment:</strong><br/>{fb.overall}
                             </div>
                           )}
                           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -1286,7 +1286,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                                 <span style={{ fontSize: '0.78rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</span>
                                 {audioUrl && (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>ЁЯОз Play Voice Audio:</span>
+                                    <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '600' }}>🎧 Play Voice Audio:</span>
                                     <audio controls src={audioUrl} style={{ height: '28px', borderRadius: '4px', outline: 'none' }} />
                                   </div>
                                 )}
@@ -1309,28 +1309,28 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
               {/* 1. Analytics Summary Row */}
               <div style={styles.statsRow}>
                 <div className="card" style={styles.statCard}>
-                  <span style={styles.statIcon}>тП│</span>
+                  <span style={styles.statIcon}>⏳</span>
                   <div>
                     <h4 style={styles.statVal}>{filteredSubmissions.filter(s => s.writing_score === null).length}</h4>
                     <span style={styles.statLabel}>Pending Reviews</span>
                   </div>
                 </div>
                 <div className="card" style={styles.statCard}>
-                  <span style={styles.statIcon}>тЬЕ</span>
+                  <span style={styles.statIcon}>✅</span>
                   <div>
                     <h4 style={styles.statVal}>{filteredSubmissions.filter(s => s.writing_score !== null).length}</h4>
                     <span style={styles.statLabel}>Graded Portfolio</span>
                   </div>
                 </div>
                 <div className="card" style={styles.statCard}>
-                  <span style={styles.statIcon}>ЁЯУИ</span>
+                  <span style={styles.statIcon}>📈</span>
                   <div>
                     <h4 style={styles.statVal}>{calculateAverageClassBand()}</h4>
                     <span style={styles.statLabel}>Avg Class Band</span>
                   </div>
                 </div>
                 <div className="card" style={styles.statCard}>
-                  <span style={styles.statIcon}>тЪая╕П</span>
+                  <span style={styles.statIcon}>⚠️</span>
                   <div>
                     <h4 style={styles.statVal}>{filteredSubmissions.reduce((acc, s) => acc + (s.violations_count || 0), 0)}</h4>
                     <span style={styles.statLabel}>Total Violations</span>
@@ -1342,7 +1342,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
               <div style={styles.vizAndFiltersPanel}>
                 {/* Score Distribution Chart */}
                 <div className="card" style={styles.chartCard}>
-                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', fontSize: '1.05rem', fontWeight: 'bold' }}>ЁЯУК Class Band Score Distribution</h4>
+                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', fontSize: '1.05rem', fontWeight: 'bold' }}>📊 Class Band Score Distribution</h4>
                   <div style={{ width: '100%', display: 'flex', justifyContent: 'center', height: '140px' }}>
                     {filteredSubmissions.filter(s => s.writing_score !== null).length === 0 ? (
                       <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, fontSize: '0.9rem', fontStyle: 'italic' }}>
@@ -1420,7 +1420,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
 
                 {/* Advanced Search & Filtering Bar */}
                 <div className="card" style={styles.filtersCard}>
-                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', fontSize: '1.05rem', fontWeight: 'bold' }}>ЁЯФН Search & Filters</h4>
+                  <h4 style={{ color: 'var(--text-primary)', marginBottom: '1rem', fontSize: '1.05rem', fontWeight: 'bold' }}>🔍 Search & Filters</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                     <div style={styles.searchContainer}>
                       <input 
@@ -1437,27 +1437,27 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                         onChange={(e) => setStatusFilter(e.target.value)}
                         style={styles.dropdownInput}
                       >
-                        <option value="all">ЁЯУБ All Statuses</option>
-                        <option value="pending">тП│ Pending Reviews</option>
-                        <option value="graded">тЬЕ Graded Portfolios</option>
+                        <option value="all">📁 All Statuses</option>
+                        <option value="pending">⏳ Pending Reviews</option>
+                        <option value="graded">✅ Graded Portfolios</option>
                       </select>
                       <select 
                         value={integrityFilter} 
                         onChange={(e) => setIntegrityFilter(e.target.value)}
                         style={styles.dropdownInput}
                       >
-                        <option value="all">ЁЯЫбя╕П All Integrity</option>
-                        <option value="clean">ЁЯЯв Clean Sessions</option>
-                        <option value="flagged">ЁЯФ┤ Proctoring Warnings</option>
+                        <option value="all">🛡️ All Integrity</option>
+                        <option value="clean">🟢 Clean Sessions</option>
+                        <option value="flagged">🔴 Proctoring Warnings</option>
                       </select>
                       <select 
                         value={groupFilter} 
                         onChange={(e) => setGroupFilter(e.target.value)}
                         style={styles.dropdownInput}
                       >
-                        <option value="all">ЁЯСе All Groups</option>
+                        <option value="all">👥 All Groups</option>
                         {studentGroups.map(g => (
-                          <option key={g} value={g}>ЁЯСе Group: {g}</option>
+                          <option key={g} value={g}>👥 Group: {g}</option>
                         ))}
                       </select>
                     </div>
@@ -1469,10 +1469,10 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
             <div style={styles.dashboardGrid}>
             {/* Left Col: Pending Review */}
             <div>
-              <h3 style={{ ...styles.columnTitle, color: '#f59e0b' }}>тП│ Pending Writing Reviews ({pendingSubmissions.length})</h3>
+              <h3 style={{ ...styles.columnTitle, color: '#f59e0b' }}>⏳ Pending Writing Reviews ({pendingSubmissions.length})</h3>
               {pendingSubmissions.length === 0 ? (
                 <div className="card" style={styles.emptyCard}>
-                  <p>тЬЕ All submissions graded! High five!</p>
+                  <p>✅ All submissions graded! High five!</p>
                 </div>
               ) : (
                 pendingSubmissions.map(sub => (
@@ -1497,15 +1497,15 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                       <span style={styles.dateLabel}>{new Date(sub.submitted_at).toLocaleDateString()}</span>
                     </div>
                     <div style={styles.miniScoresRow}>
-                      <span>ЁЯОз Listening: <strong>{fmtScore(sub.listening_score)}</strong></span>
-                      <span>ЁЯУЦ Reading: <strong>{fmtScore(sub.reading_score)}</strong></span>
+                      <span>🎧 Listening: <strong>{fmtScore(sub.listening_score)}</strong></span>
+                      <span>📖 Reading: <strong>{fmtScore(sub.reading_score)}</strong></span>
                     </div>
                     <button 
                       onClick={() => handleSelectSubmission(sub)}
                       className="btn btn-primary"
                       style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }}
                     >
-                      тЬПя╕П Evaluate Essays
+                      ✏️ Evaluate Essays
                     </button>
                   </div>
                 ))
@@ -1514,7 +1514,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
 
             {/* Right Col: Graded & Released */}
             <div>
-              <h3 style={{ ...styles.columnTitle, color: '#10b981' }}>ЁЯУК Graded & Released Portfolio ({gradedSubmissions.length})</h3>
+              <h3 style={{ ...styles.columnTitle, color: '#10b981' }}>📊 Graded & Released Portfolio ({gradedSubmissions.length})</h3>
               {gradedSubmissions.length === 0 ? (
                 <div className="card" style={styles.emptyCard}>
                   <p>No graded test portfolio found. Begin grading student writing to populate.</p>
@@ -1546,9 +1546,9 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                     </div>
                     
                     <div style={{ ...styles.miniScoresRow, marginTop: '0.5rem' }}>
-                      <span>ЁЯОз List: <strong>{fmtScore(sub.listening_score)}</strong></span>
-                      <span>ЁЯУЦ Read: <strong>{fmtScore(sub.reading_score)}</strong></span>
-                      <span>тЬНя╕П Writ: <strong>{fmtScore(sub.writing_score)}</strong></span>
+                      <span>🎧 List: <strong>{fmtScore(sub.listening_score)}</strong></span>
+                      <span>📖 Read: <strong>{fmtScore(sub.reading_score)}</strong></span>
+                      <span>✍️ Writ: <strong>{fmtScore(sub.writing_score)}</strong></span>
                     </div>
 
                     <div style={styles.revealControlBox}>
@@ -1557,7 +1557,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                         fontSize: '0.85rem',
                         fontWeight: '600'
                       }}>
-                        {sub.is_revealed === 1 ? 'ЁЯЯв Scores Released' : 'ЁЯЯб Hidden from Student'}
+                        {sub.is_revealed === 1 ? '🟢 Scores Released' : '🟡 Hidden from Student'}
                       </span>
                       <button 
                         onClick={() => toggleRevealStatus(sub.id, sub.is_revealed === 1)}
@@ -1573,14 +1573,14 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                       className="btn btn-secondary"
                       style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}
                     >
-                      ЁЯФН Edit Grade & Feedback
+                      🔍 Edit Grade & Feedback
                     </button>
                     <button 
                       onClick={() => downloadPdfReport(sub)}
                       className="btn btn-primary"
                       style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem', backgroundColor: '#6366f1', borderColor: '#6366f1' }}
                     >
-                      ЁЯУе Download PDF Report
+                      📥 Download PDF Report
                     </button>
                   </div>
                 ))
@@ -1605,8 +1605,8 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
         <div style={styles.modalOverlay}>
           <div className="glass-panel" style={{ ...styles.modalContent, backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', maxWidth: '640px' }}>
             <div style={{ ...styles.modalHeader, borderBottom: '1px solid var(--glass-border)' }}>
-              <h3 style={{ color: 'var(--text-primary)', fontWeight: '700' }}>тЬПя╕П Evaluate Speaking Test тАФ {editingSpeakingSub.student_name}</h3>
-              <button onClick={() => setEditingSpeakingSub(null)} style={styles.closeBtn}>├Ч</button>
+              <h3 style={{ color: 'var(--text-primary)', fontWeight: '700' }}>✏️ Evaluate Speaking Test — {editingSpeakingSub.student_name}</h3>
+              <button onClick={() => setEditingSpeakingSub(null)} style={styles.closeBtn}>×</button>
             </div>
 
             <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -1654,7 +1654,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
 
               {/* Feedback Textarea */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>ЁЯУЭ Teacher Summary Assessment & Feedback</label>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>📝 Teacher Summary Assessment & Feedback</label>
                 <textarea
                   rows={4}
                   value={editFeedbackText}
@@ -1695,7 +1695,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   className="btn btn-primary"
                   style={{ flex: 1, justifyContent: 'center' }}
                 >
-                  ЁЯТ╛ Save Grades
+                  💾 Save Grades
                 </button>
                 <button
                   onClick={async () => {
@@ -1727,7 +1727,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   className="btn btn-success"
                   style={{ flex: 1, justifyContent: 'center' }}
                 >
-                  ЁЯУд Save & Release to Student
+                  📤 Save & Release to Student
                 </button>
               </div>
             </div>
