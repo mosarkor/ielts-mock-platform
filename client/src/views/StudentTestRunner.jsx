@@ -472,7 +472,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
             
             {/* Listening Sections list */}
             <div className="ielts-highlightable" style={styles.listeningQuestionsScroll}>
-              {test.listening_data.sections.map((section, sIdx) => (
+              {(test.listening_data?.sections || []).map((section, sIdx) => (
                 <div key={sIdx} style={styles.listeningSectionBlock}>
                   <h4 style={styles.sectionHeading}>{section.title}</h4>
                   <p style={styles.instructionText}>{section.instructions}</p>
@@ -546,7 +546,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           <div style={{ display: 'flex', width: '100%', overflow: 'hidden' }}>
             {/* Left Passage Pane */}
             <div className={`ielts-passage-pane ielts-highlightable font-${fontSize}`}>
-              {test.reading_data.passages.map((passage, pIdx) => (
+              {(test.reading_data?.passages || []).map((passage, pIdx) => (
                 <div key={pIdx}>
                   <h3 className="ielts-passage-title">{passage.title}</h3>
                   <div style={{ whiteSpace: 'pre-wrap' }}>{passage.text}</div>
@@ -556,7 +556,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
             {/* Right Question Pane */}
             <div className={`ielts-questions-pane font-${fontSize}`}>
-              {test.reading_data.passages.map((passage, pIdx) => (
+              {(test.reading_data?.passages || []).map((passage, pIdx) => (
                 <div key={pIdx}>
                   <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid #d1d5db', paddingBottom: '0.25rem', color: '#1f2937' }}>
                     Questions for Reading Passage {pIdx + 1}
@@ -683,7 +683,9 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
                   {activeWritingTask === 'task1' ? 'Task 1 instructions:' : 'Task 2 instructions:'}
                 </h4>
                 <p style={{ lineHeight: '1.6', color: '#374151', fontSize: '1.05rem', whiteSpace: 'pre-wrap' }}>
-                  {activeWritingTask === 'task1' ? test.writing_data.task1.prompt : test.writing_data.task2.prompt}
+                  {activeWritingTask === 'task1'
+                    ? (test.writing_data?.task1?.prompt || 'No Task 1 prompt is available for this test.')
+                    : (test.writing_data?.task2?.prompt || 'No Task 2 prompt is available for this test.')}
                 </p>
               </div>
             </div>
@@ -702,7 +704,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
                   />
                   <div>
                     <span className="word-count-badge">
-                      Word Count: {getWordCount(writingAnswers.task1)} / {test.writing_data.task1.minWords} min
+                      Word Count: {getWordCount(writingAnswers.task1)} / {test.writing_data?.task1?.minWords ?? 150} min
                     </span>
                   </div>
                 </div>
@@ -716,7 +718,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
                   />
                   <div>
                     <span className="word-count-badge">
-                      Word Count: {getWordCount(writingAnswers.task2)} / {test.writing_data.task2.minWords} min
+                      Word Count: {getWordCount(writingAnswers.task2)} / {test.writing_data?.task2?.minWords ?? 250} min
                     </span>
                   </div>
                 </div>
