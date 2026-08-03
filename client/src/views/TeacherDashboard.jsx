@@ -15,6 +15,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   const [viewMode, setViewMode] = useState('grading'); // 'grading' or 'detailed_review'
   const [answerKey, setAnswerKey] = useState(null);
   const [loadingKey, setLoadingKey] = useState(false);
+  const [showOnlyMistakes, setShowOnlyMistakes] = useState(false);
 
   // Rubric scores state (dual-task: Task 1 = TA/CC/LR/GRA, Task 2 = TR/CC/LR/GRA)
   const [rubricTask1, setRubricTask1] = useState({ ta: 6.0, cc: 6.0, lr: 6.0, gra: 6.0 });
