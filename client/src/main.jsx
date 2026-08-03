@@ -22,7 +22,7 @@ class ErrorBoundary extends Component {
       localStorage.clear();
       sessionStorage.clear();
     } catch (e) {}
-    window.location.reload();
+    window.location.href = window.location.origin + '?v=' + Date.now();
   };
 
   render() {
