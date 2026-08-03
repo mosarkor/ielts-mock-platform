@@ -550,6 +550,18 @@ export async function initDb() {
 }
 
 async function ensureCustomDataSeeded(db) {
+  // Ensure staff accounts (admin and teacher) always exist
+  try {
+    const adminExists = await db.get('SELECT 1 FROM users WHERE id = ?', ['admin']);
+    if (!adminExists) {
+      await db.run(`INSERT INTO users (id, name, password_hash, role) VALUES ('admin', 'Head Administrator', 'admin123', 'admin')`);
+    }
+    const teacherExists = await db.get('SELECT 1 FROM users WHERE id = ?', ['teacher']);
+    if (!teacherExists) {
+      await db.run(`INSERT INTO users (id, name, password_hash, role) VALUES ('teacher', 'Teacher', 'teacher123', 'teacher')`);
+    }
+  } catch (e) {}
+
   const students = [
     ['G1-01', 'Aydemi Kamalova', 'RQLD2E', 'Group 1'],
     ['G1-02', 'Aydemir Akmatov', 'NRP7EX', 'Group 1'],

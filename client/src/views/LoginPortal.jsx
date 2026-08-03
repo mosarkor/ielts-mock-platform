@@ -188,49 +188,47 @@ export default function LoginPortal({ onLoginSuccess, theme, toggleTheme }) {
       <div className="glass-panel" style={styles.loginCard}>
         <div style={styles.logoHeader}>
           <h2>IELTS <span>Mock Exam Portal</span></h2>
-          <p>{new URLSearchParams(window.location.search).get('staff') === 'true' ? 'Access your student account or staff dashboards' : 'Access your candidate exam cabinet'}</p>
+          <p>Access your candidate exam cabinet or staff dashboards</p>
         </div>
 
-        {new URLSearchParams(window.location.search).get('staff') === 'true' && (
-          <div style={styles.tabContainer}>
-            <button 
-              style={{
-                ...styles.tabBtn,
-                ...(roleMode === 'student' ? styles.tabBtnActive : {})
-              }}
-              onClick={() => {
-                setRoleMode('student');
-                setError('');
-              }}
-            >
-              👨‍🎓 Candidate Login
-            </button>
-            <button 
-              style={{
-                ...styles.tabBtn,
-                ...(roleMode === 'staff' ? styles.tabBtnActive : {})
-              }}
-              onClick={() => {
-                setRoleMode('staff');
-                setError('');
-              }}
-            >
-              🏫 Staff Portal
-            </button>
-          </div>
-        )}
+        <div style={styles.tabContainer}>
+          <button 
+            style={{
+              ...styles.tabBtn,
+              ...(roleMode === 'student' ? styles.tabBtnActive : {})
+            }}
+            onClick={() => {
+              setRoleMode('student');
+              setError('');
+            }}
+          >
+            👨‍🎓 Candidate Login
+          </button>
+          <button 
+            style={{
+              ...styles.tabBtn,
+              ...(roleMode === 'staff' ? styles.tabBtnActive : {})
+            }}
+            onClick={() => {
+              setRoleMode('staff');
+              setError('');
+            }}
+          >
+            🏫 Staff Portal
+          </button>
+        </div>
 
         {error && <div style={styles.errorAlert}>{error}</div>}
 
         <form onSubmit={handleLoginSubmit}>
           <div className="form-group">
             <label className="form-label">
-              {roleMode === 'student' ? 'Candidate ID (e.g. UNI2026A)' : 'Staff Username'}
+              {roleMode === 'student' ? 'Candidate ID (e.g. G1-01)' : 'Staff Username (teacher / admin)'}
             </label>
             <input 
               type="text" 
               className="form-input" 
-              placeholder={roleMode === 'student' ? "Type Candidate ID" : "Type username"}
+              placeholder={roleMode === 'student' ? "Type Candidate ID" : "Type staff username (e.g. teacher)"}
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
               disabled={loading}
@@ -276,14 +274,10 @@ export default function LoginPortal({ onLoginSuccess, theme, toggleTheme }) {
             </div>
           </div>
 
-          {roleMode === 'student' && new URLSearchParams(window.location.search).get('staff') === 'true' && (
+          {roleMode === 'staff' && (
             <div style={styles.hintText}>
-              💡 Quick test: Use ID <strong>UNI2026A</strong> and passcode <strong>student123</strong>
-            </div>
-          )}
-          {roleMode === 'staff' && new URLSearchParams(window.location.search).get('staff') === 'true' && (
-            <div style={styles.hintText}>
-              💡 Staff roles: Use <strong>teacher</strong> (passcode: <strong>teacher123</strong>) or <strong>admin</strong> (passcode: <strong>admin123</strong>)
+              💡 <strong>Teacher Credentials:</strong> Username: <code>teacher</code> | Passcode: <code>teacher123</code><br/>
+              💡 <strong>Admin Credentials:</strong> Username: <code>admin</code> | Passcode: <code>admin123</code>
             </div>
           )}
 
