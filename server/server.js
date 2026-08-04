@@ -1058,6 +1058,8 @@ The "overall" score should be the mean of the four criteria rounded to the neare
   const userMessage = `Evaluate these IELTS Speaking responses:\n\n${combinedText}`;
 
   try {
+    let raw;
+    let provider;
     if (aiSettings.provider === 'openai' && aiSettings.openai_api_key) {
       const openai = new OpenAI({ apiKey: aiSettings.openai_api_key });
       const response = await openai.chat.completions.create({
@@ -1069,18 +1071,44 @@ The "overall" score should be the mean of the four criteria rounded to the neare
         response_format: { type: 'json_object' },
         max_tokens: 600
       });
-      return { result: JSON.parse(response.choices[0].message.content), provider: 'openai' };
+      raw = response.choices[0].message.content;
+      provider = 'openai';
     } else if (aiSettings.gemini_api_key) {
       const genAI = new GoogleGenerativeAI(aiSettings.gemini_api_key);
       const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const result = await model.generateContent(`${systemPrompt}\n\n${userMessage}`);
-      const text = result.response.text().replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      return { result: JSON.parse(text), provider: 'gemini' };
+      raw = result.response.text();
+      provider = 'gemini';
     } else {
       throw new Error('No AI API key configured. Please add your Gemini or OpenAI key in Admin Settings.');
     }
+
+    const parsed = parseAiJsonResponse(raw);
+    const requiredFields = ['fluency', 'lexical', 'grammar', 'pronunciation', 'overall'];
+    const missing = requiredFields.filter(f => typeof parsed[f] !== 'number');
+    if (missing.length > 0) {
+      throw new Error(`AI response is missing expected score field(s): ${missing.join(', ')}`);
+    }
+    return { result: parsed, provider };
   } catch (err) {
     throw new Error(`AI evaluation failed: ${err.message}`);
+  }
+}
+
+// Parses a JSON object out of an LLM response, tolerating markdown code fences
+// and any stray text the model adds despite instructions to return only JSON.
+function parseAiJsonResponse(text) {
+  const cleaned = String(text || '').replace(/```json\n?/gi, '').replace(/```\n?/g, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch {}
+    }
+    throw new Error('AI did not return valid JSON');
   }
 }
 
@@ -1292,10 +1320,23 @@ async function transcribeAudioWithWhisper(audioBuffer, ext, aiSettings) {
   return { text, publicUrl };
 }
 
+function bufferFromBase64Audio(base64) {
+  if (!base64) return null;
+  return Buffer.from(base64.replace(/^data:audio\/\w+;base64,/, ''), 'base64');
+}
+
 // Student — Submit speaking test WITH RECORDED AUDIO blobs (OpenAI Whisper pipeline)
+//
+// Saving the submission happens BEFORE AI scoring, and the two are independent:
+// transcription/punctuation/scoring calls run in parallel where possible, and if
+// AI scoring fails after a successful save, the submission still exists with
+// scores left null ("pending grading") instead of being silently discarded --
+// a teacher can grade it manually via the existing Grade/Edit flow. Previously
+// a single failed AI call anywhere in this chain (rate limit, malformed JSON,
+// network blip) meant the whole submission -- audio and all -- was lost.
 app.post('/api/speaking/submit-audio', async (req, res) => {
   const { studentId, promptId, assignmentId, part1AudioBase64, part2AudioBase64, part3AudioBase64, part1Transcript, part2Transcript, part3Transcript } = req.body;
-  
+
   if (!studentId || !promptId) {
     return res.status(400).json({ error: 'studentId and promptId required' });
   }
@@ -1304,70 +1345,65 @@ app.post('/api/speaking/submit-audio', async (req, res) => {
     const aiSettings = await db.get('SELECT * FROM ai_settings LIMIT 1');
     if (!aiSettings) return res.status(500).json({ error: 'AI settings not configured' });
 
-    let finalPart1Text = part1Transcript || '';
-    let finalPart2Text = part2Transcript || '';
-    let finalPart3Text = part3Transcript || '';
+    // Transcribe all three parts in parallel -- they're independent of each other.
+    const emptyTranscription = { text: '', publicUrl: null };
+    const [t1, t2, t3] = await Promise.all([
+      part1AudioBase64 ? transcribeAudioWithWhisper(bufferFromBase64Audio(part1AudioBase64), 'webm', aiSettings) : Promise.resolve(emptyTranscription),
+      part2AudioBase64 ? transcribeAudioWithWhisper(bufferFromBase64Audio(part2AudioBase64), 'webm', aiSettings) : Promise.resolve(emptyTranscription),
+      part3AudioBase64 ? transcribeAudioWithWhisper(bufferFromBase64Audio(part3AudioBase64), 'webm', aiSettings) : Promise.resolve(emptyTranscription)
+    ]);
 
-    let part1AudioUrl = null;
-    let part2AudioUrl = null;
-    let part3AudioUrl = null;
+    // Punctuate all three in parallel, same reasoning.
+    const [finalPart1Text, finalPart2Text, finalPart3Text] = await Promise.all([
+      punctuateTranscriptWithAI(t1.text || part1Transcript || '', aiSettings),
+      punctuateTranscriptWithAI(t2.text || part2Transcript || '', aiSettings),
+      punctuateTranscriptWithAI(t3.text || part3Transcript || '', aiSettings)
+    ]);
 
-    // Transcribe Part 1 Audio with Whisper if provided
-    if (part1AudioBase64) {
-      const buffer = Buffer.from(part1AudioBase64.replace(/^data:audio\/\w+;base64,/, ''), 'base64');
-      const resWhisper = await transcribeAudioWithWhisper(buffer, 'webm', aiSettings);
-      if (resWhisper.text) finalPart1Text = resWhisper.text;
-      part1AudioUrl = resWhisper.publicUrl;
-    }
-
-    // Transcribe Part 2 Audio with Whisper if provided
-    if (part2AudioBase64) {
-      const buffer = Buffer.from(part2AudioBase64.replace(/^data:audio\/\w+;base64,/, ''), 'base64');
-      const resWhisper = await transcribeAudioWithWhisper(buffer, 'webm', aiSettings);
-      if (resWhisper.text) finalPart2Text = resWhisper.text;
-      part2AudioUrl = resWhisper.publicUrl;
-    }
-
-    // Transcribe Part 3 Audio with Whisper if provided
-    if (part3AudioBase64) {
-      const buffer = Buffer.from(part3AudioBase64.replace(/^data:audio\/\w+;base64,/, ''), 'base64');
-      const resWhisper = await transcribeAudioWithWhisper(buffer, 'webm', aiSettings);
-      if (resWhisper.text) finalPart3Text = resWhisper.text;
-      part3AudioUrl = resWhisper.publicUrl;
-    }
-
-    // Restore punctuation
-    finalPart1Text = await punctuateTranscriptWithAI(finalPart1Text, aiSettings);
-    finalPart2Text = await punctuateTranscriptWithAI(finalPart2Text, aiSettings);
-    finalPart3Text = await punctuateTranscriptWithAI(finalPart3Text, aiSettings);
-
-    // Evaluate with AI (GPT-4o or Gemini)
-    const { result, provider } = await evaluateSpeaking(
-      { part1: finalPart1Text, part2: finalPart2Text, part3: finalPart3Text },
-      aiSettings
-    );
-
-    // Save submission with audio URLs and Whispered transcripts
-    await db.run(`
-      INSERT INTO speaking_submissions 
-        (student_id, prompt_id, part1_transcript, part2_transcript, part3_transcript,
-         fluency_score, lexical_score, grammar_score, pronunciation_score, overall_score, ai_feedback, ai_provider, is_revealed,
+    // Save the submission now -- guaranteed, no dependency on AI scoring succeeding.
+    const insertResult = await db.run(`
+      INSERT INTO speaking_submissions
+        (student_id, prompt_id, part1_transcript, part2_transcript, part3_transcript, is_revealed,
          part1_audio, part2_audio, part3_audio)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)
     `, [
       studentId, promptId,
       finalPart1Text || '', finalPart2Text || '', finalPart3Text || '',
-      result.fluency, result.lexical, result.grammar, result.pronunciation, result.overall,
-      JSON.stringify(result.feedback), provider,
-      part1AudioUrl, part2AudioUrl, part3AudioUrl
+      t1.publicUrl, t2.publicUrl, t3.publicUrl
     ]);
+    const submissionId = insertResult.lastID;
 
-    // Mark assignment as submitted
     if (assignmentId) {
       await db.run("UPDATE speaking_assignments SET status = 'submitted' WHERE id = ?", [assignmentId]);
     }
 
-    res.json({ success: true, scores: result, message: 'Submitted and transcribed with OpenAI Whisper' });
+    // Attempt AI scoring as a best-effort second step. The submission above is
+    // already safe regardless of what happens here.
+    let scores = null;
+    try {
+      const { result, provider } = await evaluateSpeaking(
+        { part1: finalPart1Text, part2: finalPart2Text, part3: finalPart3Text },
+        aiSettings
+      );
+      await db.run(`
+        UPDATE speaking_submissions
+        SET fluency_score = ?, lexical_score = ?, grammar_score = ?, pronunciation_score = ?, overall_score = ?, ai_feedback = ?, ai_provider = ?
+        WHERE id = ?
+      `, [result.fluency, result.lexical, result.grammar, result.pronunciation, result.overall, JSON.stringify(result.feedback), provider, submissionId]);
+      scores = result;
+    } catch (scoringError) {
+      console.error(`Speaking submission ${submissionId} saved, but AI scoring failed:`, scoringError.message);
+    }
+
+    res.json({
+      success: true,
+      submissionId,
+      scores,
+      gradingPending: !scores,
+      message: scores
+        ? 'Submitted and evaluated successfully'
+        : 'Submitted successfully. AI grading is temporarily unavailable, so your teacher will grade this one manually.'
+    });
   } catch (error) {
     console.error('Submit audio error:', error);
     res.status(500).json({ error: error.message });

@@ -500,11 +500,21 @@ export async function initDb() {
       ai_feedback TEXT,
       ai_provider TEXT,
       is_revealed INTEGER DEFAULT 0,
+      part1_audio TEXT,
+      part2_audio TEXT,
+      part3_audio TEXT,
       submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (prompt_id) REFERENCES speaking_prompts(id) ON DELETE CASCADE
     )
   `);
+
+  // Safety net for existing SQLite databases created before these columns
+  // were added to the CREATE TABLE above (mirrors the equivalent migration
+  // already run for the PostgreSQL branch of initDb()).
+  try { await db.exec(`ALTER TABLE speaking_submissions ADD COLUMN part1_audio TEXT;`); } catch (e) {}
+  try { await db.exec(`ALTER TABLE speaking_submissions ADD COLUMN part2_audio TEXT;`); } catch (e) {}
+  try { await db.exec(`ALTER TABLE speaking_submissions ADD COLUMN part3_audio TEXT;`); } catch (e) {}
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS ai_settings (

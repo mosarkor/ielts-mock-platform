@@ -13,6 +13,7 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
   const [part3Answers, setPart3Answers] = useState([]);
 
   const [error, setError] = useState('');
+  const [gradingPending, setGradingPending] = useState(false);
 
   const recognitionRef = useRef(null);
   const prepTimerRef = useRef(null);
@@ -149,6 +150,7 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Submission failed');
+      setGradingPending(!!data.gradingPending);
       setStep('results');
     } catch (err) {
       setError(err.message);
@@ -557,10 +559,13 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
     <div style={wrap}>
       <div style={{ ...card, textAlign: 'center' }}>
         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
-        <h2 style={{ color: '#f43f5e', fontWeight: '800', fontSize: '1.5rem' }}>Evaluation Error</h2>
+        <h2 style={{ color: '#f43f5e', fontWeight: '800', fontSize: '1.5rem' }}>Submission Failed</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>{error}</p>
-        <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1.5rem' }}>Your responses were recorded. Ask your teacher to configure the AI API key in Admin Settings.</p>
-        <button onClick={onFinished} className="btn btn-primary">← Back to Dashboard</button>
+        <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1.5rem' }}>Your recording was not submitted. You can try again without re-recording, or go back and record again later.</p>
+        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+          <button onClick={() => doSubmit(transcripts)} className="btn btn-primary">🔁 Try Again</button>
+          <button onClick={onFinished} className="btn btn-secondary">← Back to Dashboard</button>
+        </div>
       </div>
     </div>
   );
@@ -575,9 +580,14 @@ export default function SpeakingTest({ user, assignment, onFinished }) {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '480px', margin: '0 auto 1.5rem', lineHeight: 1.5 }}>
             Your speaking responses have been successfully submitted. Your teacher will review your test and release the official results to your dashboard.
           </p>
-          <div style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '2rem', fontSize: '0.85rem', color: '#10b981', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ backgroundColor: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: gradingPending ? '1rem' : '2rem', fontSize: '0.85rem', color: '#10b981', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
             <span>✅ Status: Submitted to Teacher Dashboard</span>
           </div>
+          {gradingPending && (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', maxWidth: '480px', margin: '0 auto 2rem', lineHeight: 1.5 }}>
+              AI grading is temporarily unavailable, so your teacher will grade this submission manually — your recording and transcript are already saved.
+            </p>
+          )}
           <button onClick={onFinished} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.85rem' }}>
             ← Return to Student Dashboard
           </button>
