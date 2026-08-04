@@ -875,7 +875,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                     <input
                       type="text"
-                      placeholder="🔍 Search name, ID (G1-01), passcode..."
+                      placeholder="🔍 Search name, ID (G1-01)..."
                       value={userSearchTerm}
                       onChange={e => setUserSearchTerm(e.target.value)}
                       style={{
@@ -922,8 +922,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                       const filteredUsers = allUsers.filter(u => {
                         const term = userSearchTerm.toLowerCase();
                         const matchesSearch = u.name.toLowerCase().includes(term) ||
-                                              u.id.toLowerCase().includes(term) ||
-                                              (u.passcode && String(u.passcode).toLowerCase().includes(term));
+                                              u.id.toLowerCase().includes(term);
                         
                         let matchesGroup = true;
                         if (userGroupFilter !== 'all') {
@@ -955,7 +954,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                               </span>
                             )}
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                              Role: <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{u.role}</span> | Passcode: <strong style={{ color: 'var(--color-indigo)' }}>{u.passcode}</strong>
+                              Role: <span style={{ textTransform: 'capitalize', fontWeight: 'bold' }}>{u.role}</span> | Passcode: <em>hidden for security &mdash; use Reset to set a new one</em>
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: '0.5rem' }}>

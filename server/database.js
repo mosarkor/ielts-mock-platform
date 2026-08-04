@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import pg from 'pg';
 import { sanitizeTestHtml } from './contentSanitizer.js';
+import { hashPassword, isBcryptHash } from './auth.js';
 
 const { Pool } = pg;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -917,6 +918,27 @@ async function ensureCustomDataSeeded(db) {
     }
   } catch (e) {
     console.error('Auto-assign Mock Test 9 failed:', e.message);
+  }
+
+  // Migrate any plaintext-stored passwords to bcrypt hashes. Runs last, after
+  // all other seeding above (which may itself insert plaintext defaults like
+  // 'admin123'), so every account is covered in a single pass. Idempotent:
+  // values that are already a bcrypt hash are left untouched.
+  try {
+    const allUsers = await db.all('SELECT id, password_hash FROM users');
+    let migratedCount = 0;
+    for (const u of allUsers) {
+      if (u.password_hash && !isBcryptHash(u.password_hash)) {
+        const hashed = await hashPassword(u.password_hash);
+        await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hashed, u.id]);
+        migratedCount += 1;
+      }
+    }
+    if (migratedCount > 0) {
+      console.log(`Migrated ${migratedCount} account(s) from plaintext to bcrypt-hashed passwords.`);
+    }
+  } catch (e) {
+    console.error('Password hash migration failed:', e.message);
   }
 
   // Seeding finished

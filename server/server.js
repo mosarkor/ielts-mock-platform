@@ -7,6 +7,7 @@ import fs from 'fs';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import { sanitizeTestHtml } from './contentSanitizer.js';
+import { hashPassword, verifyPassword } from './auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -84,7 +85,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: `User ID "${req.body.id}" not found` });
     }
 
-    if (cleanPasscode !== user.password_hash && cleanPasscode !== 'teacher123' && cleanPasscode !== 'admin123') {
+    if (!(await verifyPassword(cleanPasscode, user.password_hash))) {
       return res.status(401).json({ error: 'Invalid passcode. Please check your credentials.' });
     }
 
@@ -102,10 +103,10 @@ app.post('/api/user/change-password', async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    if (user.password_hash !== currentPassword) {
+    if (!(await verifyPassword(currentPassword, user.password_hash))) {
       return res.status(400).json({ error: 'Incorrect current password' });
     }
-    await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [newPassword, userId]);
+    await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [await hashPassword(newPassword), userId]);
     res.json({ success: true, message: 'Password updated successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -460,7 +461,7 @@ app.get('/api/admin/overview', async (req, res) => {
 // Get all users
 app.get('/api/admin/users', async (req, res) => {
   try {
-    const users = await db.all('SELECT id, name, role, password_hash as passcode, group_name as groupName FROM users');
+    const users = await db.all('SELECT id, name, role, group_name as groupName FROM users');
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -471,7 +472,7 @@ app.get('/api/admin/users', async (req, res) => {
 app.post('/api/admin/users/reset-password', async (req, res) => {
   const { userId, newPassword } = req.body;
   try {
-    await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [newPassword, userId]);
+    await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [await hashPassword(newPassword), userId]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -482,7 +483,8 @@ app.post('/api/admin/users/reset-password', async (req, res) => {
 app.post('/api/admin/users', async (req, res) => {
   const { id, name, role, password, groupName } = req.body;
   try {
-    await db.run('INSERT INTO users (id, name, password_hash, role, group_name) VALUES (?, ?, ?, ?, ?)', [id, name, password || 'student123', role, groupName || null]);
+    const hashedPassword = await hashPassword(password || 'student123');
+    await db.run('INSERT INTO users (id, name, password_hash, role, group_name) VALUES (?, ?, ?, ?, ?)', [id, name, hashedPassword, role, groupName || null]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'User ID already exists or invalid data' });
@@ -915,10 +917,13 @@ app.post('/api/admin/users/bulk-import', async (req, res) => {
   const results = [];
   for (const s of students) {
     try {
+      const hashedPassword = await hashPassword(s.password);
       await db.run(
         'INSERT INTO users (id, name, password_hash, role, group_name) VALUES (?, ?, ?, ?, ?)',
-        [s.id, s.name, s.password, 'student', s.groupName || null]
+        [s.id, s.name, hashedPassword, 'student', s.groupName || null]
       );
+      // s.password (plaintext) is only echoed back in this response so the
+      // admin can distribute it now; it is never stored or shown again.
       results.push({ id: s.id, name: s.name, password: s.password, groupName: s.groupName || '', status: 'created' });
     } catch (err) {
       results.push({ id: s.id, name: s.name, password: s.password, groupName: s.groupName || '', status: 'skipped (ID exists)' });
