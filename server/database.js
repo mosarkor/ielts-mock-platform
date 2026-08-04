@@ -139,6 +139,13 @@ export async function initDb() {
       }
     });
 
+    // Idle pooled clients can be dropped by the database at any time (e.g. Render
+    // recycling idle connections). pg.Pool is an EventEmitter, and an unhandled
+    // 'error' event crashes the whole process, so this must always be listened for.
+    pool.on('error', (err) => {
+      console.error('Unexpected error on idle PostgreSQL client:', err);
+    });
+
     const db = new PostgresDatabaseWrapper(pool);
 
     // Create Tables
