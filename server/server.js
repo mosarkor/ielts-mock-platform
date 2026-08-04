@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
+import { sanitizeTestHtml } from './contentSanitizer.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -823,14 +824,27 @@ app.post('/api/admin/upload-test', async (req, res) => {
       `;
       content = content.replace(finishWritingTarget, finishWritingReplacement);
     }
-    
+
+    // 2b. Safety net on top of the branch-specific handling above: fix any
+    // mojibake from the source file's original encoding, and guarantee the
+    // password/Test-Taker-ID gate is neutralized even if this file's function
+    // names didn't match either branch above.
+    const sanitized = sanitizeTestHtml(content);
+    content = sanitized.html;
+    if (sanitized.mojibakeFixedCount > 0) {
+      console.log(`Upload "${title}": fixed ${sanitized.mojibakeFixedCount} mojibake span(s).`);
+    }
+    if (sanitized.gateRemoved) {
+      console.log(`Upload "${title}": neutralized an embedded password/ID gate.`);
+    }
+
     // 3. Persist the processed HTML in the database first. The file is only a fast local cache.
     const mockListening = {
       isIframe: true,
       iframeUrl: `/tests/${fileName}`
     };
     await db.run(`
-      UPDATE tests 
+      UPDATE tests
       SET listening_data = ?, html_content = ?
       WHERE id = ?
     `, [JSON.stringify(mockListening), content, testId]);
@@ -843,7 +857,12 @@ app.post('/api/admin/upload-test', async (req, res) => {
       }
     }
     
-    res.json({ success: true, testId });
+    res.json({
+      success: true,
+      testId,
+      mojibakeFixedCount: sanitized.mojibakeFixedCount,
+      gateRemoved: sanitized.gateRemoved
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

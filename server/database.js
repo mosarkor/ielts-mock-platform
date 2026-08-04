@@ -2,6 +2,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import pg from 'pg';
+import { sanitizeTestHtml } from './contentSanitizer.js';
 
 const { Pool } = pg;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -663,6 +664,28 @@ async function ensureCustomDataSeeded(db) {
     } catch (e) {
       console.error(`Failed to migrate mock ${i} to native schema:`, e.message);
     }
+  }
+
+  // Sanitize any admin-uploaded HTML tests already stored in the database:
+  // fix mojibake left over from the source file's original encoding, and
+  // neutralize any password/Test-Taker-ID gate the source file still has.
+  // New uploads are sanitized at upload time (see /api/admin/upload-test);
+  // this keeps existing rows in sync with the same rules on every startup.
+  try {
+    const htmlTests = await db.all('SELECT id, title, html_content FROM tests WHERE html_content IS NOT NULL');
+    for (const test of htmlTests) {
+      try {
+        const { html, mojibakeFixedCount, gateRemoved } = sanitizeTestHtml(test.html_content);
+        if (mojibakeFixedCount > 0 || gateRemoved) {
+          await db.run('UPDATE tests SET html_content = ? WHERE id = ?', [html, test.id]);
+          console.log(`Sanitized "${test.title}" (id=${test.id}): mojibakeFixed=${mojibakeFixedCount}, gateRemoved=${gateRemoved}.`);
+        }
+      } catch (e) {
+        console.error(`Failed to sanitize test id=${test.id}:`, e.message);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to run html_content sanitization pass:', e.message);
   }
 
   const students = [
