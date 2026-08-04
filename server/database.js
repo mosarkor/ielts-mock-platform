@@ -641,6 +641,30 @@ async function ensureCustomDataSeeded(db) {
     }
   } catch (e) {}
 
+  // Migrate Mock Tests 1-9 to the native JSON schema if they still point at the
+  // legacy iframe-embedded HTML. That HTML has its own password/Test-Taker-ID
+  // gate meant for standalone distribution, which is redundant (and confusing)
+  // now that students are already authenticated on the platform.
+  for (let i = 1; i <= 9; i++) {
+    try {
+      const jsonPath = path.join(__dirname, 'data', 'mocks', `mock${i}.json`);
+      if (!fs.existsSync(jsonPath)) continue;
+      const title = `IELTS Academic Mock Test ${i}`;
+      const existing = await db.get('SELECT id, listening_data FROM tests WHERE title = ?', [title]);
+      if (!existing) continue;
+      const currentListening = JSON.parse(existing.listening_data || '{}');
+      if (!currentListening.isIframe) continue;
+      const mockData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+      await db.run(
+        'UPDATE tests SET listening_data = ?, reading_data = ?, writing_data = ? WHERE id = ?',
+        [JSON.stringify(mockData.listening_data), JSON.stringify(mockData.reading_data), JSON.stringify(mockData.writing_data), existing.id]
+      );
+      console.log(`Migrated "${title}" (id=${existing.id}) to the native JSON schema.`);
+    } catch (e) {
+      console.error(`Failed to migrate mock ${i} to native schema:`, e.message);
+    }
+  }
+
   const students = [
     ['G1-01', 'Aydemi Kamalova', 'RQLD2E', 'Group 1'],
     ['G1-02', 'Aydemir Akmatov', 'NRP7EX', 'Group 1'],

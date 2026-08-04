@@ -38,8 +38,10 @@ function extractAnswersFromJS(content, prefix = 'l') {
 
 function extractPassages(content) {
   const passages = [];
-  // Style A passage extraction
-  const passagesMatch = content.match(/const\s+passages\s*=\s*(\[[\s\S]*?\]);/);
+  // Style A passage extraction: different mock files name this array differently
+  // (e.g. `const passages = [...]` vs `const READING_PASSAGES = [...]`)
+  const passagesMatch = content.match(/const\s+passages\s*=\s*(\[[\s\S]*?\]);/)
+    || content.match(/const\s+READING_PASSAGES\s*=\s*(\[[\s\S]*?\]);/);
   if (passagesMatch) {
     try {
       const rawCode = passagesMatch[1];
