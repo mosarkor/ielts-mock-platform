@@ -427,7 +427,14 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to upload mock test');
 
-      alert('HTML Mock Test uploaded, sanitized, and seeded successfully!');
+      const fixes = [];
+      if (data.mojibakeFixedCount > 0) fixes.push(`fixed ${data.mojibakeFixedCount} garbled-text spot${data.mojibakeFixedCount === 1 ? '' : 's'} (mojibake)`);
+      if (data.gateRemoved) fixes.push('removed a leftover password/ID gate');
+      const fixSummary = fixes.length > 0
+        ? `Auto-fixes applied: ${fixes.join(', ')}.`
+        : 'No issues found in this file.';
+
+      alert(`HTML Mock Test uploaded and seeded successfully!\n\n${fixSummary}`);
       setTestTitle('');
       setUploadedHtmlContent('');
       setShowTestCreator(false);
