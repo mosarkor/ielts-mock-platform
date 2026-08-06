@@ -391,11 +391,27 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
   };
 
   const handleClearAllAssignments = async () => {
-    if (!confirm('Are you sure you want to delete ALL test assignments for all students? All candidate dashboards will be reset.')) return;
+    const input = prompt('⚠️ WARNING: Clearing all assignments will permanently delete ALL student test assignments and submissions.\n\nTo confirm this deletion, type "DELETE" in the box below:');
+    if (input !== 'DELETE') {
+      if (input !== null) alert('Action cancelled. You must type DELETE to confirm.');
+      return;
+    }
     try {
       const res = await fetch('/api/admin/assignments/clear-all', { method: 'POST' });
       if (!res.ok) throw new Error('Failed to clear assignments');
       alert('All candidate assignments cleared successfully!');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleReassignAll = async () => {
+    try {
+      const res = await fetch('/api/admin/reassign-default-tests', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to re-assign tests');
+      alert(data.message || 'Mock tests successfully re-assigned to all candidates!');
       fetchAdminData();
     } catch (err) {
       alert(err.message);
@@ -1088,15 +1104,24 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                 <div className="card">
                   <div style={styles.flexHeader}>
                     <h3 style={styles.cardTitle}>📊 Live Candidate Assignments</h3>
-                    {assignments.length > 0 && (
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <button 
-                        onClick={handleClearAllAssignments} 
-                        className="btn btn-danger"
+                        onClick={handleReassignAll} 
+                        className="btn btn-success"
                         style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
                       >
-                        🗑️ Clear All Assignments
+                        🚀 Re-assign Tests to All Students
                       </button>
-                    )}
+                      {assignments.length > 0 && (
+                        <button 
+                          onClick={handleClearAllAssignments} 
+                          className="btn btn-danger"
+                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
+                        >
+                          🗑️ Clear All Assignments
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Filters Row */}

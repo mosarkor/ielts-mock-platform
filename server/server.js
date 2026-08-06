@@ -977,6 +977,33 @@ app.all('/api/admin/assignments/clear-all', async (req, res) => {
   }
 });
 
+// Re-assign default tests to all active students
+app.post('/api/admin/reassign-default-tests', async (req, res) => {
+  try {
+    const students = await db.all("SELECT id FROM users WHERE role = 'student'");
+    const tests = await db.all("SELECT id FROM tests");
+    if (students.length === 0 || tests.length === 0) {
+      return res.status(400).json({ error: 'No students or tests found to assign.' });
+    }
+
+    let count = 0;
+    const stmt = await db.prepare("INSERT INTO assignments (student_id, test_id, assigned_at) VALUES (?, ?, datetime('now'))");
+    for (const student of students) {
+      for (const test of tests) {
+        const exists = await db.get("SELECT 1 FROM assignments WHERE student_id = ? AND test_id = ? AND status != 'completed'", [student.id, test.id]);
+        if (!exists) {
+          await stmt.run(student.id, test.id);
+          count++;
+        }
+      }
+    }
+    await stmt.finalize();
+    res.json({ success: true, message: `Successfully assigned ${count} test(s) across ${students.length} candidates.` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 
 
