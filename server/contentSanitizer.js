@@ -15,33 +15,20 @@ function tryFixMojibakeSpan(span) {
 }
 
 export function fixMojibake(text) {
-  let result = '';
-  let i = 0;
   let fixedCount = 0;
-  while (i < text.length) {
-    const c = text.codePointAt(i);
-    if (c > 0x7f) {
-      let j = i;
-      let span = '';
-      while (j < text.length && text.codePointAt(j) > 0x7f) {
-        const cp = text.codePointAt(j);
-        const chunk = String.fromCodePoint(cp);
-        span += chunk;
-        j += chunk.length;
-      }
-      const fixed = tryFixMojibakeSpan(span);
-      if (fixed) {
-        result += fixed;
-        fixedCount += 1;
-      } else {
-        result += span;
-      }
-      i = j;
-    } else {
-      result += text[i];
-      i += 1;
+  // Uploaded files can be tens of megabytes (embedded base64 audio), almost
+  // entirely plain ASCII. Only scan for runs of non-ASCII characters via regex
+  // (native, efficient) rather than rebuilding the whole string one character
+  // at a time -- the latter is slow/memory-heavy enough on a large file to hang
+  // the process.
+  const result = text.replace(/[^\x00-\x7f]+/gu, (span) => {
+    const fixed = tryFixMojibakeSpan(span);
+    if (fixed) {
+      fixedCount += 1;
+      return fixed;
     }
-  }
+    return span;
+  });
   return { html: result, fixedCount };
 }
 
