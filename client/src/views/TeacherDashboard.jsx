@@ -691,27 +691,34 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   const safeSpeakingSubmissions = Array.isArray(speakingSubmissions) ? speakingSubmissions : [];
   const studentGroups = [...new Set(safeSubmissions.map(s => s.student_group).filter(Boolean))];
 
+  // A submission only needs essay grading if its test actually has a Writing
+  // component. Standalone Listening/Reading-only tests never do, so they're
+  // ready to release the moment they're submitted -- they shouldn't sit
+  // stuck in "Pending" waiting for an essay that will never exist.
+  const hasWritingTask = (sub) => !!(sub.test_writing_data?.task1?.prompt || sub.test_writing_data?.task2?.prompt);
+  const isReadyToRelease = (sub) => sub.writing_score !== null || !hasWritingTask(sub);
+
   // Dynamic filter logic
   const filteredSubmissions = safeSubmissions.filter(sub => {
-    const matchesSearch = sub.student_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          sub.student_id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = sub.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          sub.student_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           sub.test_title.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || 
-                          (statusFilter === 'pending' && sub.writing_score === null) ||
-                          (statusFilter === 'graded' && sub.writing_score !== null);
-    
-    const matchesIntegrity = integrityFilter === 'all' || 
+
+    const matchesStatus = statusFilter === 'all' ||
+                          (statusFilter === 'pending' && !isReadyToRelease(sub)) ||
+                          (statusFilter === 'graded' && isReadyToRelease(sub));
+
+    const matchesIntegrity = integrityFilter === 'all' ||
                               (integrityFilter === 'clean' && (sub.violations_count || 0) === 0) ||
                               (integrityFilter === 'flagged' && (sub.violations_count || 0) > 0);
-    
+
     const matchesGroup = groupFilter === 'all' || sub.student_group === groupFilter;
-    
+
     return matchesSearch && matchesStatus && matchesIntegrity && matchesGroup;
   });
 
-  const pendingSubmissions = filteredSubmissions.filter(s => s.writing_score === null);
-  const gradedSubmissions = filteredSubmissions.filter(s => s.writing_score !== null);
+  const pendingSubmissions = filteredSubmissions.filter(s => !isReadyToRelease(s));
+  const gradedSubmissions = filteredSubmissions.filter(s => isReadyToRelease(s));
 
   return (
     <div style={styles.dashboardLayout}>
@@ -1312,14 +1319,14 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                 <div className="card" style={styles.statCard}>
                   <span style={styles.statIcon}>⏳</span>
                   <div>
-                    <h4 style={styles.statVal}>{filteredSubmissions.filter(s => s.writing_score === null).length}</h4>
+                    <h4 style={styles.statVal}>{pendingSubmissions.length}</h4>
                     <span style={styles.statLabel}>Pending Reviews</span>
                   </div>
                 </div>
                 <div className="card" style={styles.statCard}>
                   <span style={styles.statIcon}>✅</span>
                   <div>
-                    <h4 style={styles.statVal}>{filteredSubmissions.filter(s => s.writing_score !== null).length}</h4>
+                    <h4 style={styles.statVal}>{gradedSubmissions.length}</h4>
                     <span style={styles.statLabel}>Graded Portfolio</span>
                   </div>
                 </div>
@@ -1540,16 +1547,18 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                         )}
                       </div>
                       <span style={styles.subMeta}>ID: {sub.student_id} | {sub.test_title}</span>
-                      <div style={styles.miniBadgeBox}>
-                        <span style={styles.overallScoreNumMini}>{fmtScore(sub.writing_score)}</span>
-                        <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Writing Band</span>
-                      </div>
+                      {hasWritingTask(sub) && (
+                        <div style={styles.miniBadgeBox}>
+                          <span style={styles.overallScoreNumMini}>{fmtScore(sub.writing_score)}</span>
+                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Writing Band</span>
+                        </div>
+                      )}
                     </div>
-                    
+
                     <div style={{ ...styles.miniScoresRow, marginTop: '0.5rem' }}>
                       <span>🎧 List: <strong>{fmtScore(sub.listening_score)}</strong></span>
                       <span>📖 Read: <strong>{fmtScore(sub.reading_score)}</strong></span>
-                      <span>✍️ Writ: <strong>{fmtScore(sub.writing_score)}</strong></span>
+                      {hasWritingTask(sub) && <span>✍️ Writ: <strong>{fmtScore(sub.writing_score)}</strong></span>}
                     </div>
 
                     <div style={styles.revealControlBox}>
@@ -1569,14 +1578,16 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                       </button>
                     </div>
 
-                    <button 
-                      onClick={() => handleSelectSubmission(sub)}
-                      className="btn btn-secondary"
-                      style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}
-                    >
-                      🔍 Edit Grade & Feedback
-                    </button>
-                    <button 
+                    {hasWritingTask(sub) && (
+                      <button
+                        onClick={() => handleSelectSubmission(sub)}
+                        className="btn btn-secondary"
+                        style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}
+                      >
+                        🔍 Edit Grade & Feedback
+                      </button>
+                    )}
+                    <button
                       onClick={() => downloadPdfReport(sub)}
                       className="btn btn-primary"
                       style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem', backgroundColor: '#6366f1', borderColor: '#6366f1' }}

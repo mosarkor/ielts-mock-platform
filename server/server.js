@@ -265,8 +265,11 @@ app.post('/api/student/submit/:testId', async (req, res) => {
       ? validBand(req.body.readingScore)
       : scoreQuestions(readingData.passages, readingAnswers);
 
-    const lowerTitle = String(test.title || '').toLowerCase();
-    const defaultIsRevealed = lowerTitle.includes('reading') || lowerTitle.includes('listening') ? 1 : 0;
+    // Every submission -- full mock or standalone listening/reading -- stays
+    // hidden from the student until the teacher explicitly releases it via
+    // /api/teacher/reveal. (Previously, tests whose title contained the word
+    // "listening" or "reading" bypassed this and auto-revealed instantly.)
+    const defaultIsRevealed = 0;
 
     await db.run(`
       INSERT INTO submissions (
@@ -355,7 +358,7 @@ app.post('/api/student/assignment/start', async (req, res) => {
 app.get('/api/teacher/submissions', async (req, res) => {
   try {
     const submissions = await db.all(`
-      SELECT s.*, u.name as student_name, u.group_name as student_group, t.title as test_title, t.listening_data, t.reading_data
+      SELECT s.*, u.name as student_name, u.group_name as student_group, t.title as test_title, t.listening_data, t.reading_data, t.writing_data
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN tests t ON s.test_id = t.id
@@ -366,7 +369,8 @@ app.get('/api/teacher/submissions', async (req, res) => {
       listening_answers: JSON.parse(sub.listening_answers || '{}'),
       reading_answers: JSON.parse(sub.reading_answers || '{}'),
       writing_answers: JSON.parse(sub.writing_answers || '{}'),
-      writing_scores: JSON.parse(sub.writing_scores || 'null')
+      writing_scores: JSON.parse(sub.writing_scores || 'null'),
+      test_writing_data: JSON.parse(sub.writing_data || '{}')
     })));
   } catch (error) {
     res.status(500).json({ error: error.message });
