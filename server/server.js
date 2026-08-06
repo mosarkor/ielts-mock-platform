@@ -1015,6 +1015,81 @@ app.post('/api/admin/reassign-default-tests', async (req, res) => {
   }
 });
 
+// Reseed Demo Submissions & Sample Essays
+app.post('/api/admin/reseed-demo-submissions', async (req, res) => {
+  try {
+    const firstTest = await db.get('SELECT id FROM tests ORDER BY id ASC LIMIT 1');
+    if (!firstTest) return res.status(400).json({ error: 'No mock tests found in database.' });
+    const firstTestId = firstTest.id;
+
+    // Ensure demo students exist
+    const demoStudents = [
+      { id: 'UNI2026A', name: 'Aria Thorne', role: 'student', group_name: 'Group 1' },
+      { id: 'UNI2026B', name: 'Brandon Lee', role: 'student', group_name: 'Group 1' },
+      { id: 'UNI2026C', name: 'Chloe Varma', role: 'student', group_name: 'Group 2' }
+    ];
+
+    for (const s of demoStudents) {
+      const u = await db.get('SELECT id FROM users WHERE id = ?', [s.id]);
+      if (!u) {
+        await db.run('INSERT INTO users (id, name, password_hash, role, group_name) VALUES (?, ?, ?, ?, ?)', [s.id, s.name, 'student123', s.role, s.group_name]);
+      }
+    }
+
+    // Insert sample assignments & submissions
+    await db.run("INSERT INTO assignments (student_id, test_id, assigned_at, status) VALUES ('UNI2026C', ?, datetime('now', '-3 days'), 'completed')", [firstTestId]).catch(() => {});
+    await db.run("INSERT INTO assignments (student_id, test_id, assigned_at, status) VALUES ('UNI2026B', ?, datetime('now', '-1 days'), 'completed')", [firstTestId]).catch(() => {});
+
+    await db.run(`
+      INSERT INTO submissions (
+        student_id, test_id, started_at, submitted_at, 
+        listening_answers, reading_answers, writing_answers, 
+        listening_score, reading_score, writing_scores, writing_score, 
+        teacher_feedback, graded_by, is_revealed
+      ) VALUES (
+        'UNI2026C', ?, datetime('now', '-3 days'), datetime('now', '-3 days', '+2 hours'),
+        ?, ?, ?,
+        7.5, 8.0, ?, 7.5,
+        'Excellent effort, Chloe! Your essay was well-structured with highly cohesive transitions. Your grammatical range is wide, but watch out for spelling slips.',
+        'teacher', 1
+      )
+    `,
+      firstTestId,
+      JSON.stringify({ 1: "Aria", 2: "Thorne", 3: "CB21LQ", 4: "Student", 5: "15", 6: "B", 7: "A" }),
+      JSON.stringify({ 11: "B", 12: "FALSE", 13: "FALSE", 14: "1999" }),
+      JSON.stringify({
+        task1: "The bar chart illustrates the count of students signing up for different language programs at a university from 2020 to 2024. Overall, Spanish remained the most popular subject throughout the timeframe, whereas German recorded the lowest enrollment rate...",
+        task2: "Gaining knowledge is a multifaceted process. While academic books provide a structured foundation of theories, practical experience offers hands-on application. In my opinion, a balanced combination of both is the most effective approach..."
+      }),
+      JSON.stringify({ ta: 7.5, cc: 8.0, lr: 7.0, gra: 7.5 })
+    ).catch(() => {});
+
+    await db.run(`
+      INSERT INTO submissions (
+        student_id, test_id, started_at, submitted_at, 
+        listening_answers, reading_answers, writing_answers, 
+        listening_score, reading_score, is_revealed
+      ) VALUES (
+        'UNI2026B', ?, datetime('now', '-1 days'), datetime('now', '-1 days', '+2 hours'),
+        ?, ?, ?,
+        5.5, 6.0, 0
+      )
+    `,
+      firstTestId,
+      JSON.stringify({ 1: "John", 2: "Lee", 3: "CB21LQ", 4: "Adult", 5: "25", 6: "A", 7: "B" }),
+      JSON.stringify({ 11: "A", 12: "TRUE", 13: "FALSE", 14: "1995" }),
+      JSON.stringify({
+        task1: "The chart shows language enrollment. Spanish is high. French is medium. German is low. French goes up and down. Spanish goes up...",
+        task2: "I think books are good but practice is better. When you work you learn more than when you read. Many people go to school and don't know how to do job..."
+      })
+    ).catch(() => {});
+
+    res.json({ success: true, message: 'Sample student submissions & graded essays restored successfully!' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 
 

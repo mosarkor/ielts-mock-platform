@@ -431,6 +431,18 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
     }
   };
 
+  const handleReseedSubmissions = async () => {
+    try {
+      const res = await fetch('/api/admin/reseed-demo-submissions', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to restore submissions');
+      alert(data.message || 'Sample student submissions restored!');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   // HTML Mock Test Uploader
   const handleUploadHtmlTest = async () => {
     if (!testTitle.trim()) {
@@ -1124,6 +1136,14 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                         style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
                       >
                         🚀 Re-assign Tests
+                      </button>
+                      <button 
+                        onClick={handleReseedSubmissions} 
+                        className="btn btn-primary"
+                        style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', backgroundColor: '#6366f1' }}
+                        title="Restores sample completed student test submissions and essays"
+                      >
+                        ↺ Restore Sample Submissions
                       </button>
                       {assignments.length > 0 && (
                         <>
