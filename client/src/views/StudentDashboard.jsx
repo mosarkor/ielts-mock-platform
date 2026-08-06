@@ -619,15 +619,19 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                     </div>
 
                     {/* SECTION 3: Listening Practice Tests */}
-                    {listeningTests.length > 0 && (
-                      <div style={{ marginBottom: '2rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                          <span style={{ fontSize: '1.2rem' }}>🎧</span>
-                          <h3 style={{ ...styles.sectionTitle, margin: 0 }}>Listening Practice Tests ({listeningTests.length})</h3>
-                        </div>
-                        {listeningTests.map(asg => renderTestCard(asg, '🎧 Listening Test Only', '#3b82f6'))}
+                    <div style={{ marginBottom: '2rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🎧</span>
+                        <h3 style={{ ...styles.sectionTitle, margin: 0 }}>Listening Practice Tests ({listeningTests.length})</h3>
                       </div>
-                    )}
+                      {listeningTests.length === 0 ? (
+                        <div className="card" style={styles.emptyCard}>
+                          <p style={{ margin: 0, fontSize: '0.85rem' }}>No listening practice tests assigned.</p>
+                        </div>
+                      ) : (
+                        listeningTests.map(asg => renderTestCard(asg, '🎧 Listening Test Only', '#3b82f6'))
+                      )}
+                    </div>
 
                     {/* SECTION 4: AI Speaking Tests */}
                     <div style={{ marginBottom: '2rem' }}>
