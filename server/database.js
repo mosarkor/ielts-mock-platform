@@ -686,6 +686,44 @@ async function ensureCustomDataSeeded(db) {
     }
   }
 
+  // Speaking scores are AI-graded, and the model doesn't reliably stick to real
+  // IELTS band increments (0.5 steps) even when told to -- fix any already-stored
+  // rows with an off-band value (e.g. 6.3) from before the grading prompt was
+  // enforced server-side.
+  try {
+    const roundIelts = (value) => {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return null;
+      const clamped = Math.max(0, Math.min(9, number));
+      const decimal = clamped - Math.floor(clamped);
+      if (decimal < 0.25) return Math.floor(clamped);
+      if (decimal < 0.75) return Math.floor(clamped) + 0.5;
+      return Math.ceil(clamped);
+    };
+    const speakingScores = await db.all(
+      'SELECT id, fluency_score, lexical_score, grammar_score, pronunciation_score, overall_score FROM speaking_submissions'
+    );
+    for (const row of speakingScores) {
+      const fixed = {
+        fluency_score: roundIelts(row.fluency_score),
+        lexical_score: roundIelts(row.lexical_score),
+        grammar_score: roundIelts(row.grammar_score),
+        pronunciation_score: roundIelts(row.pronunciation_score),
+        overall_score: roundIelts(row.overall_score)
+      };
+      const changed = Object.keys(fixed).some((key) => row[key] !== null && fixed[key] !== null && row[key] !== fixed[key]);
+      if (changed) {
+        await db.run(
+          'UPDATE speaking_submissions SET fluency_score = ?, lexical_score = ?, grammar_score = ?, pronunciation_score = ?, overall_score = ? WHERE id = ?',
+          [fixed.fluency_score, fixed.lexical_score, fixed.grammar_score, fixed.pronunciation_score, fixed.overall_score, row.id]
+        );
+        console.log(`Rounded off-band speaking score(s) for submission id=${row.id} onto valid IELTS increments.`);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to run speaking score band-rounding pass:', e.message);
+  }
+
   // Sanitize any admin-uploaded HTML tests already stored in the database:
   // fix mojibake left over from the source file's original encoding, and
   // neutralize any password/Test-Taker-ID gate the source file still has.

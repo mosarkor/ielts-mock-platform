@@ -44,6 +44,20 @@ function parseJson(value, fallback) {
   }
 }
 
+// IELTS bands only exist in whole/half-band increments (4.0, 4.5, 5.0, ...).
+// AI-graded scores (writing, speaking) are asked to round to the nearest 0.5,
+// but LLMs don't reliably follow that instruction on their own (e.g. 6.3
+// instead of 6.5), so every AI-derived score must be forced through this.
+function roundIelts(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 4.0;
+  const clamped = Math.max(0, Math.min(9, number));
+  const decimal = clamped - Math.floor(clamped);
+  if (decimal < 0.25) return Math.floor(clamped);
+  if (decimal < 0.75) return Math.floor(clamped) + 0.5;
+  return Math.ceil(clamped);
+}
+
 app.get('/api/health', async (req, res) => {
   try {
     await db.get('SELECT 1 as ok');
@@ -381,13 +395,6 @@ app.get('/api/teacher/submissions', async (req, res) => {
 app.post('/api/teacher/grade/:submissionId', async (req, res) => {
   const { submissionId } = req.params;
   const { writingScores, teacherFeedback, gradedBy } = req.body;
-
-  const roundIelts = (avg) => {
-    const decimal = avg - Math.floor(avg);
-    if (decimal < 0.25) return Math.floor(avg);
-    if (decimal < 0.75) return Math.floor(avg) + 0.5;
-    return Math.ceil(avg);
-  };
 
   const calculateOverallWritingBand = (scores) => {
     if (!scores) return 6.0;
@@ -1322,6 +1329,20 @@ The "overall" score should be the mean of the four criteria rounded to the neare
     if (missing.length > 0) {
       throw new Error(`AI response is missing expected score field(s): ${missing.join(', ')}`);
     }
+
+    // Force every score onto a real IELTS band increment -- the prompt asks the
+    // AI to round to the nearest 0.5, but it doesn't reliably do that on its own
+    // (e.g. returning 6.3). Overall is recomputed from the four already-rounded
+    // criteria rather than trusting the AI's separately-reported overall value,
+    // so the displayed overall always matches its own sub-scores.
+    parsed.fluency = roundIelts(parsed.fluency);
+    parsed.lexical = roundIelts(parsed.lexical);
+    parsed.grammar = roundIelts(parsed.grammar);
+    parsed.pronunciation = roundIelts(parsed.pronunciation);
+    parsed.overall = roundIelts(
+      (parsed.fluency + parsed.lexical + parsed.grammar + parsed.pronunciation) / 4
+    );
+
     return { result: parsed, provider };
   } catch (err) {
     throw new Error(`AI evaluation failed: ${err.message}`);
@@ -1674,11 +1695,11 @@ app.post('/api/teacher/speaking/:id/update', async (req, res) => {
   const { fluency, lexical, grammar, pronunciation, overall, feedback } = req.body;
   try {
     await db.run(`
-      UPDATE speaking_submissions 
+      UPDATE speaking_submissions
       SET fluency_score = ?, lexical_score = ?, grammar_score = ?, pronunciation_score = ?, overall_score = ?, ai_feedback = ?
       WHERE id = ?
     `, [
-      fluency, lexical, grammar, pronunciation, overall,
+      roundIelts(fluency), roundIelts(lexical), roundIelts(grammar), roundIelts(pronunciation), roundIelts(overall),
       typeof feedback === 'string' ? feedback : JSON.stringify(feedback),
       req.params.id
     ]);
