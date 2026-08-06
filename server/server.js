@@ -964,14 +964,25 @@ app.post('/api/admin/assignments/:id/reset', async (req, res) => {
   }
 });
 
-// Clear All Assignments (Mock Exams + Speaking + Submissions) - Support both POST and GET
+// Clear Pending/Uncompleted Assignments (PRESERVES student submissions & graded work)
+app.post('/api/admin/assignments/clear-pending', async (req, res) => {
+  try {
+    await db.run("DELETE FROM assignments WHERE status != 'completed'");
+    await db.run("DELETE FROM speaking_assignments WHERE status != 'completed'");
+    res.json({ success: true, message: 'Pending assignments cleared. Student completed submissions remain safe.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Clear All Assignments & Submissions (Purge History)
 app.all('/api/admin/assignments/clear-all', async (req, res) => {
   try {
     await db.run('DELETE FROM assignments');
     await db.run('DELETE FROM speaking_assignments');
     await db.run('DELETE FROM submissions');
     await db.run('DELETE FROM speaking_submissions');
-    res.json({ success: true, message: 'All test assignments and submissions cleared successfully' });
+    res.json({ success: true, message: 'All test assignments and student submissions cleared successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

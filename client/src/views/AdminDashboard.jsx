@@ -390,8 +390,21 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
     }
   };
 
+  const handleClearPendingAssignments = async () => {
+    if (!confirm('Clear all pending/uncompleted test assignments? Completed student submissions and graded work will remain safe.')) return;
+    try {
+      const res = await fetch('/api/admin/assignments/clear-pending', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to clear pending assignments');
+      alert(data.message || 'Pending assignments cleared successfully.');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const handleClearAllAssignments = async () => {
-    const input = prompt('⚠️ WARNING: Clearing all assignments will permanently delete ALL student test assignments and submissions.\n\nTo confirm this deletion, type "DELETE" in the box below:');
+    const input = prompt('⚠️ DANGER: This action will permanently delete ALL student completed work, graded essays, and submissions history.\n\nTo confirm this PERMANENT DELETION, type "DELETE" in the box below:');
     if (input !== 'DELETE') {
       if (input !== null) alert('Action cancelled. You must type DELETE to confirm.');
       return;
@@ -1104,22 +1117,33 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                 <div className="card">
                   <div style={styles.flexHeader}>
                     <h3 style={styles.cardTitle}>📊 Live Candidate Assignments</h3>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
                       <button 
                         onClick={handleReassignAll} 
                         className="btn btn-success"
                         style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
                       >
-                        🚀 Re-assign Tests to All Students
+                        🚀 Re-assign Tests
                       </button>
                       {assignments.length > 0 && (
-                        <button 
-                          onClick={handleClearAllAssignments} 
-                          className="btn btn-danger"
-                          style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
-                        >
-                          🗑️ Clear All Assignments
-                        </button>
+                        <>
+                          <button 
+                            onClick={handleClearPendingAssignments} 
+                            className="btn btn-secondary"
+                            style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem', backgroundColor: '#eab308', color: '#000', borderColor: '#eab308' }}
+                            title="Clears pending assigned tests without touching student submissions"
+                          >
+                            🧹 Clear Pending Tests
+                          </button>
+                          <button 
+                            onClick={handleClearAllAssignments} 
+                            className="btn btn-danger"
+                            style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
+                            title="Purges all assignments AND student submissions history"
+                          >
+                            🗑️ Purge All Submissions
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
