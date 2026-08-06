@@ -729,6 +729,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                         ) : (() => {
                           const fullMocks = tests.filter(t => !t.title.toLowerCase().includes('reading') && !t.title.toLowerCase().includes('listening'));
                           const readingMocks = tests.filter(t => t.title.toLowerCase().includes('reading'));
+                          const listeningMocks = tests.filter(t => t.title.toLowerCase().includes('listening'));
                           
                           const renderRow = (t) => {
                             const isSelected = selectedTestIds.includes(t.id);
@@ -761,6 +762,15 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                                     🏆 Full IELTS Mock Tests
                                   </div>
                                   {fullMocks.map(renderRow)}
+                                </div>
+                              )}
+
+                              {listeningMocks.length > 0 && (
+                                <div style={{ marginBottom: '0.75rem' }}>
+                                  <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.3rem', paddingLeft: '0.2rem' }}>
+                                    🎧 Listening Practice Tests
+                                  </div>
+                                  {listeningMocks.map(renderRow)}
                                 </div>
                               )}
 
