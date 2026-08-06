@@ -641,6 +641,15 @@ export async function initDb() {
 }
 
 async function ensureCustomDataSeeded(db) {
+  // Postgres' auto-increment sequence for tests.id can fall behind the actual max
+  // id (e.g. after rows were ever inserted with an explicit id), which then makes
+  // every subsequent INSERT collide with an existing row ("duplicate key value
+  // violates unique constraint tests_pkey"). Realign it on every boot. SQLite has
+  // no sequences to realign, so this harmlessly no-ops there.
+  try {
+    await db.run(`SELECT setval(pg_get_serial_sequence('tests', 'id'), COALESCE((SELECT MAX(id) FROM tests), 1))`);
+  } catch (e) {}
+
   // Ensure staff accounts (admin and teacher) always exist
   try {
     const adminExists = await db.get('SELECT 1 FROM users WHERE id = ?', ['admin']);
