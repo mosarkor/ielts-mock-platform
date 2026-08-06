@@ -17,6 +17,9 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   const [readingAnswers, setReadingAnswers] = useState({});
   const [writingAnswers, setWritingAnswers] = useState({ task1: '', task2: '' });
 
+  // Results harvested from iframe-based modules (postMessage bridge), keyed by module
+  const [moduleResults, setModuleResults] = useState({ listening: null, reading: null });
+
   // Navigation and Flags
   const [activeQuestionId, setActiveQuestionId] = useState(null);
   const [flaggedQuestions, setFlaggedQuestions] = useState({});
@@ -36,10 +39,33 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
   const audioRef = useRef(null);
   const timerIntervalRef = useRef(null);
-  const iframeRef = useRef(null);
+  const listeningIframeRef = useRef(null);
+  const readingIframeRef = useRef(null);
   const submissionInFlightRef = useRef(false);
   const completionCheckRef = useRef(false);
   const latestSubmissionRef = useRef(null);
+
+  // A module can independently be native (JSON questions) or a standalone iframe.
+  // Computed here (not just in the render body) so effects can use it too.
+  const listeningIsIframe = test?.listening_data?.isIframe === true;
+  const readingIsIframe = test?.reading_data?.isIframe === true;
+  const hasListeningContent = listeningIsIframe || test?.listening_data?.sections?.length > 0;
+  const hasReadingContent = readingIsIframe || test?.reading_data?.passages?.length > 0;
+  const hasWritingContent = !!(test?.writing_data?.task1?.prompt || test?.writing_data?.task2?.prompt);
+
+  // Legacy standalone full-mock uploads (pre-dating the harvest bridge) are a single
+  // iframe that submits itself and owns the whole screen, with no platform chrome.
+  const isLegacyFullScreen = listeningIsIframe
+    && test?.listening_data?.bridgeType !== 'harvest'
+    && !hasReadingContent
+    && !hasWritingContent;
+
+  // A hybrid test mixes iframe modules with the platform's own chrome/timer (as
+  // opposed to a legacy full-screen test, or a fully native test with no iframes).
+  const isHybridWithIframeModules = !isLegacyFullScreen && (listeningIsIframe || readingIsIframe);
+
+  const activeModuleIsIframe = (activeModule === 'listening' && listeningIsIframe)
+    || (activeModule === 'reading' && readingIsIframe);
 
   // Anti-Cheat System (Disabled strict kickout to prevent false-positive auto-submissions)
   useEffect(() => {
@@ -103,45 +129,62 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     }
   };
 
-  // Fetch test details and listen to iframe submit events
+  // Fetch test details and listen to iframe submit/module-complete events
   useEffect(() => {
     const handleIframeMessage = async (event) => {
-      if (
-        event.origin !== window.location.origin ||
-        event.source !== iframeRef.current?.contentWindow ||
-        event.data?.type !== 'IELTS_TEST_SUBMITTED' ||
-        String(event.data?.testId) !== String(testId) ||
-        completionCheckRef.current
-      ) {
+      if (event.origin !== window.location.origin || String(event.data?.testId) !== String(testId)) {
         return;
       }
 
-      completionCheckRef.current = true;
-      try {
-        // Legacy HTML tests can post completion before their request settles.
-        // Confirm against the server before leaving the exam.
-        for (const delay of [0, 800, 1600]) {
-          if (delay) await new Promise(resolve => setTimeout(resolve, delay));
-          const response = await fetch(`/api/student/submission-status/${encodeURIComponent(user.id)}/${testId}`, {
-            cache: 'no-store'
-          });
-          if (!response.ok) continue;
-          const status = await response.json();
-          if (status.submitted) {
-            onFinished();
-            return;
+      // Legacy standalone full-mock templates: the iframe submits itself to the
+      // server and just tells the parent it's done, so the parent confirms and exits.
+      if (event.data?.type === 'IELTS_TEST_SUBMITTED') {
+        if (event.source !== listeningIframeRef.current?.contentWindow || completionCheckRef.current) return;
+
+        completionCheckRef.current = true;
+        try {
+          for (const delay of [0, 800, 1600]) {
+            if (delay) await new Promise(resolve => setTimeout(resolve, delay));
+            const response = await fetch(`/api/student/submission-status/${encodeURIComponent(user.id)}/${testId}`, {
+              cache: 'no-store'
+            });
+            if (!response.ok) continue;
+            const status = await response.json();
+            if (status.submitted) {
+              onFinished();
+              return;
+            }
           }
+          alert('Your submission has not been confirmed yet. Your exam will stay open so you can retry safely.');
+        } catch (error) {
+          console.error('Could not confirm iframe submission:', error);
+          alert('The platform could not confirm your submission. Check your connection and try again.');
+        } finally {
+          completionCheckRef.current = false;
         }
-        alert('Your submission has not been confirmed yet. Your exam will stay open so you can retry safely.');
-      } catch (error) {
-        console.error('Could not confirm iframe submission:', error);
-        alert('The platform could not confirm your submission. Check your connection and try again.');
-      } finally {
-        completionCheckRef.current = false;
+        return;
+      }
+
+      // Newer "prediction" template modules: the iframe never submits itself, it just
+      // reports its harvested answers/score back so the parent can hold onto them until
+      // the student clicks the platform's own shared Submit Test button.
+      if (event.data?.type === 'IELTS_MODULE_COMPLETE') {
+        const isFromListening = event.source === listeningIframeRef.current?.contentWindow;
+        const isFromReading = event.source === readingIframeRef.current?.contentWindow;
+        if (!isFromListening && !isFromReading) return;
+
+        const moduleType = isFromListening ? 'listening' : 'reading';
+        const answers = event.data.answers && typeof event.data.answers === 'object' ? event.data.answers : {};
+        const band = Number(event.data.band) || 0;
+        const correctCount = Number(event.data.correctCount) || 0;
+
+        setModuleResults(prev => ({ ...prev, [moduleType]: { answers, correctCount, band } }));
+        if (moduleType === 'listening') setListeningAnswers(answers);
+        else setReadingAnswers(answers);
       }
     };
     window.addEventListener('message', handleIframeMessage);
-    
+
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       window.removeEventListener('message', handleIframeMessage);
@@ -213,6 +256,8 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           listeningAnswers,
           readingAnswers,
           writingAnswers,
+          listeningScore: moduleResults.listening?.band,
+          readingScore: moduleResults.reading?.band,
           violationsCount: violations
         })
       });
@@ -245,11 +290,31 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     fetchTestDetails();
   }, [fetchTestDetails]);
 
+  // Default to the first module that actually has content (e.g. a reading-only test).
+  useEffect(() => {
+    if (!test) return;
+    if (!hasListeningContent && hasReadingContent) setActiveModule('reading');
+    else if (!hasListeningContent && !hasReadingContent && hasWritingContent) setActiveModule('writing');
+  }, [test, hasListeningContent, hasReadingContent, hasWritingContent]);
+
+  // A hybrid test (iframe modules + platform chrome) has no single-file timer of its
+  // own like a legacy full mock does, so give it a Writing-sized budget (60 min)
+  // instead of the native-test default, which was never meant for this case.
+  useEffect(() => {
+    if (isHybridWithIframeModules) setTimeLeft(3600);
+  }, [test, isHybridWithIframeModules]);
+
   latestSubmissionRef.current = submitTestAnswers;
 
-  // Native tests use the parent timer. Standalone iframe tests own their timer.
+  // Native tests use the parent's shared timer throughout. Hybrid tests use it too,
+  // but only while a native module (e.g. Writing) is active — standalone iframe
+  // modules are either audio-driven or should be timed by the student checking their
+  // own progress inside them, not by a generic platform-wide clock ticking over audio.
+  // Legacy standalone full-mock iframes (which own their own internal timer/UI) skip
+  // the parent timer entirely.
   useEffect(() => {
-    if (!isExamStarted || !test || test.listening_data?.isIframe) return;
+    if (!isExamStarted || !test || isLegacyFullScreen) return;
+    if (isHybridWithIframeModules && activeModuleIsIframe) return;
 
     timerIntervalRef.current = setInterval(() => {
       setTimeLeft((previous) => {
@@ -265,7 +330,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     }, 1000);
 
     return () => clearInterval(timerIntervalRef.current);
-  }, [isExamStarted, test]);
+  }, [isExamStarted, test, isLegacyFullScreen, isHybridWithIframeModules, activeModuleIsIframe]);
 
   // Helper to format remaining seconds into MM:SS
   const formatTime = (seconds) => {
@@ -301,13 +366,13 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
   // Define questions list for active module to build bottom bubbles
   let questionsForActiveModule = [];
-  if (activeModule === 'listening' && test.listening_data && test.listening_data.sections) {
+  if (activeModule === 'listening' && !listeningIsIframe && test.listening_data && test.listening_data.sections) {
     test.listening_data.sections.forEach(sec => {
       if (sec.questions) {
         sec.questions.forEach(q => questionsForActiveModule.push(q));
       }
     });
-  } else if (activeModule === 'reading' && test.reading_data && test.reading_data.passages) {
+  } else if (activeModule === 'reading' && !readingIsIframe && test.reading_data && test.reading_data.passages) {
     test.reading_data.passages.forEach(pass => {
       if (pass.questions) {
         pass.questions.forEach(q => questionsForActiveModule.push(q));
@@ -352,11 +417,11 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
-      {test && test.listening_data && test.listening_data.isIframe ? (
+      {isLegacyFullScreen ? (
         <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
           {isExamStarted && (
             <iframe
-              ref={iframeRef}
+              ref={listeningIframeRef}
               src={`${window.location.origin}${test.listening_data.iframeUrl}?studentId=${encodeURIComponent(user.id)}&testId=${testId}`}
               style={{ width: '100%', height: '100%', border: 'none' }}
               title={test.title}
@@ -418,44 +483,64 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
       {/* 2. Part Navigation (Tabs for Module Switching) */}
       <nav className="ielts-part-tabs">
-        <button 
-          className={`ielts-part-tab ${activeModule === 'listening' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveModule('listening');
-            if (test.listening_data?.sections?.[0]?.questions?.[0]) {
-              setActiveQuestionId(test.listening_data.sections[0].questions[0].id);
-            }
-          }}
-        >
-          🎧 Listening
-        </button>
-        <button 
-          className={`ielts-part-tab ${activeModule === 'reading' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveModule('reading');
-            if (test.reading_data?.passages?.[0]?.questions?.[0]) {
-              setActiveQuestionId(test.reading_data.passages[0].questions[0].id);
-            }
-          }}
-        >
-          📖 Reading
-        </button>
-        <button 
-          className={`ielts-part-tab ${activeModule === 'writing' ? 'active' : ''}`}
-          onClick={() => {
-            setActiveModule('writing');
-            setActiveQuestionId('task1');
-            setActiveWritingTask('task1');
-          }}
-        >
-          ✍️ Writing
-        </button>
+        {hasListeningContent && (
+          <button
+            className={`ielts-part-tab ${activeModule === 'listening' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveModule('listening');
+              if (!listeningIsIframe && test.listening_data?.sections?.[0]?.questions?.[0]) {
+                setActiveQuestionId(test.listening_data.sections[0].questions[0].id);
+              }
+            }}
+          >
+            🎧 Listening {moduleResults.listening ? '✓' : ''}
+          </button>
+        )}
+        {hasReadingContent && (
+          <button
+            className={`ielts-part-tab ${activeModule === 'reading' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveModule('reading');
+              if (!readingIsIframe && test.reading_data?.passages?.[0]?.questions?.[0]) {
+                setActiveQuestionId(test.reading_data.passages[0].questions[0].id);
+              }
+            }}
+          >
+            📖 Reading {moduleResults.reading ? '✓' : ''}
+          </button>
+        )}
+        {hasWritingContent && (
+          <button
+            className={`ielts-part-tab ${activeModule === 'writing' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveModule('writing');
+              setActiveQuestionId('task1');
+              setActiveWritingTask('task1');
+            }}
+          >
+            ✍️ Writing
+          </button>
+        )}
       </nav>
 
       {/* 3. Main Workspace */}
       <div className="ielts-workspace">
-        {/* LISTENING MODULE WORKSPACE */}
-        {activeModule === 'listening' && (
+        {/* LISTENING MODULE WORKSPACE (standalone iframe, kept mounted across tab switches) */}
+        {listeningIsIframe && (
+          <div style={{ width: '100%', height: '100%', display: activeModule === 'listening' ? 'block' : 'none' }}>
+            {isExamStarted && (
+              <iframe
+                ref={listeningIframeRef}
+                src={`${window.location.origin}${test.listening_data.iframeUrl}?studentId=${encodeURIComponent(user.id)}&testId=${testId}&moduleType=listening`}
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                title={`${test.title} — Listening`}
+              />
+            )}
+          </div>
+        )}
+
+        {/* LISTENING MODULE WORKSPACE (native JSON questions) */}
+        {!listeningIsIframe && activeModule === 'listening' && (
           <div style={styles.listeningContainer}>
             {/* Embedded Audio Control */}
             <div style={styles.audioBar}>
@@ -541,8 +626,22 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           </div>
         )}
 
-        {/* READING MODULE WORKSPACE (Independent Split Panel) */}
-        {activeModule === 'reading' && (
+        {/* READING MODULE WORKSPACE (standalone iframe, kept mounted across tab switches) */}
+        {readingIsIframe && (
+          <div style={{ width: '100%', height: '100%', display: activeModule === 'reading' ? 'block' : 'none' }}>
+            {isExamStarted && (
+              <iframe
+                ref={readingIframeRef}
+                src={`${window.location.origin}${test.reading_data.iframeUrl}?studentId=${encodeURIComponent(user.id)}&testId=${testId}&moduleType=reading`}
+                style={{ width: '100%', height: '100%', border: 'none' }}
+                title={`${test.title} — Reading`}
+              />
+            )}
+          </div>
+        )}
+
+        {/* READING MODULE WORKSPACE (native JSON questions, Independent Split Panel) */}
+        {!readingIsIframe && activeModule === 'reading' && (
           <div style={{ display: 'flex', width: '100%', overflow: 'hidden' }}>
             {/* Left Passage Pane */}
             <div className={`ielts-passage-pane ielts-highlightable font-${fontSize}`}>
@@ -687,6 +786,13 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
                     ? (test.writing_data?.task1?.prompt || 'No Task 1 prompt is available for this test.')
                     : (test.writing_data?.task2?.prompt || 'No Task 2 prompt is available for this test.')}
                 </p>
+                {activeWritingTask === 'task1' && test.writing_data?.task1?.imageUrl && (
+                  <img
+                    src={test.writing_data.task1.imageUrl}
+                    alt="Task 1 chart"
+                    style={{ maxWidth: '100%', marginTop: '1rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
+                  />
+                )}
               </div>
             </div>
 
@@ -729,6 +835,14 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
       </div>
 
       {/* 4. Bottom Dock */}
+      {activeModuleIsIframe ? (
+        <footer className="ielts-bottom-dock" style={{ justifyContent: 'center' }}>
+          <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
+            This section has its own navigation and "Complete Section" button inside the window above.
+            {moduleResults[activeModule] ? ' ✓ Section completed — switch tabs or submit when ready.' : ' Mark it complete there before submitting the whole test.'}
+          </span>
+        </footer>
+      ) : (
       <footer className="ielts-bottom-dock">
         {/* Navigation buttons */}
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -784,7 +898,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           })}
         </div>
 
-        <button 
+        <button
           onClick={handleNextQuestion}
           disabled={activeQuestionIndex >= questionsForActiveModule.length - 1}
           className="ielts-tool-btn"
@@ -793,6 +907,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           Next →
         </button>
       </footer>
+      )}
 
       {/* Submit Confirmation Modal */}
       {showSubmitConfirm && (
@@ -800,10 +915,20 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           <div style={styles.confirmPanel}>
             <h4>Confirm Test Submission</h4>
             <p style={{ margin: '1rem 0', color: '#4b5563', lineHeight: '1.5' }}>
-              Are you sure you want to end and submit your IELTS mock exam? 
-              Once submitted, your Reading and Listening sections will be graded automatically, 
+              Are you sure you want to end and submit your IELTS mock exam?
+              Once submitted, your Reading and Listening sections will be graded automatically,
               and your Writing answers will be sent to the review desk.
             </p>
+            {listeningIsIframe && !moduleResults.listening && (
+              <p style={{ color: '#b45309', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                ⚠️ You haven't marked the Listening section complete yet.
+              </p>
+            )}
+            {readingIsIframe && !moduleResults.reading && (
+              <p style={{ color: '#b45309', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                ⚠️ You haven't marked the Reading section complete yet.
+              </p>
+            )}
             <div style={styles.confirmActions}>
               <button className="btn btn-primary" onClick={submitTestAnswers} disabled={submitting}>
                 Yes, Submit Test 📥

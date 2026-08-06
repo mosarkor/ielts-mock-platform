@@ -536,17 +536,28 @@ app.post('/api/admin/tests', async (req, res) => {
 // Dynamic Admin HTML test uploader with Telegram sanitization and auto-login injection
 app.post('/api/admin/upload-test', async (req, res) => {
   const { title, htmlContent } = req.body;
+  const moduleType = req.body.moduleType === 'reading' ? 'reading' : 'listening';
+  // Optional: reprocess an already-uploaded test's HTML in place (e.g. after fixing
+  // the sanitizer/injection logic) instead of always creating a new test row.
+  const existingTestId = Number.parseInt(req.body.existingTestId, 10);
   if (!title || !htmlContent) {
     return res.status(400).json({ error: 'Title and htmlContent are required' });
   }
   try {
-    // 1. Insert into tests table to get the next ID
-    const result = await db.run(`
-      INSERT INTO tests (title, listening_data, reading_data, writing_data, created_by)
-      VALUES (?, ?, ?, ?, ?)
-    `, [title, '{}', '{}', '{}', 'admin']);
-    const testId = result.lastID;
-    
+    let testId;
+    if (Number.isInteger(existingTestId) && existingTestId > 0) {
+      const existing = await db.get('SELECT id FROM tests WHERE id = ?', [existingTestId]);
+      if (!existing) return res.status(404).json({ error: `Test ${existingTestId} not found` });
+      testId = existingTestId;
+    } else {
+      // 1. Insert into tests table to get the next ID
+      const result = await db.run(`
+        INSERT INTO tests (title, listening_data, reading_data, writing_data, created_by)
+        VALUES (?, ?, ?, ?, ?)
+      `, [title, '{}', '{}', '{}', 'admin']);
+      testId = result.lastID;
+    }
+
     const fileName = `mock${testId}.html`;
     const testsDir = path.join(__dirname, 'public', 'tests');
     
@@ -588,7 +599,8 @@ app.post('/api/admin/upload-test', async (req, res) => {
 
     // Inject auto-login script
     const hasFinishWriting = content.includes('function finishWriting()') || content.includes('function finishWriting(');
-    
+    let usedHarvestBridge = false;
+
     if (content.includes('function finishTest')) {
       const autoLoginSnippet = `
       // Auto-login extension injected by IELTS Mock Platform
@@ -829,6 +841,108 @@ app.post('/api/admin/upload-test', async (req, res) => {
       }
       `;
       content = content.replace(finishWritingTarget, finishWritingReplacement);
+    } else if (content.includes('function checkAnswers(') && content.includes('function showResultsModal(')) {
+      // "Prediction" template family (New listening/reading predictions folders): a
+      // self-scoring client-side quiz with no backend submission of its own, and one
+      // that reveals correct/incorrect marks and a results modal the moment the student
+      // checks their answers. Full mock tests must never show scores until the teacher
+      // releases them, so the original "Check Answers" button is completely replaced
+      // (not just wrapped) with a silent harvester that never runs the original
+      // checkAnswers()/showResultsModal() reveal logic at all.
+      usedHarvestBridge = true;
+      const harvestBridgeSnippet = `
+      (function() {
+        var params = new URLSearchParams(window.location.search);
+        var __bridgeTestId = params.get('testId') || '${testId}';
+        var __bridgeModuleType = params.get('moduleType') || '${moduleType}';
+
+        function __harvestAnswer(n) {
+          try {
+            if (typeof getUserAnswer === 'function') return getUserAnswer(n) || '';
+            if (typeof getQuestionAnswer === 'function') return getQuestionAnswer(n) || '';
+          } catch (e) {}
+          return '';
+        }
+
+        function __normalize(v) {
+          return String(v == null ? '' : v).trim().toLowerCase();
+        }
+
+        function __silentCheckAndReport() {
+          var answers = {};
+          var correctCount = 0;
+          for (var n = 1; n <= 40; n++) {
+            var userAns = __harvestAnswer(n);
+            answers[n] = userAns;
+            try {
+              if (typeof correctAnswers === 'object' && correctAnswers && correctAnswers[n] !== undefined) {
+                var correct = correctAnswers[n];
+                var isMatch = Array.isArray(correct)
+                  ? correct.some(function(c) { return __normalize(c) === __normalize(userAns); })
+                  : __normalize(correct) === __normalize(userAns);
+                if (isMatch) correctCount++;
+              }
+            } catch (e) {}
+          }
+          var band = 0;
+          try {
+            if (typeof calculateBandScore === 'function') {
+              band = parseFloat(calculateBandScore(correctCount)) || 0;
+            }
+          } catch (e) {}
+
+          // Stop any internal timer/audio and lock the answers in, without ever
+          // revealing correctness (these variable names are consistent across this
+          // template family's listening/reading variants).
+          try { if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval); } catch (e) {}
+          try { if (typeof timerRunning !== 'undefined') timerRunning = false; } catch (e) {}
+          document.querySelectorAll('audio').forEach(function(a) { try { a.pause(); } catch (e) {} });
+          document.querySelectorAll('input, select, textarea').forEach(function(el) { el.disabled = true; });
+
+          if (window.parent) {
+            window.parent.postMessage({
+              type: 'IELTS_MODULE_COMPLETE',
+              testId: __bridgeTestId,
+              moduleType: __bridgeModuleType,
+              answers: answers,
+              correctCount: correctCount,
+              band: band
+            }, window.location.origin);
+          }
+        }
+
+        function __installBridge() {
+          var btn = document.getElementById('checkBtn');
+          if (!btn) return;
+          // Strip any addEventListener-bound handlers by cloning, then replace the
+          // click behavior entirely (inline onclick="checkAnswers()" attributes get
+          // overwritten by the .onclick assignment below).
+          var freshBtn = btn.cloneNode(true);
+          btn.parentNode.replaceChild(freshBtn, btn);
+          // The original label ("Check Answers") implies scoring, which this bridge
+          // deliberately never shows the student. Relabel it as a plain completion
+          // action before it's ever clicked, not just after.
+          freshBtn.textContent = '✓ Complete Section';
+          freshBtn.onclick = function() {
+            if (freshBtn.dataset.bridgeSubmitted === '1') return;
+            freshBtn.dataset.bridgeSubmitted = '1';
+            __silentCheckAndReport();
+            freshBtn.textContent = '✓ Section Completed';
+            freshBtn.disabled = true;
+            freshBtn.style.opacity = '0.6';
+            freshBtn.style.cursor = 'default';
+            alert('This section is marked complete and saved. You can switch tabs or submit the whole test when ready.');
+          };
+        }
+
+        if (document.readyState !== 'loading') {
+          __installBridge();
+        } else {
+          document.addEventListener('DOMContentLoaded', __installBridge);
+        }
+      })();
+      `;
+      content = content.replace('</body>', `<script>${harvestBridgeSnippet}</script>\n</body>`);
     }
 
     // 2b. Safety net on top of the branch-specific handling above: fix any
@@ -845,15 +959,17 @@ app.post('/api/admin/upload-test', async (req, res) => {
     }
 
     // 3. Persist the processed HTML in the database first. The file is only a fast local cache.
-    const mockListening = {
+    const moduleData = {
       isIframe: true,
-      iframeUrl: `/tests/${fileName}`
+      iframeUrl: `/tests/${fileName}`,
+      ...(usedHarvestBridge ? { bridgeType: 'harvest' } : {})
     };
+    const targetColumn = moduleType === 'reading' ? 'reading_data' : 'listening_data';
     await db.run(`
       UPDATE tests
-      SET listening_data = ?, html_content = ?
+      SET ${targetColumn} = ?, html_content = ?
       WHERE id = ?
-    `, [JSON.stringify(mockListening), content, testId]);
+    `, [JSON.stringify(moduleData), content, testId]);
 
     if (process.env.DISABLE_TEST_FILE_CACHE !== 'true') {
       try {
