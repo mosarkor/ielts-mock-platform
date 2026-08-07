@@ -946,6 +946,51 @@ app.post('/api/admin/upload-test', async (req, res) => {
           }
         }
 
+        function __reclaimHeaderSpace() {
+          // This template family is now always embedded inside the platform's own
+          // chrome (a header with the test title/shared timer/submit button, plus
+          // module tabs), which duplicates this file's own internal <header> (its
+          // own title, a second timer, notes/theme toggles) -- wasted space that
+          // should go to the passage/audio content, and a confusingly duplicate
+          // timer. The bottom nav is left alone: the "Complete Section" button and
+          // part/section navigation live inside it.
+          //
+          // Hiding the header alone isn't enough -- these templates commonly give
+          // some other fixed-position wrapper a hardcoded top offset to make room
+          // for it (e.g. a content wrapper at top:60px to clear a 60px header),
+          // and that offset doesn't move just because the header disappears. Class
+          // names for that wrapper vary per template, so instead of guessing one,
+          // measure the header's real height and reclaim it from whatever
+          // fixed-position element was offset by roughly that amount.
+          try {
+            var header = document.querySelector('header');
+            if (!header) return;
+            // These modules are mounted (but not necessarily visible) as soon as
+            // the exam starts, to preserve audio/progress across tab switches --
+            // so this can run while still hidden behind another active tab, where
+            // getBoundingClientRect() returns 0 for everything (a hidden ancestor
+            // generates no layout box at all). The header's height is an explicit
+            // pixel value in this template family's own CSS, though, so the
+            // computed style resolves correctly regardless of visibility -- prefer
+            // that, and only fall back to the layout measurement if it doesn't.
+            var computedHeight = parseFloat(getComputedStyle(header).height);
+            var headerHeight = !isNaN(computedHeight) && computedHeight > 0
+              ? computedHeight
+              : header.getBoundingClientRect().height;
+            if (!headerHeight || headerHeight <= 0) return;
+            document.querySelectorAll('*').forEach(function(el) {
+              if (el === header) return;
+              var style = getComputedStyle(el);
+              if (style.position !== 'fixed') return;
+              var top = parseFloat(style.top);
+              if (!isNaN(top) && Math.abs(top - headerHeight) < 4) {
+                el.style.top = '0px';
+              }
+            });
+            header.style.display = 'none';
+          } catch (e) {}
+        }
+
         function __findCheckButton() {
           var idCandidates = ['checkBtn', 'checkAnswersBtn'];
           for (var i = 0; i < idCandidates.length; i++) {
@@ -960,6 +1005,7 @@ app.post('/api/admin/upload-test', async (req, res) => {
         }
 
         function __installBridge() {
+          __reclaimHeaderSpace();
           var btn = __findCheckButton();
           if (!btn) return;
           // Strip any addEventListener-bound handlers by cloning, then replace the
