@@ -231,7 +231,12 @@ app.post('/api/student/submit/:testId', async (req, res) => {
 
     const listeningData = parseJson(test.listening_data, {});
     const readingData = parseJson(test.reading_data, {});
-    const isIframeTest = listeningData?.isIframe === true;
+    // Each module can independently be a standalone iframe (score reported by the
+    // client, computed against an answer key embedded in that file) or native JSON
+    // (scored here from server-side question data) -- a hybrid test can freely mix
+    // the two, so this must never be a single flag derived from listening alone.
+    const isListeningIframe = listeningData?.isIframe === true;
+    const isReadingIframe = readingData?.isIframe === true;
 
     const validBand = (value) => {
       const number = Number(value);
@@ -272,10 +277,10 @@ app.post('/api/student/submit/:testId', async (req, res) => {
 
     // Standalone HTML tests calculate against answer keys embedded in their document.
     // Native tests are always scored from the server-side question data.
-    const listeningScore = isIframeTest
+    const listeningScore = isListeningIframe
       ? validBand(req.body.listeningScore)
       : scoreQuestions(listeningData.sections, listeningAnswers);
-    const readingScore = isIframeTest
+    const readingScore = isReadingIframe
       ? validBand(req.body.readingScore)
       : scoreQuestions(readingData.passages, readingAnswers);
 
@@ -848,14 +853,23 @@ app.post('/api/admin/upload-test', async (req, res) => {
       }
       `;
       content = content.replace(finishWritingTarget, finishWritingReplacement);
-    } else if (content.includes('function checkAnswers(') && content.includes('function showResultsModal(')) {
+    } else if (
+      content.includes('function checkAnswers(')
+      && (content.includes('function getUserAnswer(') || content.includes('function getQuestionAnswer('))
+      && content.includes('correctAnswers')
+    ) {
       // "Prediction" template family (New listening/reading predictions folders): a
       // self-scoring client-side quiz with no backend submission of its own, and one
-      // that reveals correct/incorrect marks and a results modal the moment the student
+      // that reveals correct/incorrect marks and a results view the moment the student
       // checks their answers. Full mock tests must never show scores until the teacher
       // releases them, so the original "Check Answers" button is completely replaced
       // (not just wrapped) with a silent harvester that never runs the original
-      // checkAnswers()/showResultsModal() reveal logic at all.
+      // checkAnswers() reveal logic at all. Different generations of this template use
+      // different button ids and reveal-function names (checkBtn/showResultsModal vs.
+      // checkAnswersBtn/openResultModal), so this locates the button generically
+      // (by id candidates, falling back to matching its label) instead of assuming one
+      // fixed id, and never needs to know the reveal function's name at all -- it just
+      // never lets the button's original click handler run.
       usedHarvestBridge = true;
       const harvestBridgeSnippet = `
       (function() {
@@ -891,10 +905,24 @@ app.post('/api/admin/upload-test', async (req, res) => {
               }
             } catch (e) {}
           }
-          var band = 0;
+          function __fallbackBand(correct) {
+            if (correct >= 39) return 9.0;
+            if (correct >= 37) return 8.5;
+            if (correct >= 35) return 8.0;
+            if (correct >= 32) return 7.5;
+            if (correct >= 30) return 7.0;
+            if (correct >= 26) return 6.5;
+            if (correct >= 23) return 6.0;
+            if (correct >= 18) return 5.5;
+            if (correct >= 16) return 5.0;
+            if (correct >= 13) return 4.5;
+            return 4.0;
+          }
+          var band = __fallbackBand(correctCount);
           try {
             if (typeof calculateBandScore === 'function') {
-              band = parseFloat(calculateBandScore(correctCount)) || 0;
+              var reported = parseFloat(calculateBandScore(correctCount));
+              if (!isNaN(reported)) band = reported;
             }
           } catch (e) {}
 
@@ -918,8 +946,21 @@ app.post('/api/admin/upload-test', async (req, res) => {
           }
         }
 
+        function __findCheckButton() {
+          var idCandidates = ['checkBtn', 'checkAnswersBtn'];
+          for (var i = 0; i < idCandidates.length; i++) {
+            var byId = document.getElementById(idCandidates[i]);
+            if (byId) return byId;
+          }
+          var buttons = document.querySelectorAll('button');
+          for (var j = 0; j < buttons.length; j++) {
+            if (/check\s*answers?/i.test(buttons[j].textContent || '')) return buttons[j];
+          }
+          return null;
+        }
+
         function __installBridge() {
-          var btn = document.getElementById('checkBtn');
+          var btn = __findCheckButton();
           if (!btn) return;
           // Strip any addEventListener-bound handlers by cloning, then replace the
           // click behavior entirely (inline onclick="checkAnswers()" attributes get
