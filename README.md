@@ -31,5 +31,6 @@ The application starts on `http://localhost:5000` unless `PORT` is set.
 - A repeated submission returns the existing successful result instead of creating a duplicate.
 - The browser keeps an exam open until the server confirms that the submission was saved.
 - `npm run check` runs lint, server syntax checks, and a production client build. The same checks run in GitHub Actions.
+- `npm run smoke` runs a live-browser smoke test against every uploaded standalone test template (`server/public/tests/*.html`) with the harvest-bridge injected. It checks the failure modes that have actually broken real students' exams: identical content shown after switching Part/passage tabs, answer inputs not registering a click or keystroke, and a frozen countdown timer. Requires the local server running (`npm start` in another terminal) and, once, `npx playwright install chromium`. Run it after every test upload or reprocess, before releasing the test to students.
 
 For production, run one application instance with SQLite or use PostgreSQL when scaling to multiple instances.
