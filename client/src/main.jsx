@@ -22,7 +22,7 @@ class ErrorBoundary extends Component {
       localStorage.clear();
       sessionStorage.clear();
     } catch (e) {}
-    window.location.href = window.location.origin + '?v=' + Date.now();
+    window.location.href = window.location.origin;
   };
 
   render() {
@@ -41,11 +41,27 @@ class ErrorBoundary extends Component {
           textAlign: 'center'
         }}>
           <h2 style={{ fontSize: '1.8rem', color: '#ef4444', marginBottom: '1rem' }}>
-            IELTS Platform Reload Required
+            IELTS Platform Session Reset
           </h2>
-          <p style={{ maxWidth: '500px', color: '#94a3b8', lineHeight: '1.6', marginBottom: '2rem' }}>
-            A temporary session mismatch occurred. Click below to refresh your browser session and load the latest IELTS Platform version.
+          <p style={{ maxWidth: '520px', color: '#94a3b8', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+            Your browser session saved an outdated cache from a previous update. Click the button below to clear session cache and load the latest IELTS Platform version.
           </p>
+          {this.state.error && (
+            <div style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              borderRadius: '6px',
+              padding: '0.75rem 1rem',
+              color: '#fca5a5',
+              fontSize: '0.85rem',
+              maxWidth: '550px',
+              wordBreak: 'break-word',
+              marginBottom: '1.5rem',
+              fontFamily: 'monospace'
+            }}>
+              {String(this.state.error?.message || this.state.error)}
+            </div>
+          )}
           <button 
             onClick={this.handleReset}
             style={{
