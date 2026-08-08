@@ -1295,6 +1295,36 @@ app.post('/api/admin/upload-test', async (req, res) => {
   }
 });
 
+// Point an existing test's Listening and/or Reading module at the iframe data
+// of other already-uploaded (standalone template) test rows, without touching
+// its writing_data. Used to rebuild a combined full-mock's modules from freshly
+// uploaded source files -- e.g. after fixing broken listening_data/reading_data
+// that never had a working iframeUrl -- while leaving its writing task intact.
+app.post('/api/admin/tests/:id/link-modules', async (req, res) => {
+  const targetId = Number.parseInt(req.params.id, 10);
+  const listeningFromTestId = Number.parseInt(req.body.listeningFromTestId, 10);
+  const readingFromTestId = Number.parseInt(req.body.readingFromTestId, 10);
+  if (!Number.isInteger(targetId)) return res.status(400).json({ error: 'Invalid test id' });
+  try {
+    const target = await db.get('SELECT id FROM tests WHERE id = ?', [targetId]);
+    if (!target) return res.status(404).json({ error: `Test ${targetId} not found` });
+
+    if (Number.isInteger(listeningFromTestId)) {
+      const src = await db.get('SELECT listening_data FROM tests WHERE id = ?', [listeningFromTestId]);
+      if (!src || !src.listening_data) return res.status(404).json({ error: `Source listening test ${listeningFromTestId} not found` });
+      await db.run('UPDATE tests SET listening_data = ? WHERE id = ?', [src.listening_data, targetId]);
+    }
+    if (Number.isInteger(readingFromTestId)) {
+      const src = await db.get('SELECT reading_data FROM tests WHERE id = ?', [readingFromTestId]);
+      if (!src || !src.reading_data) return res.status(404).json({ error: `Source reading test ${readingFromTestId} not found` });
+      await db.run('UPDATE tests SET reading_data = ? WHERE id = ?', [src.reading_data, targetId]);
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get Assignments list
 app.get('/api/admin/assignments', async (req, res) => {
   try {
