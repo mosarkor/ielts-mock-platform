@@ -180,6 +180,22 @@ export async function initDb() {
     await db.exec('ALTER TABLE tests ADD COLUMN html_content TEXT').catch(() => {});
     await db.exec('ALTER TABLE tests ADD COLUMN sequential_lock INTEGER NOT NULL DEFAULT 0').catch(() => {});
 
+    // Listening audio used to be embedded inline in html_content as a base64
+    // data: URI -- for a real ~15-20 minute track that's a 15+ MB single HTML
+    // document the whole page has to download before anything renders, which
+    // is exactly what made Listening take ~70s to even appear for students.
+    // Extracted out to its own row, served by its own streaming route with
+    // Range support, so the page itself loads instantly and the audio loads
+    // independently in the background the way a real <audio src="..."> does.
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS test_audio_assets (
+        id SERIAL PRIMARY KEY,
+        mime_type TEXT NOT NULL,
+        data_base64 TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     await db.exec(`
       CREATE TABLE IF NOT EXISTS assignments (
         id SERIAL PRIMARY KEY,
@@ -429,6 +445,18 @@ export async function initDb() {
 
   await db.exec('ALTER TABLE tests ADD COLUMN html_content TEXT').catch(() => {});
   await db.exec('ALTER TABLE tests ADD COLUMN sequential_lock INTEGER NOT NULL DEFAULT 0').catch(() => {});
+
+  // See the Postgres branch above for why this exists: a track embedded
+  // inline as base64 makes the whole HTML document too large to load
+  // quickly, so it's extracted to its own row and streamed separately.
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS test_audio_assets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      mime_type TEXT NOT NULL,
+      data_base64 TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS assignments (

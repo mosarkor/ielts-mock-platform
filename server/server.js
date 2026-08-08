@@ -82,6 +82,52 @@ app.get('/tests/:fileName', async (req, res, next) => {
   }
 });
 
+// Serves listening audio that was extracted out of an uploaded test's HTML
+// (see the harvest-bridge upload path below) -- stored in the database, same
+// as the test HTML itself, so it survives an ephemeral deploy filesystem.
+// Supports Range requests, since <audio> relies on them for real streaming
+// and seeking rather than blocking on the whole file up front.
+app.get('/tests-audio/:id', async (req, res, next) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return next();
+
+  try {
+    const asset = await db.get('SELECT mime_type, data_base64 FROM test_audio_assets WHERE id = ?', [id]);
+    if (!asset) return next();
+
+    const buffer = Buffer.from(asset.data_base64, 'base64');
+    const total = buffer.length;
+    res.set('Accept-Ranges', 'bytes');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    res.type(asset.mime_type);
+
+    const range = req.headers.range;
+    if (!range) {
+      res.set('Content-Length', total);
+      res.status(200).send(buffer);
+      return;
+    }
+
+    const match2 = /^bytes=(\d*)-(\d*)$/.exec(range);
+    if (!match2) {
+      res.status(416).set('Content-Range', `bytes */${total}`).end();
+      return;
+    }
+    let start = match2[1] ? Number.parseInt(match2[1], 10) : 0;
+    let end = match2[2] ? Number.parseInt(match2[2], 10) : total - 1;
+    if (Number.isNaN(start) || Number.isNaN(end) || start > end || end >= total) {
+      res.status(416).set('Content-Range', `bytes */${total}`).end();
+      return;
+    }
+    res.status(206);
+    res.set('Content-Range', `bytes ${start}-${end}/${total}`);
+    res.set('Content-Length', end - start + 1);
+    res.send(buffer.subarray(start, end + 1));
+  } catch (error) {
+    next(error);
+  }
+});
+
 // ----------------------------------------
 // AUTHENTICATION
 // ----------------------------------------
@@ -633,7 +679,27 @@ app.post('/api/admin/upload-test', async (req, res) => {
     
     // 2. Process and clean the HTML content
     let content = htmlContent;
-    
+
+    // Listening tests commonly embed their whole audio track inline as a
+    // base64 data: URI -- for a real track that alone can be 15+ MB, meaning
+    // the entire page (audio included) has to finish downloading before
+    // anything renders. Extract it to its own DB row and point <audio> at
+    // the streaming route above instead, so the page itself loads
+    // immediately and the audio streams in independently, the way a normal
+    // <audio src="..."> does. Confirmed real impact: this was making
+    // Listening take ~70 seconds to even appear for students.
+    if (moduleType === 'listening') {
+      const audioMatch = /src="data:(audio\/[a-zA-Z0-9.+-]+);base64,([^"]+)"/.exec(content);
+      if (audioMatch) {
+        const [fullMatch, mimeType, base64Data] = audioMatch;
+        const assetResult = await db.run(
+          'INSERT INTO test_audio_assets (mime_type, data_base64) VALUES (?, ?)',
+          [mimeType, base64Data]
+        );
+        content = content.replace(fullMatch, `src="/tests-audio/${assetResult.lastID}"`);
+      }
+    }
+
     // Inject CSS override
     const cssOverride = `
     <style>
