@@ -959,8 +959,8 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
             <h4>Confirm Test Submission</h4>
             <p style={{ margin: '1rem 0', color: '#4b5563', lineHeight: '1.5' }}>
               Are you sure you want to end and submit your IELTS mock exam?
-              Once submitted, your Reading and Listening sections will be graded automatically,
-              and your Writing answers will be sent to the review desk.
+              Once submitted, your Listening, Reading, and Writing responses will be sent directly to your teacher for review.
+              Your final band scores, mistake explanations, and teacher feedback will be published to your dashboard after teacher evaluation.
             </p>
             {listeningIsIframe && !moduleResults.listening && (
               <p style={{ color: '#b45309', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
