@@ -952,6 +952,38 @@ app.post('/api/admin/upload-test', async (req, res) => {
           return (typeof correctAnswers !== 'undefined') ? correctAnswers : window.correctAnswers;
         }
 
+        // Some template generations keep only ONE part/section's questions in the
+        // DOM at a time, completely replacing that container's HTML (with fresh,
+        // blank inputs -- no restoration of what was already answered) every time
+        // the student switches parts. That means by the time the student reaches
+        // the last part and finishes, every earlier part's answers are already
+        // gone from the DOM -- not hidden, genuinely destroyed -- and nothing
+        // (harvesting via getUserAnswer, or the template's own checkAnswers(),
+        // which reads the exact same live DOM) can recover them after the fact.
+        // A real incident: a student's Reading answers for two whole parts were
+        // silently dropped this way, and she had no way to know until after
+        // submitting. Track every answer AS the student enters it, via a
+        // delegated listener on the document itself (never replaced, unlike the
+        // question elements), so nothing depends on which part happens to be
+        // currently rendered when this section is completed.
+        var __liveAnswers = {};
+        function __recordLiveAnswer(el) {
+          try {
+            if (!el || !el.name && !el.id) return;
+            var match = /^q(\\d+)$/.exec(el.name || '') || /^q(\\d+)$/.exec(el.id || '');
+            if (!match) return;
+            var n = Number(match[1]);
+            if (!n) return;
+            if (el.type === 'radio' || el.type === 'checkbox') {
+              if (el.checked) __liveAnswers[n] = el.value;
+            } else if ('value' in el) {
+              __liveAnswers[n] = el.value;
+            }
+          } catch (e) {}
+        }
+        document.addEventListener('input', function(e) { __recordLiveAnswer(e.target); }, true);
+        document.addEventListener('change', function(e) { __recordLiveAnswer(e.target); }, true);
+
         // "Choose N answers" checkbox questions (e.g. Q20/21 sharing one
         // checkbox group named "q20_21") are scored by how many of the
         // student's checked boxes are in the correct set, not by matching one
@@ -993,6 +1025,14 @@ app.post('/api/admin/upload-test', async (req, res) => {
         }
 
         function __harvestAnswer(n) {
+          // Checked first, and preferred over everything below: the template's own
+          // getUserAnswer/getQuestionAnswer (and every DOM query after it) all read
+          // whatever's currently in the live DOM, which is exactly what's unreliable
+          // for a part the student has since navigated away from. The live-tracked
+          // value is only missing for a question that was never interacted with via
+          // a plain input/change event (e.g. true drag-and-drop), which the
+          // fallbacks below still cover.
+          if (Object.prototype.hasOwnProperty.call(__liveAnswers, n)) return __liveAnswers[n];
           try {
             if (typeof getUserAnswer === 'function') return getUserAnswer(n) || '';
             if (typeof getQuestionAnswer === 'function') return getQuestionAnswer(n) || '';
