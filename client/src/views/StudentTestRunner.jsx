@@ -13,6 +13,19 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   // Hybrid tests give Reading and Writing their own real 60-minute clocks (matching
   // the actual exam), rather than one shared clock split across both.
   const [hybridTimers, setHybridTimers] = useState({ reading: 3600, writing: 3600 });
+  // Tracks which iframe modules have ever been the active tab. A module's iframe
+  // only mounts once the student actually visits it (see the mount conditions
+  // below) -- these standalone templates start their OWN internal 60-minute clock
+  // the instant they load, using wall-clock time, with anti-cheat logic that
+  // deliberately keeps it running even while backgrounded/hidden (so a student
+  // can't "pause" the exam by switching browser tabs). Mounting every module's
+  // iframe immediately at exam start -- which earlier preserved audio/progress
+  // across tab switches -- meant Reading's internal clock silently started
+  // counting down from the moment the exam began, not from when the student
+  // actually got to it, quietly eating into their real reading time. Mounting
+  // lazily on first visit (and never unmounting after that, so state still
+  // survives later switches) fixes that without losing the original behavior.
+  const [visitedModules, setVisitedModules] = useState({ listening: false, reading: false });
 
   // Student Answers State
   const [listeningAnswers, setListeningAnswers] = useState({});
@@ -198,7 +211,6 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     window.addEventListener('message', handleIframeMessage);
 
     return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       window.removeEventListener('message', handleIframeMessage);
     };
   }, [testId, user.id, onFinished]);
@@ -315,6 +327,15 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   useEffect(() => {
     if (isHybridWithIframeModules) setHybridTimers({ reading: 3600, writing: 3600 });
   }, [test, isHybridWithIframeModules]);
+
+  // Mark whichever module is active as "visited" so its iframe mounts (see the
+  // mount conditions below) -- lazily, the first time the student actually gets
+  // there, not before.
+  useEffect(() => {
+    if (!isExamStarted) return;
+    if (activeModule !== 'listening' && activeModule !== 'reading') return;
+    setVisitedModules((previous) => (previous[activeModule] ? previous : { ...previous, [activeModule]: true }));
+  }, [isExamStarted, activeModule]);
 
   latestSubmissionRef.current = submitTestAnswers;
 
@@ -575,7 +596,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         {/* LISTENING MODULE WORKSPACE (standalone iframe, kept mounted across tab switches) */}
         {listeningIsIframe && (
           <div style={{ width: '100%', height: '100%', display: activeModule === 'listening' ? 'block' : 'none' }}>
-            {isExamStarted && (
+            {isExamStarted && visitedModules.listening && (
               <iframe
                 ref={listeningIframeRef}
                 src={`${window.location.origin}${test.listening_data.iframeUrl}?studentId=${encodeURIComponent(user.id)}&testId=${testId}&moduleType=listening`}
@@ -676,7 +697,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         {/* READING MODULE WORKSPACE (standalone iframe, kept mounted across tab switches) */}
         {readingIsIframe && (
           <div style={{ width: '100%', height: '100%', display: activeModule === 'reading' ? 'block' : 'none' }}>
-            {isExamStarted && (
+            {isExamStarted && visitedModules.reading && (
               <iframe
                 ref={readingIframeRef}
                 src={`${window.location.origin}${test.reading_data.iframeUrl}?studentId=${encodeURIComponent(user.id)}&testId=${testId}&moduleType=reading`}
