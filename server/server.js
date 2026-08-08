@@ -457,6 +457,13 @@ app.get('/api/teacher/submissions', async (req, res) => {
       reading_answers: JSON.parse(sub.reading_answers || '{}'),
       writing_answers: JSON.parse(sub.writing_answers || '{}'),
       writing_scores: JSON.parse(sub.writing_scores || 'null'),
+      // Per-question {userAnswer, correctAnswer, isCorrect, explanationHtml},
+      // harvested from standalone iframe modules that support it -- the
+      // student dashboard already reads these; the teacher dashboard never
+      // did, so the only per-question review it could show was for the old
+      // single-file mock1-9 templates, nothing for any harvest-bridge test.
+      listening_detail: parseJson(sub.listening_detail, null),
+      reading_detail: parseJson(sub.reading_detail, null),
       test_writing_data: JSON.parse(sub.writing_data || '{}')
     })));
   } catch (error) {

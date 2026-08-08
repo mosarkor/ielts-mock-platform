@@ -16,6 +16,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   const [answerKey, setAnswerKey] = useState(null);
   const [loadingKey, setLoadingKey] = useState(false);
   const [showOnlyMistakes, setShowOnlyMistakes] = useState(false);
+  const [expandedExplanation, setExpandedExplanation] = useState(null); // e.g. 'l-5' or 'r-12'
 
   // Rubric scores state (dual-task: Task 1 = TA/CC/LR/GRA, Task 2 = TR/CC/LR/GRA)
   const [rubricTask1, setRubricTask1] = useState({ ta: 6.0, cc: 6.0, lr: 6.0, gra: 6.0 });
@@ -273,11 +274,23 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
       try { parsedRubric = JSON.parse(parsedRubric); } catch(_) { parsedRubric = null; }
     }
 
+    let parsedListeningDetail = sub.listening_detail;
+    if (typeof parsedListeningDetail === 'string') {
+      try { parsedListeningDetail = JSON.parse(parsedListeningDetail); } catch(_) { parsedListeningDetail = null; }
+    }
+
+    let parsedReadingDetail = sub.reading_detail;
+    if (typeof parsedReadingDetail === 'string') {
+      try { parsedReadingDetail = JSON.parse(parsedReadingDetail); } catch(_) { parsedReadingDetail = null; }
+    }
+
     const cleanSub = {
       ...sub,
       writing_answers: parsedWriting,
       listening_answers: parsedListening,
       reading_answers: parsedReading,
+      listening_detail: parsedListeningDetail,
+      reading_detail: parsedReadingDetail,
     };
 
     setSelectedSub(cleanSub);
@@ -383,6 +396,100 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
     } catch (err) {
       alert(err.message);
     }
+  };
+
+  // Prefers server-harvested per-question detail (works for every
+  // harvest-bridge iframe test -- Full Mock Test 1, Prediction Mock Test 10,
+  // any standalone Reading/Listening test) over the legacy answerKey scraping
+  // mechanism, which only ever worked for the old single-file mock1-9
+  // templates and silently showed nothing for anything else. Falls back to
+  // answerKey only when the submission has no server-provided detail at all
+  // (older submissions from before this was tracked).
+  const renderReviewColumn = (detail, prefix, rawAnswers) => {
+    const usingServerDetail = !!detail;
+    if (!usingServerDetail && !answerKey) {
+      return (
+        <p style={{ color: 'var(--text-secondary)', padding: '1rem' }}>
+          {loadingKey ? 'Extracting answer keys from mock test file...' : 'Answer key details could not be found.'}
+        </p>
+      );
+    }
+
+    const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const moduleKey = prefix === 'l' ? 'listening' : 'reading';
+
+    return (
+      <table style={styles.reviewTable}>
+        <thead>
+          <tr>
+            <th style={styles.reviewTh}>Q</th>
+            <th style={styles.reviewTh}>Student Answer</th>
+            <th style={styles.reviewTh}>Correct Key</th>
+            <th style={styles.reviewTh}>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Array.from({ length: 40 }, (_, idx) => {
+            const qNum = idx + 1;
+            let studentAns, displayCorrect, isOk, explanationHtml;
+
+            if (usingServerDetail) {
+              const d = detail[qNum];
+              if (!d) return null;
+              studentAns = d.userAnswer || '';
+              displayCorrect = d.correctAnswer ?? '—';
+              isOk = !!d.isCorrect;
+              explanationHtml = d.explanationHtml;
+            } else {
+              studentAns = rawAnswers?.[qNum] || '';
+              const correctArr = answerKey.answers[prefix + qNum] || [];
+              displayCorrect = answerKey.display[prefix + qNum] || correctArr.join(' / ') || '—';
+              isOk = correctArr.some((ans) => norm(ans) === norm(studentAns));
+            }
+
+            if (showOnlyMistakes && isOk) return null;
+            const explanationKey = `${prefix}-${qNum}`;
+            const isExpanded = expandedExplanation === explanationKey;
+
+            return (
+              <React.Fragment key={qNum}>
+                <tr
+                  onClick={() => explanationHtml && setExpandedExplanation(isExpanded ? null : explanationKey)}
+                  style={{
+                    borderBottom: isExpanded ? 'none' : '1px solid var(--glass-border)',
+                    cursor: explanationHtml ? 'pointer' : 'default',
+                    backgroundColor: isOk
+                      ? 'rgba(16, 185, 129, 0.04)'
+                      : studentAns
+                        ? 'rgba(244, 63, 94, 0.04)'
+                        : 'rgba(148, 163, 184, 0.04)'
+                  }}
+                >
+                  <td style={styles.reviewTd}><strong>{qNum}</strong></td>
+                  <td style={styles.reviewTd}>{studentAns || '—'}</td>
+                  <td style={styles.reviewTd}>{displayCorrect}</td>
+                  <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
+                    {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
+                    {explanationHtml && (isExpanded ? ' ▲' : ' ▼ Why?')}
+                  </td>
+                </tr>
+                {isExpanded && explanationHtml && (
+                  <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                    <td colSpan={4} style={{ padding: '0.75rem 0.5rem', backgroundColor: 'var(--bg-tertiary)' }}>
+                      <div
+                        className={`ielts-explanation-${moduleKey}`}
+                        style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}
+                        dangerouslySetInnerHTML={{ __html: explanationHtml }}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    );
   };
 
   const handleCopyReport = () => {
@@ -1028,53 +1135,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                     </div>
                     
                     <div style={{ overflowY: 'auto', flex: 1 }}>
-                      {!answerKey ? (
-                        <p style={{ color: 'var(--text-secondary)', padding: '1rem' }}>
-                          {loadingKey ? 'Extracting answer keys from mock test file...' : 'Answer key details could not be found.'}
-                        </p>
-                      ) : (
-                        <table style={styles.reviewTable}>
-                          <thead>
-                            <tr>
-                              <th style={styles.reviewTh}>Q</th>
-                              <th style={styles.reviewTh}>Student Answer</th>
-                              <th style={styles.reviewTh}>Correct Key</th>
-                              <th style={styles.reviewTh}>Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {Array.from({ length: 40 }, (_, idx) => {
-                              const qNum = idx + 1;
-                              const studentAns = selectedSub.listening_answers[qNum] || '';
-                              const correctArr = answerKey.answers['l' + qNum] || [];
-                              const displayCorrect = answerKey.display['l' + qNum] || correctArr.join(' / ') || '—';
-                              const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
-                              const sNorm = norm(studentAns);
-                              const isOk = correctArr.some(ans => norm(ans) === sNorm);
-                              
-                              if (showOnlyMistakes && isOk) return null;
-                              
-                              return (
-                                <tr key={qNum} style={{ 
-                                  borderBottom: '1px solid var(--glass-border)',
-                                  backgroundColor: isOk 
-                                    ? 'rgba(16, 185, 129, 0.04)' 
-                                    : studentAns 
-                                      ? 'rgba(244, 63, 94, 0.04)' 
-                                      : 'rgba(148, 163, 184, 0.04)'
-                                }}>
-                                  <td style={styles.reviewTd}><strong>{qNum}</strong></td>
-                                  <td style={styles.reviewTd}>{studentAns || '—'}</td>
-                                  <td style={styles.reviewTd}>{displayCorrect}</td>
-                                  <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
-                                    {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      )}
+                      {renderReviewColumn(selectedSub.listening_detail, 'l', selectedSub.listening_answers)}
                     </div>
                   </div>
 
@@ -1088,53 +1149,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                     </div>
                     
                     <div style={{ overflowY: 'auto', flex: 1 }}>
-                      {!answerKey ? (
-                        <p style={{ color: 'var(--text-secondary)', padding: '1rem' }}>
-                          {loadingKey ? 'Extracting answer keys from mock test file...' : 'Answer key details could not be found.'}
-                        </p>
-                      ) : (
-                        <table style={styles.reviewTable}>
-                          <thead>
-                            <tr>
-                              <th style={styles.reviewTh}>Q</th>
-                              <th style={styles.reviewTh}>Student Answer</th>
-                              <th style={styles.reviewTh}>Correct Key</th>
-                              <th style={styles.reviewTh}>Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {Array.from({ length: 40 }, (_, idx) => {
-                              const qNum = idx + 1;
-                              const studentAns = selectedSub.reading_answers[qNum] || '';
-                              const correctArr = answerKey.answers['r' + qNum] || [];
-                              const displayCorrect = answerKey.display['r' + qNum] || correctArr.join(' / ') || '—';
-                              const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
-                              const sNorm = norm(studentAns);
-                              const isOk = correctArr.some(ans => norm(ans) === sNorm);
-                              
-                              if (showOnlyMistakes && isOk) return null;
-                              
-                              return (
-                                <tr key={qNum} style={{ 
-                                  borderBottom: '1px solid var(--glass-border)',
-                                  backgroundColor: isOk 
-                                    ? 'rgba(16, 185, 129, 0.04)' 
-                                    : studentAns 
-                                      ? 'rgba(244, 63, 94, 0.04)' 
-                                      : 'rgba(148, 163, 184, 0.04)'
-                                }}>
-                                  <td style={styles.reviewTd}><strong>{qNum}</strong></td>
-                                  <td style={styles.reviewTd}>{studentAns || '—'}</td>
-                                  <td style={styles.reviewTd}>{displayCorrect}</td>
-                                  <td style={{ ...styles.reviewTd, color: isOk ? '#10b981' : studentAns ? '#f43f5e' : '#94a3b8', fontWeight: 'bold' }}>
-                                    {isOk ? '✓ Correct' : studentAns ? '✗ Wrong' : '— Empty'}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      )}
+                      {renderReviewColumn(selectedSub.reading_detail, 'r', selectedSub.reading_answers)}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginTop: '1.25rem' }}>
                       <button 
