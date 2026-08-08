@@ -145,13 +145,26 @@ app.get('/api/student/dashboard/:studentId', async (req, res) => {
     `, [studentId]);
 
     // Get completed and revealed submissions (grades + feedback)
-    const submissions = await db.all(`
+    const submissionRows = await db.all(`
       SELECT s.*, t.title
       FROM submissions s
       JOIN tests t ON s.test_id = t.id
       WHERE s.student_id = ? AND s.is_revealed = 1
       ORDER BY s.submitted_at DESC
     `, [studentId]);
+
+    // These are stored as JSON strings -- parse them here so the client gets real
+    // objects (indexing a raw JSON string by question number silently returns a
+    // single character, not the intended answer).
+    const submissions = submissionRows.map((sub) => ({
+      ...sub,
+      listening_answers: parseJson(sub.listening_answers, {}),
+      reading_answers: parseJson(sub.reading_answers, {}),
+      writing_answers: parseJson(sub.writing_answers, {}),
+      listening_detail: parseJson(sub.listening_detail, null),
+      reading_detail: parseJson(sub.reading_detail, null),
+      writing_scores: parseJson(sub.writing_scores, null)
+    }));
 
     res.json({ assignments, submissions });
   } catch (error) {
@@ -186,6 +199,11 @@ app.post('/api/student/submit/:testId', async (req, res) => {
   const listeningAnswers = req.body.listeningAnswers && typeof req.body.listeningAnswers === 'object' ? req.body.listeningAnswers : {};
   const readingAnswers = req.body.readingAnswers && typeof req.body.readingAnswers === 'object' ? req.body.readingAnswers : {};
   const writingAnswers = req.body.writingAnswers && typeof req.body.writingAnswers === 'object' ? req.body.writingAnswers : {};
+  // Per-question correct answer / correctness / explanation, harvested from
+  // standalone iframe modules that support it. Native tests have no need for this
+  // (their question bank already lives server-side), so these are simply absent.
+  const listeningDetail = req.body.listeningDetail && typeof req.body.listeningDetail === 'object' ? req.body.listeningDetail : null;
+  const readingDetail = req.body.readingDetail && typeof req.body.readingDetail === 'object' ? req.body.readingDetail : null;
   const violationsCount = Math.max(0, Math.min(999, Number.parseInt(req.body.violationsCount, 10) || 0));
 
   if (!studentId || !/^\d+$/.test(testId)) {
@@ -294,14 +312,17 @@ app.post('/api/student/submit/:testId', async (req, res) => {
       INSERT INTO submissions (
         student_id, test_id, started_at, submitted_at,
         listening_answers, reading_answers, writing_answers,
+        listening_detail, reading_detail,
         listening_score, reading_score, is_revealed, violations_count
-      ) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
       studentId,
       testId,
       JSON.stringify(listeningAnswers),
       JSON.stringify(readingAnswers),
       JSON.stringify(writingAnswers),
+      listeningDetail ? JSON.stringify(listeningDetail) : null,
+      readingDetail ? JSON.stringify(readingDetail) : null,
       listeningScore,
       readingScore,
       defaultIsRevealed,
@@ -891,19 +912,38 @@ app.post('/api/admin/upload-test', async (req, res) => {
 
         function __silentCheckAndReport() {
           var answers = {};
+          var detail = {};
           var correctCount = 0;
           for (var n = 1; n <= 40; n++) {
             var userAns = __harvestAnswer(n);
             answers[n] = userAns;
+            var correctAnswerForN;
+            var isCorrectForN = false;
             try {
               if (typeof correctAnswers === 'object' && correctAnswers && correctAnswers[n] !== undefined) {
                 var correct = correctAnswers[n];
+                correctAnswerForN = Array.isArray(correct) ? correct[0] : correct;
                 var isMatch = Array.isArray(correct)
                   ? correct.some(function(c) { return __normalize(c) === __normalize(userAns); })
                   : __normalize(correct) === __normalize(userAns);
-                if (isMatch) correctCount++;
+                if (isMatch) { correctCount++; isCorrectForN = true; }
               }
             } catch (e) {}
+            var explanationHtml;
+            try {
+              // Some template generations expose a real per-question explanation
+              // (with evidence quoted from the passage); others don't. Grab it when
+              // available instead of only recording right/wrong.
+              if (typeof buildExplanationHtml === 'function') explanationHtml = buildExplanationHtml(n);
+            } catch (e) {}
+            if (correctAnswerForN !== undefined) {
+              detail[n] = {
+                userAnswer: userAns,
+                correctAnswer: correctAnswerForN,
+                isCorrect: isCorrectForN
+              };
+              if (explanationHtml) detail[n].explanationHtml = explanationHtml;
+            }
           }
           function __fallbackBand(correct) {
             if (correct >= 39) return 9.0;
@@ -940,6 +980,7 @@ app.post('/api/admin/upload-test', async (req, res) => {
               testId: __bridgeTestId,
               moduleType: __bridgeModuleType,
               answers: answers,
+              detail: detail,
               correctCount: correctCount,
               band: band
             }, window.location.origin);

@@ -186,10 +186,11 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
         const moduleType = isFromListening ? 'listening' : 'reading';
         const answers = event.data.answers && typeof event.data.answers === 'object' ? event.data.answers : {};
+        const detail = event.data.detail && typeof event.data.detail === 'object' ? event.data.detail : {};
         const band = Number(event.data.band) || 0;
         const correctCount = Number(event.data.correctCount) || 0;
 
-        setModuleResults(prev => ({ ...prev, [moduleType]: { answers, correctCount, band } }));
+        setModuleResults(prev => ({ ...prev, [moduleType]: { answers, detail, correctCount, band } }));
         if (moduleType === 'listening') setListeningAnswers(answers);
         else setReadingAnswers(answers);
       }
@@ -267,6 +268,8 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           listeningAnswers,
           readingAnswers,
           writingAnswers,
+          listeningDetail: moduleResults.listening?.detail,
+          readingDetail: moduleResults.reading?.detail,
           listeningScore: moduleResults.listening?.band,
           readingScore: moduleResults.reading?.band,
           violationsCount: violations

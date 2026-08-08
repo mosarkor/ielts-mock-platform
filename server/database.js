@@ -198,6 +198,8 @@ export async function initDb() {
         listening_answers TEXT,
         reading_answers TEXT,
         writing_answers TEXT,
+        listening_detail TEXT,
+        reading_detail TEXT,
         listening_score REAL,
         reading_score REAL,
         writing_scores TEXT,
@@ -211,6 +213,8 @@ export async function initDb() {
 
     // Dynamically alter table for existing installations
     await db.exec('ALTER TABLE submissions ADD COLUMN violations_count INTEGER DEFAULT 0').catch(() => {});
+    await db.exec('ALTER TABLE submissions ADD COLUMN listening_detail TEXT').catch(() => {});
+    await db.exec('ALTER TABLE submissions ADD COLUMN reading_detail TEXT').catch(() => {});
 
     // Speaking module tables
     await db.exec(`
@@ -443,6 +447,8 @@ export async function initDb() {
       listening_answers TEXT,
       reading_answers TEXT,
       writing_answers TEXT,
+      listening_detail TEXT,
+      reading_detail TEXT,
       listening_score REAL,
       reading_score REAL,
       writing_scores TEXT,
@@ -459,6 +465,8 @@ export async function initDb() {
 
   // Dynamically alter table for existing installations
   await db.exec('ALTER TABLE submissions ADD COLUMN violations_count INTEGER DEFAULT 0').catch(() => {});
+  await db.exec('ALTER TABLE submissions ADD COLUMN listening_detail TEXT').catch(() => {});
+  await db.exec('ALTER TABLE submissions ADD COLUMN reading_detail TEXT').catch(() => {});
 
   // Speaking module tables
   await db.exec(`
