@@ -555,7 +555,7 @@ export async function initDb() {
     `);
 
     let firstTestId = null;
-    for (let i = 1; i <= 9; i++) {
+    for (let i = 1; i <= 10; i++) {
       let mockData = null;
       try {
         const jsonPath = path.join(__dirname, 'data', 'mocks', `mock${i}.json`);
@@ -567,12 +567,13 @@ export async function initDb() {
       const listeningData = mockData ? mockData.listening_data : { isIframe: false };
       const readingData = mockData ? mockData.reading_data : {};
       const writingData = mockData ? mockData.writing_data : {};
+      const testTitle = mockData?.title || `IELTS Academic Mock Test ${i}`;
 
       const result = await db.run(`
         INSERT INTO tests (title, listening_data, reading_data, writing_data, created_by)
         VALUES (?, ?, ?, ?, ?)
       `, 
-        `IELTS Academic Mock Test ${i}`, 
+        testTitle, 
         JSON.stringify(listeningData), 
         JSON.stringify(readingData), 
         JSON.stringify(writingData), 
@@ -949,14 +950,22 @@ async function ensureCustomDataSeeded(db) {
       { id: 26, title: 'IELTS Reading Test 21', file: 'mock26.html' },
       { id: 27, title: 'IELTS Reading Test 22', file: 'mock27.html' }
     ];
-    for (const et of extraTests) {
-      const exists = await db.get('SELECT id FROM tests WHERE id = ? OR title = ?', [et.id, et.title]);
-      if (!exists) {
-        await db.run(
-          `INSERT INTO tests (id, title, listening_data, reading_data, writing_data, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
-          [et.id, et.title, JSON.stringify({ isIframe: true, iframeUrl: `/tests/${et.file}` }), JSON.stringify({}), JSON.stringify({}), 'admin']
-        );
+    // Auto-seed IELTS Hard Prediction Mock Test 10 if missing
+    try {
+      const mock10Exists = await db.get("SELECT id FROM tests WHERE id = 10 OR title LIKE '%Prediction Mock Test 10%' OR title LIKE '%Test 10%' LIMIT 1");
+      if (!mock10Exists) {
+        const jsonPath = path.join(__dirname, 'data', 'mocks', 'mock10.json');
+        if (fs.existsSync(jsonPath)) {
+          const mockData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+          await db.run(
+            `INSERT INTO tests (id, title, listening_data, reading_data, writing_data, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
+            [10, mockData.title || 'IELTS Hard Prediction Mock Test 10', JSON.stringify(mockData.listening_data), JSON.stringify(mockData.reading_data), JSON.stringify(mockData.writing_data), 'admin']
+          );
+          console.log('Seeded IELTS Hard Prediction Mock Test 10 into database.');
+        }
       }
+    } catch (e) {
+      console.warn('Could not auto-seed Mock Test 10:', e.message);
     }
   } catch (e) {}
 
