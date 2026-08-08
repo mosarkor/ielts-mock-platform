@@ -1502,6 +1502,19 @@ app.post('/api/admin/upload-test', async (req, res) => {
             freshBtn.style.cursor = 'default';
             alert('This section is marked complete and saved. You can switch tabs or submit the whole test when ready.');
           };
+          // The parent platform needs to be able to trigger completion itself
+          // (a module's own clock running out, or a sequential-locked exam
+          // moving the student on) without a real user click -- but every
+          // template generation names/labels this button differently, and
+          // this bridge itself relabels it away from its original text the
+          // moment it installs. A DOM search for "the check answers button"
+          // from outside is exactly the kind of thing that silently stops
+          // matching the instant either of those varies, which is a real
+          // incident: a student's whole Reading section went unsubmitted
+          // because the parent's button-matching heuristics didn't recognize
+          // this button once it had already been relabeled. Exposing the
+          // handler directly removes the need to find the button at all.
+          window.__ieltsBridgeComplete = freshBtn.onclick;
         }
 
         if (document.readyState !== 'loading') {

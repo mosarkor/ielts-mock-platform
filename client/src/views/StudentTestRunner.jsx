@@ -352,12 +352,26 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   latestSubmissionRef.current = submitTestAnswers;
 
   // Programmatically fires an iframe module's own "Complete Section" button (same
-  // effect as the student clicking it) -- used when that module's own clock runs out
-  // rather than the student finishing early. No-ops safely if already completed.
+  // effect as the student clicking it) -- used when that module's own clock runs out,
+  // or a sequential-locked exam moves the student on, rather than the student
+  // finishing the section directly. No-ops safely if already completed.
+  //
+  // Prefers the bridge's own exposed handler (window.__ieltsBridgeComplete) over
+  // searching the DOM for "the button" -- a real incident: this module's button
+  // used a non-standard id, and the bridge itself relabels the button's text away
+  // from "Check Answers" the moment it installs, so a DOM search from out here
+  // silently stopped matching and a student's whole Reading section went
+  // unsubmitted. Falls back to the old DOM search for content uploaded before
+  // this hook existed.
   const autoCompleteIframeModule = (iframeRef) => {
     try {
+      const win = iframeRef.current?.contentWindow;
       const doc = iframeRef.current?.contentDocument;
-      if (!doc) return;
+      if (!win || !doc) return;
+      if (typeof win.__ieltsBridgeComplete === 'function') {
+        win.__ieltsBridgeComplete();
+        return;
+      }
       const btn = doc.getElementById('checkBtn')
         || doc.getElementById('checkAnswersBtn')
         || Array.from(doc.querySelectorAll('button')).find((b) => /check\s*answers?/i.test(b.textContent || ''));
