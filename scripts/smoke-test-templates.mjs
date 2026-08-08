@@ -20,8 +20,9 @@ const testsDir = path.join(repoRoot, 'server', 'public', 'tests');
 const baseUrl = process.env.SMOKE_BASE_URL || 'http://localhost:5000';
 
 function isHarvestBridgeTemplate(html) {
+  // Mirrors the exact signature server.js's /api/admin/upload-test uses to
+  // decide whether to inject the harvest bridge -- keep these in sync.
   return html.includes('function checkAnswers(')
-    && (html.includes('function getUserAnswer(') || html.includes('function getQuestionAnswer('))
     && html.includes('correctAnswers');
 }
 

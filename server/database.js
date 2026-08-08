@@ -172,11 +172,13 @@ export async function initDb() {
         reading_data TEXT NOT NULL,
         writing_data TEXT NOT NULL,
         html_content TEXT,
+        sequential_lock INTEGER NOT NULL DEFAULT 0,
         created_by TEXT REFERENCES users(id)
       )
     `);
 
     await db.exec('ALTER TABLE tests ADD COLUMN html_content TEXT').catch(() => {});
+    await db.exec('ALTER TABLE tests ADD COLUMN sequential_lock INTEGER NOT NULL DEFAULT 0').catch(() => {});
 
     await db.exec(`
       CREATE TABLE IF NOT EXISTS assignments (
@@ -419,12 +421,14 @@ export async function initDb() {
       reading_data TEXT NOT NULL,
       writing_data TEXT NOT NULL,
       html_content TEXT,
+      sequential_lock INTEGER NOT NULL DEFAULT 0,
       created_by TEXT,
       FOREIGN KEY (created_by) REFERENCES users(id)
     )
   `);
 
   await db.exec('ALTER TABLE tests ADD COLUMN html_content TEXT').catch(() => {});
+  await db.exec('ALTER TABLE tests ADD COLUMN sequential_lock INTEGER NOT NULL DEFAULT 0').catch(() => {});
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS assignments (

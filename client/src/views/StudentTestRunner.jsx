@@ -82,6 +82,18 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   const activeModuleIsIframe = (activeModule === 'listening' && listeningIsIframe)
     || (activeModule === 'reading' && readingIsIframe);
 
+  // Sequential-locked tests (opt-in per test) mirror the real computer-delivered
+  // exam: Listening, then Reading, then Writing, one-way -- once a student moves
+  // on, the module they left is gone for good, not just hidden. Everything else
+  // stays on the platform's normal free tab-switching.
+  const sequentialLock = test?.sequentialLock === true;
+  const moduleOrder = [
+    hasListeningContent && 'listening',
+    hasReadingContent && 'reading',
+    hasWritingContent && 'writing'
+  ].filter(Boolean);
+  const currentStageIndex = moduleOrder.indexOf(activeModule);
+
   // What the header clock shows: the active module's own clock in hybrid mode (none
   // during Listening, which is audio-paced), or the single shared clock for native
   // tests. Derived directly from state rather than tracked separately, so it can
@@ -353,6 +365,33 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     } catch {}
   };
 
+  // Sequential-locked tests only: advances to the next module in moduleOrder.
+  // There is deliberately no equivalent step backward -- once a student moves
+  // on, the module they left is locked, matching the real exam.
+  const goToNextStage = () => {
+    const nextModule = moduleOrder[currentStageIndex + 1];
+    if (!nextModule) return;
+    setActiveModule(nextModule);
+    if (nextModule === 'writing') {
+      setActiveQuestionId('task1');
+      setActiveWritingTask('task1');
+    }
+  };
+
+  const MODULE_LABELS = { listening: 'Listening', reading: 'Reading', writing: 'Writing' };
+
+  const finishCurrentStageAndContinue = () => {
+    const nextModule = moduleOrder[currentStageIndex + 1];
+    if (!nextModule) return;
+    const confirmed = window.confirm(
+      `You will not be able to return to ${MODULE_LABELS[activeModule]} once you continue. Move on to ${MODULE_LABELS[nextModule]} now?`
+    );
+    if (!confirmed) return;
+    if (activeModule === 'listening' && listeningIsIframe) autoCompleteIframeModule(listeningIframeRef);
+    if (activeModule === 'reading' && readingIsIframe) autoCompleteIframeModule(readingIframeRef);
+    goToNextStage();
+  };
+
   // Native tests keep one shared clock across the whole exam, exactly as before.
   // Hybrid tests give Reading and Writing independent 60-minute clocks (matching the
   // real exam), and Listening none at all (it's audio-paced, not clock-driven).
@@ -375,6 +414,10 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
             } else {
               alert('Reading time is up! Your Reading section has been locked and saved.');
               autoCompleteIframeModule(readingIframeRef);
+              // Sequential-locked tests have no manual tab-switching to fall back on,
+              // so a timed-out module must advance the exam itself or the student
+              // would be stuck with every tab locked.
+              if (sequentialLock) goToNextStage();
             }
             return { ...previous, [tickingModule]: 0 };
           }
@@ -398,7 +441,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     }, 1000);
 
     return () => clearInterval(timerIntervalRef.current);
-  }, [isExamStarted, test, isLegacyFullScreen, isHybridWithIframeModules, activeModule]);
+  }, [isExamStarted, test, isLegacyFullScreen, isHybridWithIframeModules, activeModule, sequentialLock]);
 
   // Helper to format remaining seconds into MM:SS
   const formatTime = (seconds) => {
@@ -554,39 +597,58 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         {hasListeningContent && (
           <button
             className={`ielts-part-tab ${activeModule === 'listening' ? 'active' : ''}`}
+            disabled={sequentialLock && moduleOrder.indexOf('listening') !== currentStageIndex}
             onClick={() => {
+              if (sequentialLock && moduleOrder.indexOf('listening') !== currentStageIndex) return;
               setActiveModule('listening');
               if (!listeningIsIframe && test.listening_data?.sections?.[0]?.questions?.[0]) {
                 setActiveQuestionId(test.listening_data.sections[0].questions[0].id);
               }
             }}
           >
-            🎧 Listening {moduleResults.listening ? '✓' : ''}
+            🎧 Listening {sequentialLock
+              ? (moduleOrder.indexOf('listening') < currentStageIndex ? '✓' : moduleOrder.indexOf('listening') > currentStageIndex ? '🔒' : '')
+              : (moduleResults.listening ? '✓' : '')}
           </button>
         )}
         {hasReadingContent && (
           <button
             className={`ielts-part-tab ${activeModule === 'reading' ? 'active' : ''}`}
+            disabled={sequentialLock && moduleOrder.indexOf('reading') !== currentStageIndex}
             onClick={() => {
+              if (sequentialLock && moduleOrder.indexOf('reading') !== currentStageIndex) return;
               setActiveModule('reading');
               if (!readingIsIframe && test.reading_data?.passages?.[0]?.questions?.[0]) {
                 setActiveQuestionId(test.reading_data.passages[0].questions[0].id);
               }
             }}
           >
-            📖 Reading {moduleResults.reading ? '✓' : ''}
+            📖 Reading {sequentialLock
+              ? (moduleOrder.indexOf('reading') < currentStageIndex ? '✓' : moduleOrder.indexOf('reading') > currentStageIndex ? '🔒' : '')
+              : (moduleResults.reading ? '✓' : '')}
           </button>
         )}
         {hasWritingContent && (
           <button
             className={`ielts-part-tab ${activeModule === 'writing' ? 'active' : ''}`}
+            disabled={sequentialLock && moduleOrder.indexOf('writing') !== currentStageIndex}
             onClick={() => {
+              if (sequentialLock && moduleOrder.indexOf('writing') !== currentStageIndex) return;
               setActiveModule('writing');
               setActiveQuestionId('task1');
               setActiveWritingTask('task1');
             }}
           >
-            ✍️ Writing
+            ✍️ Writing {sequentialLock && moduleOrder.indexOf('writing') > currentStageIndex ? '🔒' : ''}
+          </button>
+        )}
+        {sequentialLock && currentStageIndex >= 0 && currentStageIndex < moduleOrder.length - 1 && (
+          <button
+            className="ielts-part-tab"
+            style={{ marginLeft: 'auto', background: '#16a34a', color: '#fff', fontWeight: 600 }}
+            onClick={finishCurrentStageAndContinue}
+          >
+            Finish {MODULE_LABELS[activeModule]} & Continue ▶
           </button>
         )}
       </nav>

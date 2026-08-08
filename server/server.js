@@ -185,7 +185,8 @@ app.get('/api/student/test/:testId', async (req, res) => {
       title: test.title,
       listening_data: JSON.parse(test.listening_data),
       reading_data: JSON.parse(test.reading_data),
-      writing_data: JSON.parse(test.writing_data)
+      writing_data: JSON.parse(test.writing_data),
+      sequentialLock: !!Number(test.sequential_lock)
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -905,7 +906,6 @@ app.post('/api/admin/upload-test', async (req, res) => {
       content = content.replace(finishWritingTarget, finishWritingReplacement);
     } else if (
       content.includes('function checkAnswers(')
-      && (content.includes('function getUserAnswer(') || content.includes('function getQuestionAnswer('))
       && content.includes('correctAnswers')
     ) {
       // "Prediction" template family (New listening/reading predictions folders): a
@@ -920,17 +920,103 @@ app.post('/api/admin/upload-test', async (req, res) => {
       // (by id candidates, falling back to matching its label) instead of assuming one
       // fixed id, and never needs to know the reveal function's name at all -- it just
       // never lets the button's original click handler run.
+      //
+      // Some generations wrap their entire script in a
+      // document.addEventListener('DOMContentLoaded', () => { ... }) closure, which
+      // makes correctAnswers (and everything else) lexically invisible to this
+      // separately-appended bridge script no matter where it's placed -- this is a
+      // hard JS scoping wall, not something the bridge's own code can work around.
+      // Whichever button ends up bound to checkAnswers is only ever bound once
+      // correctAnswers already exists in that same scope, so that's a safe, generic
+      // point to expose it onto window for the bridge to read afterward. A no-op
+      // wherever correctAnswers was already a bare global (most generations).
+      content = content.replace(
+        /(\w+)\.addEventListener\(\s*['"]click['"]\s*,\s*checkAnswers\s*\)\s*;/,
+        (match) => `${match}\ntry { if (typeof correctAnswers !== 'undefined') window.correctAnswers = correctAnswers; } catch (e) {}`
+      );
       usedHarvestBridge = true;
       const harvestBridgeSnippet = `
       (function() {
         var params = new URLSearchParams(window.location.search);
         var __bridgeTestId = params.get('testId') || '${testId}';
         var __bridgeModuleType = params.get('moduleType') || '${moduleType}';
+        // correctAnswers may be a bare global (most generations), or invisible to
+        // this script entirely because it's closure-scoped inside the template's
+        // own DOMContentLoaded handler -- in which case it was exposed onto window
+        // right where the original check button gets bound (see above). That
+        // exposure only happens once the template's own DOMContentLoaded handler
+        // actually runs, which can easily be after this bridge script's own
+        // top-level code executes -- so this must be looked up fresh at the point
+        // of use (when the student finishes the section), never cached early.
+        function __getCorrectAnswers() {
+          return (typeof correctAnswers !== 'undefined') ? correctAnswers : window.correctAnswers;
+        }
+
+        // "Choose N answers" checkbox questions (e.g. Q20/21 sharing one
+        // checkbox group named "q20_21") are scored by how many of the
+        // student's checked boxes are in the correct set, not by matching one
+        // box to one question -- the Nth question in the group is correct once
+        // at least N of the checked boxes are right (mirrors this template
+        // family's own checkAnswers() logic for this question type exactly).
+        // Computed once per group and cached, since both answer harvesting and
+        // correctness checking need the same result for the same question.
+        var __groupCreditCache = {};
+        function __checkboxGroupCredit(n) {
+          if (Object.prototype.hasOwnProperty.call(__groupCreditCache, n)) return __groupCreditCache[n];
+          var result = null;
+          try {
+            var groupNames = Array.from(document.querySelectorAll('input[type="checkbox"][name^="q"][name*="_"]'))
+              .reduce(function (names, el) { if (names.indexOf(el.name) === -1) names.push(el.name); return names; }, []);
+            for (var g = 0; g < groupNames.length; g++) {
+              var groupName = groupNames[g];
+              var parts = groupName.slice(1).split('_').map(Number);
+              var pos = parts.indexOf(n);
+              if (pos === -1) continue;
+              var checkedVals = Array.from(document.querySelectorAll('input[name="' + groupName + '"]:checked')).map(function (c) { return c.value; });
+              var __ca = __getCorrectAnswers();
+              // correctAnswers is keyed by question numbers, which may or may not
+              // include the "q" prefix the input's own name attribute carries --
+              // try both rather than assuming one convention.
+              var __caGroup = (typeof __ca === 'object' && __ca) ? (__ca[groupName] || __ca[groupName.slice(1)]) : undefined;
+              var correctSet = Array.isArray(__caGroup) ? __caGroup : [];
+              var matchCount = checkedVals.filter(function (v) { return correctSet.indexOf(v) !== -1; }).length;
+              result = {
+                userAnswer: checkedVals.join(', '),
+                correctAnswer: correctSet[pos] !== undefined ? correctSet[pos] : correctSet.join(' / '),
+                isCorrect: matchCount >= (pos + 1)
+              };
+              break;
+            }
+          } catch (e) {}
+          __groupCreditCache[n] = result;
+          return result;
+        }
 
         function __harvestAnswer(n) {
           try {
             if (typeof getUserAnswer === 'function') return getUserAnswer(n) || '';
             if (typeof getQuestionAnswer === 'function') return getQuestionAnswer(n) || '';
+          } catch (e) {}
+          // Some template generations never expose a named per-question helper --
+          // they read the answer inline inside their own checkAnswers(), using one
+          // of these DOM conventions depending on question type. Mirrors that same
+          // logic here so harvesting still works without calling into the
+          // template's own (replaced) checkAnswers().
+          try {
+            var el = document.getElementById('q' + n);
+            if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT')) return (el.value || '').trim();
+          } catch (e) {}
+          try {
+            var checked = document.querySelector('input[name="q' + n + '"]:checked');
+            if (checked) return checked.value || '';
+          } catch (e) {}
+          try {
+            var slot = document.querySelector('.dnd-slot[data-q="' + n + '"]');
+            if (slot && slot.dataset && slot.dataset.value) return slot.dataset.value;
+          } catch (e) {}
+          try {
+            var groupResult = __checkboxGroupCredit(n);
+            if (groupResult) return groupResult.userAnswer;
           } catch (e) {}
           return '';
         }
@@ -1010,6 +1096,10 @@ app.post('/api/admin/upload-test', async (req, res) => {
           var answers = {};
           var detail = {};
           var correctCount = 0;
+          // Safe to look up (and cache for this whole run) only now -- this only
+          // ever runs once the student clicks the button, long after the
+          // template's own DOMContentLoaded handler has had every chance to run.
+          var __correctAnswers = __getCorrectAnswers();
           for (var n = 1; n <= 40; n++) {
             var userAns = __harvestAnswer(n);
             answers[n] = userAns;
@@ -1022,13 +1112,20 @@ app.post('/api/admin/upload-test', async (req, res) => {
             var correctAnswerForN = undefined;
             var isCorrectForN = false;
             try {
-              if (typeof correctAnswers === 'object' && correctAnswers && correctAnswers[n] !== undefined) {
-                var correct = correctAnswers[n];
+              if (typeof __correctAnswers === 'object' && __correctAnswers && __correctAnswers[n] !== undefined) {
+                var correct = __correctAnswers[n];
                 correctAnswerForN = Array.isArray(correct) ? correct[0] : correct;
                 var isMatch = Array.isArray(correct)
                   ? correct.some(function(c) { return __normalize(c) === __normalize(userAns); })
                   : __normalize(correct) === __normalize(userAns);
                 if (isMatch) { correctCount++; isCorrectForN = true; }
+              } else {
+                var groupResult = __checkboxGroupCredit(n);
+                if (groupResult) {
+                  correctAnswerForN = groupResult.correctAnswer;
+                  isCorrectForN = groupResult.isCorrect;
+                  if (isCorrectForN) correctCount++;
+                }
               }
             } catch (e) {}
             var explanationHtml = undefined;
@@ -1200,7 +1297,7 @@ app.post('/api/admin/upload-test', async (req, res) => {
           }
           var buttons = document.querySelectorAll('button');
           for (var j = 0; j < buttons.length; j++) {
-            if (/check\s*answers?/i.test(buttons[j].textContent || '')) return buttons[j];
+            if (/check\\s*answers?/i.test(buttons[j].textContent || '')) return buttons[j];
           }
           return null;
         }
@@ -1318,6 +1415,24 @@ app.post('/api/admin/tests/:id/link-modules', async (req, res) => {
       const src = await db.get('SELECT reading_data FROM tests WHERE id = ?', [readingFromTestId]);
       if (!src || !src.reading_data) return res.status(404).json({ error: `Source reading test ${readingFromTestId} not found` });
       await db.run('UPDATE tests SET reading_data = ? WHERE id = ?', [src.reading_data, targetId]);
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Toggle a test's navigation style: sequential-locked (Listening then Reading
+// then Writing, one-way, no going back -- matching the real computer-delivered
+// exam) vs the platform's normal free tab-switching between modules.
+app.post('/api/admin/tests/:id/settings', async (req, res) => {
+  const targetId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(targetId)) return res.status(400).json({ error: 'Invalid test id' });
+  try {
+    const target = await db.get('SELECT id FROM tests WHERE id = ?', [targetId]);
+    if (!target) return res.status(404).json({ error: `Test ${targetId} not found` });
+    if (typeof req.body.sequentialLock === 'boolean') {
+      await db.run('UPDATE tests SET sequential_lock = ? WHERE id = ?', [req.body.sequentialLock ? 1 : 0, targetId]);
     }
     res.json({ success: true });
   } catch (error) {
