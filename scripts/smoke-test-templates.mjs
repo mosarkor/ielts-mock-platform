@@ -107,6 +107,61 @@ async function smokeTestFile(browser, filename) {
         failures.push(`Timer display did not change after 2.5s (stuck at "${before}") -- timer may be frozen`);
       }
     }
+
+    // Answer persistence across part navigation: some template generations
+    // completely rebuild their questions panel's DOM on every part switch --
+    // fresh, blank inputs, with no restoration of what was already answered.
+    // A student who doesn't finish on Part 1 (i.e. every real student) then
+    // has every earlier part's answers silently vanish, discovered only after
+    // submitting. Real incident: a student's Reading Parts 1-2 were entirely
+    // absent from her graded submission. Answer one question per part, finish
+    // the section, and confirm every part's answer actually reached the
+    // harvested result -- not just whichever part was open at the end. This
+    // is a terminal check (finishing a section is a one-time action), so it
+    // runs last.
+    if (partTabCount > 1) {
+      let lastMessage = null;
+      await page.exposeFunction('__smokeCaptureMessage', (data) => { lastMessage = data; });
+      await page.evaluate(() => {
+        window.addEventListener('message', (e) => window.__smokeCaptureMessage(e.data));
+      });
+
+      let partsAnswered = 0;
+      for (let i = 0; i < Math.min(partTabCount, 4); i += 1) {
+        await page.locator('.part-tab[data-part]').nth(i).click();
+        await page.waitForTimeout(300);
+        const radio = page.locator('input[type="radio"]:visible').first();
+        const textInput = page.locator('input[type="text"]:visible').first();
+        const selectInput = page.locator('select:visible').first();
+        if (await radio.count()) {
+          await radio.click();
+          partsAnswered += 1;
+        } else if (await textInput.count()) {
+          await textInput.fill('smoketest');
+          partsAnswered += 1;
+        } else if (await selectInput.count()) {
+          const optionValue = await selectInput.locator('option').nth(1).getAttribute('value');
+          if (optionValue) {
+            await selectInput.selectOption(optionValue);
+            partsAnswered += 1;
+          }
+        }
+      }
+
+      const finishButton = page.locator('#checkBtn, #checkAnswersBtn, #deliver-button, button:has-text("Check Answers")').first();
+      if (partsAnswered > 1 && (await finishButton.count())) {
+        await finishButton.click();
+        await page.waitForTimeout(500);
+        const nonEmptyCount = lastMessage && lastMessage.answers
+          ? Object.values(lastMessage.answers).filter((v) => v !== '').length
+          : 0;
+        if (nonEmptyCount < partsAnswered) {
+          failures.push(
+            `Answered a question in ${partsAnswered} different parts, but only ${nonEmptyCount} survived to the final submitted result -- answers from earlier parts are being lost when the student navigates away before finishing`
+          );
+        }
+      }
+    }
   } catch (error) {
     failures.push(`Unexpected error while testing: ${error.message}`);
   } finally {

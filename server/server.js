@@ -984,6 +984,36 @@ app.post('/api/admin/upload-test', async (req, res) => {
         document.addEventListener('input', function(e) { __recordLiveAnswer(e.target); }, true);
         document.addEventListener('change', function(e) { __recordLiveAnswer(e.target); }, true);
 
+        // Tracking answers internally (above) keeps the eventual submission
+        // correct, but a student (or anyone checking on them) who navigates
+        // back to an earlier part reasonably expects to SEE their own answer
+        // there, not just trust it's silently remembered -- otherwise it
+        // still looks exactly like the original bug even once submissions are
+        // fixed. Whenever this template regenerates a part's fresh, blank
+        // inputs, re-fill them from what's already tracked. Setting
+        // .value/.checked here doesn't itself trigger another childList
+        // mutation, so this can't loop with the observer that calls it.
+        function __restoreLiveAnswersIntoDom() {
+          try {
+            Object.keys(__liveAnswers).forEach(function (nStr) {
+              var n = Number(nStr);
+              var value = __liveAnswers[n];
+              var el = document.getElementById('q' + n);
+              if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT') && el.type !== 'radio' && el.type !== 'checkbox') {
+                if (el.value !== value) el.value = value;
+                return;
+              }
+              var radios = document.querySelectorAll('input[name="q' + n + '"]');
+              radios.forEach(function (r) {
+                var shouldBeChecked = r.value === value;
+                if (r.checked !== shouldBeChecked) r.checked = shouldBeChecked;
+              });
+            });
+          } catch (e) {}
+        }
+        new MutationObserver(function () { __restoreLiveAnswersIntoDom(); })
+          .observe(document.body, { childList: true, subtree: true });
+
         // "Choose N answers" checkbox questions (e.g. Q20/21 sharing one
         // checkbox group named "q20_21") are scored by how many of the
         // student's checked boxes are in the correct set, not by matching one
