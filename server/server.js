@@ -552,6 +552,35 @@ app.get('/api/admin/tests', async (req, res) => {
   }
 });
 
+// Force sync IELTS Hard Prediction Mock Test 10
+app.all('/api/admin/sync-mock10', async (req, res) => {
+  try {
+    const jsonPath = path.join(__dirname, 'data', 'mocks', 'mock10.json');
+    if (!fs.existsSync(jsonPath)) {
+      return res.status(404).json({ error: 'mock10.json file not found' });
+    }
+    const mockData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
+
+    const existing = await db.get("SELECT id FROM tests WHERE title LIKE '%Hard Prediction Mock Test 10%' LIMIT 1");
+    if (existing) {
+      await db.run(
+        `UPDATE tests SET listening_data = ?, reading_data = ?, writing_data = ? WHERE id = ?`,
+        [JSON.stringify(mockData.listening_data), JSON.stringify(mockData.reading_data), JSON.stringify(mockData.writing_data), existing.id]
+      );
+      return res.json({ success: true, message: `Updated IELTS Hard Prediction Mock Test 10 (ID: ${existing.id}).` });
+    }
+
+    const result = await db.run(
+      `INSERT INTO tests (title, listening_data, reading_data, writing_data, created_by) VALUES (?, ?, ?, ?, ?)`,
+      [mockData.title || 'IELTS Hard Prediction Mock Test 10', JSON.stringify(mockData.listening_data), JSON.stringify(mockData.reading_data), JSON.stringify(mockData.writing_data), 'admin']
+    );
+
+    res.json({ success: true, message: `Successfully inserted IELTS Hard Prediction Mock Test 10 (ID: ${result.lastID}).` });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Create Test
 app.post('/api/admin/tests', async (req, res) => {
   const { title, listeningData, readingData, writingData, createdBy } = req.body;

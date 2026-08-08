@@ -443,6 +443,18 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
     }
   };
 
+  const handleSyncMock10 = async () => {
+    try {
+      const res = await fetch('/api/admin/sync-mock10', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to sync Prediction Test 10');
+      alert(data.message || 'IELTS Hard Prediction Mock Test 10 synced successfully!');
+      fetchAdminData();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   // HTML Mock Test Uploader
   const handleUploadHtmlTest = async () => {
     if (!testTitle.trim()) {
@@ -1041,13 +1053,23 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                 <div className="card" style={{ marginBottom: '2rem' }}>
                   <div style={styles.flexHeader}>
                     <h3 style={styles.cardTitle}>📜 Test Directory</h3>
-                    <button 
-                      onClick={() => setShowTestCreator(!showTestCreator)} 
-                      className="btn btn-primary"
-                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                    >
-                      {showTestCreator ? 'Close Uploader' : 'Upload HTML Mock Test +'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <button 
+                        onClick={handleSyncMock10} 
+                        className="btn btn-success"
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                        title="Force sync IELTS Hard Prediction Mock Test 10 into test library"
+                      >
+                        ⚡ Sync Prediction Test 10
+                      </button>
+                      <button 
+                        onClick={() => setShowTestCreator(!showTestCreator)} 
+                        className="btn btn-primary"
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                      >
+                        {showTestCreator ? 'Close Uploader' : 'Upload HTML Mock Test +'}
+                      </button>
+                    </div>
                   </div>
 
                   {showTestCreator && (

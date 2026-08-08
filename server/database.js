@@ -952,16 +952,16 @@ async function ensureCustomDataSeeded(db) {
     ];
     // Auto-seed IELTS Hard Prediction Mock Test 10 if missing
     try {
-      const mock10Exists = await db.get("SELECT id FROM tests WHERE id = 10 OR title LIKE '%Prediction Mock Test 10%' OR title LIKE '%Test 10%' LIMIT 1");
+      const mock10Exists = await db.get("SELECT id FROM tests WHERE title LIKE '%Hard Prediction Mock Test 10%' LIMIT 1");
       if (!mock10Exists) {
         const jsonPath = path.join(__dirname, 'data', 'mocks', 'mock10.json');
         if (fs.existsSync(jsonPath)) {
           const mockData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
           await db.run(
-            `INSERT INTO tests (id, title, listening_data, reading_data, writing_data, created_by) VALUES (?, ?, ?, ?, ?, ?)`,
-            [10, mockData.title || 'IELTS Hard Prediction Mock Test 10', JSON.stringify(mockData.listening_data), JSON.stringify(mockData.reading_data), JSON.stringify(mockData.writing_data), 'admin']
+            `INSERT INTO tests (title, listening_data, reading_data, writing_data, created_by) VALUES (?, ?, ?, ?, ?)`,
+            [mockData.title || 'IELTS Hard Prediction Mock Test 10', JSON.stringify(mockData.listening_data), JSON.stringify(mockData.reading_data), JSON.stringify(mockData.writing_data), 'admin']
           );
-          console.log('Seeded IELTS Hard Prediction Mock Test 10 into database.');
+          console.log('Successfully seeded IELTS Hard Prediction Mock Test 10 into database.');
         }
       }
     } catch (e) {
