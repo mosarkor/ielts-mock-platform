@@ -910,6 +910,73 @@ app.post('/api/admin/upload-test', async (req, res) => {
           return String(v == null ? '' : v).trim().toLowerCase();
         }
 
+        // Only one template generation (the one behind buildExplanationHtml) exposes
+        // a real, pre-written per-question explanation with evidence quoted from the
+        // passage. Every other variant in this family still has enough structure to
+        // build a useful (if less specific) one: a per-question type, from whichever
+        // metadata object the template happens to expose, or inferred from the DOM
+        // shape of the answer element when no such object exists at all (true for
+        // every listening variant so far); plus the question's own prompt text, when
+        // available. Never assumes any one variant's exact data shape.
+        function __inferQuestionType(n) {
+          try {
+            if (typeof questions === 'object' && questions && questions[n] && questions[n].type) return questions[n].type;
+          } catch (e) {}
+          try {
+            if (typeof questionTypeMap === 'object' && questionTypeMap && questionTypeMap[n]) return questionTypeMap[n];
+          } catch (e) {}
+          try {
+            if (document.querySelector('.clickable-cell[data-question="' + n + '"]')) return 'matching';
+            if (document.querySelector('.summary-drop-zone[data-q-start="' + n + '"]')) return 'matching';
+            if (document.querySelector('.ldm-slot[data-question="' + n + '"]')) return 'matching';
+            var el = document.getElementById('q' + n);
+            if (el && el.tagName === 'SELECT') return 'select';
+            if (el && el.tagName === 'INPUT') return 'text';
+            if (document.querySelector('[name="q' + n + '"]')) return 'mcq';
+          } catch (e) {}
+          return null;
+        }
+
+        function __questionPrompt(n) {
+          try {
+            if (typeof questions === 'object' && questions && questions[n]) {
+              var q = questions[n];
+              return q.prompt || q.statement || q.label || q.instruction || null;
+            }
+          } catch (e) {}
+          return null;
+        }
+
+        function __genericTip(type) {
+          var tips = {
+            tfn: 'Look for exact support, exact contradiction, or no clear information.',
+            ynng: 'Look for exact support, exact contradiction, or no clear information.',
+            text: 'Check the exact word(s) used (and the stated word limit) -- spelling counts.',
+            select: 'Match based on the overall meaning, not just one keyword.',
+            headings: 'Choose the heading that matches the overall idea, not just one detail.',
+            mcq: 'Eliminate options that contradict what was said; the correct one is fully supported.',
+            matching: 'Track the exact feature, person, or detail mentioned for each item.',
+            'matching-select': 'Track the exact feature or person mentioned for each item.'
+          };
+          return (type && tips[type]) || 'Compare your answer with the correct one to see exactly where your understanding differed.';
+        }
+
+        function __escapeHtml(s) {
+          return String(s == null ? '' : s).replace(/[&<>"]/g, function(c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+          });
+        }
+
+        function __buildGenericExplanationHtml(n) {
+          var type = __inferQuestionType(n);
+          var prompt = __questionPrompt(n);
+          var html = '<div class="__genericExplanation">';
+          if (prompt) html += '<p style="font-weight:600;margin-bottom:6px">' + __escapeHtml(prompt) + '</p>';
+          html += '<p><em>How to approach this type:</em> ' + __escapeHtml(__genericTip(type)) + '</p>';
+          html += '</div>';
+          return html;
+        }
+
         function __silentCheckAndReport() {
           var answers = {};
           var detail = {};
@@ -917,7 +984,13 @@ app.post('/api/admin/upload-test', async (req, res) => {
           for (var n = 1; n <= 40; n++) {
             var userAns = __harvestAnswer(n);
             answers[n] = userAns;
-            var correctAnswerForN;
+            // These must be reset (not just declared) every iteration: "var" is
+            // function-scoped, not block-scoped, so a bare "var x;" on iteration 2
+            // is a no-op that silently keeps iteration 1's value if this question
+            // doesn't overwrite it -- exactly what happened before this fix, where
+            // every question after the first one with a real explanation quietly
+            // inherited that first question's explanation text.
+            var correctAnswerForN = undefined;
             var isCorrectForN = false;
             try {
               if (typeof correctAnswers === 'object' && correctAnswers && correctAnswers[n] !== undefined) {
@@ -929,13 +1002,13 @@ app.post('/api/admin/upload-test', async (req, res) => {
                 if (isMatch) { correctCount++; isCorrectForN = true; }
               }
             } catch (e) {}
-            var explanationHtml;
+            var explanationHtml = undefined;
             try {
-              // Some template generations expose a real per-question explanation
-              // (with evidence quoted from the passage); others don't. Grab it when
-              // available instead of only recording right/wrong.
               if (typeof buildExplanationHtml === 'function') explanationHtml = buildExplanationHtml(n);
             } catch (e) {}
+            if (!explanationHtml) {
+              try { explanationHtml = __buildGenericExplanationHtml(n); } catch (e) {}
+            }
             if (correctAnswerForN !== undefined) {
               detail[n] = {
                 userAnswer: userAns,
