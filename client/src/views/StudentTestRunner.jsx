@@ -9,8 +9,10 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   const [activeModule, setActiveModule] = useState('listening');
   const [fontSize, setFontSize] = useState('md'); // 'sm' | 'md' | 'lg' | 'xl'
   const [showTimer, setShowTimer] = useState(true);
-  const [timeLeft, setTimeLeft] = useState(2400); // 40 minutes
-  const [timerWarning, setTimerWarning] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(2400); // 40 minutes -- native tests only
+  // Hybrid tests give Reading and Writing their own real 60-minute clocks (matching
+  // the actual exam), rather than one shared clock split across both.
+  const [hybridTimers, setHybridTimers] = useState({ reading: 3600, writing: 3600 });
 
   // Student Answers State
   const [listeningAnswers, setListeningAnswers] = useState({});
@@ -66,6 +68,15 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
   const activeModuleIsIframe = (activeModule === 'listening' && listeningIsIframe)
     || (activeModule === 'reading' && readingIsIframe);
+
+  // What the header clock shows: the active module's own clock in hybrid mode (none
+  // during Listening, which is audio-paced), or the single shared clock for native
+  // tests. Derived directly from state rather than tracked separately, so it can
+  // never go stale switching between modules with different remaining time.
+  const displayTime = isHybridWithIframeModules
+    ? (activeModule === 'reading' || activeModule === 'writing' ? hybridTimers[activeModule] : null)
+    : timeLeft;
+  const isTimerWarning = displayTime !== null && displayTime <= 300;
 
   // Anti-Cheat System (Disabled strict kickout to prevent false-positive auto-submissions)
   useEffect(() => {
@@ -297,24 +308,58 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     else if (!hasListeningContent && !hasReadingContent && hasWritingContent) setActiveModule('writing');
   }, [test, hasListeningContent, hasReadingContent, hasWritingContent]);
 
-  // A hybrid test (iframe modules + platform chrome) has no single-file timer of its
-  // own like a legacy full mock does, so give it a Writing-sized budget (60 min)
-  // instead of the native-test default, which was never meant for this case.
+  // Reset the per-module clocks whenever a (new) hybrid test loads.
   useEffect(() => {
-    if (isHybridWithIframeModules) setTimeLeft(3600);
+    if (isHybridWithIframeModules) setHybridTimers({ reading: 3600, writing: 3600 });
   }, [test, isHybridWithIframeModules]);
 
   latestSubmissionRef.current = submitTestAnswers;
 
-  // Native tests use the parent's shared timer throughout. Hybrid tests use it too,
-  // but only while a native module (e.g. Writing) is active — standalone iframe
-  // modules are either audio-driven or should be timed by the student checking their
-  // own progress inside them, not by a generic platform-wide clock ticking over audio.
-  // Legacy standalone full-mock iframes (which own their own internal timer/UI) skip
-  // the parent timer entirely.
+  // Programmatically fires an iframe module's own "Complete Section" button (same
+  // effect as the student clicking it) -- used when that module's own clock runs out
+  // rather than the student finishing early. No-ops safely if already completed.
+  const autoCompleteIframeModule = (iframeRef) => {
+    try {
+      const doc = iframeRef.current?.contentDocument;
+      if (!doc) return;
+      const btn = doc.getElementById('checkBtn')
+        || doc.getElementById('checkAnswersBtn')
+        || Array.from(doc.querySelectorAll('button')).find((b) => /check\s*answers?/i.test(b.textContent || ''));
+      if (btn && !btn.disabled) btn.click();
+    } catch {}
+  };
+
+  // Native tests keep one shared clock across the whole exam, exactly as before.
+  // Hybrid tests give Reading and Writing independent 60-minute clocks (matching the
+  // real exam), and Listening none at all (it's audio-paced, not clock-driven).
+  // Legacy standalone full-mock iframes (which own their internal timer/UI) skip the
+  // parent timer entirely.
   useEffect(() => {
     if (!isExamStarted || !test || isLegacyFullScreen) return;
-    if (isHybridWithIframeModules && activeModuleIsIframe) return;
+
+    if (isHybridWithIframeModules) {
+      if (activeModule !== 'reading' && activeModule !== 'writing') return;
+      const tickingModule = activeModule;
+
+      timerIntervalRef.current = setInterval(() => {
+        setHybridTimers((previous) => {
+          if (previous[tickingModule] <= 1) {
+            clearInterval(timerIntervalRef.current);
+            if (tickingModule === 'writing') {
+              alert('Time is up! Your answers are being submitted automatically.');
+              latestSubmissionRef.current?.();
+            } else {
+              alert('Reading time is up! Your Reading section has been locked and saved.');
+              autoCompleteIframeModule(readingIframeRef);
+            }
+            return { ...previous, [tickingModule]: 0 };
+          }
+          return { ...previous, [tickingModule]: previous[tickingModule] - 1 };
+        });
+      }, 1000);
+
+      return () => clearInterval(timerIntervalRef.current);
+    }
 
     timerIntervalRef.current = setInterval(() => {
       setTimeLeft((previous) => {
@@ -324,13 +369,12 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           latestSubmissionRef.current?.();
           return 0;
         }
-        if (previous <= 300) setTimerWarning(true);
         return previous - 1;
       });
     }, 1000);
 
     return () => clearInterval(timerIntervalRef.current);
-  }, [isExamStarted, test, isLegacyFullScreen, isHybridWithIframeModules, activeModuleIsIframe]);
+  }, [isExamStarted, test, isLegacyFullScreen, isHybridWithIframeModules, activeModule]);
 
   // Helper to format remaining seconds into MM:SS
   const formatTime = (seconds) => {
@@ -439,9 +483,9 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           </span>
         </div>
 
-        {showTimer && (
-          <div className={`ielts-timer ${timerWarning ? 'warning' : ''}`}>
-            ⏳ {formatTime(timeLeft)}
+        {showTimer && displayTime !== null && (
+          <div className={`ielts-timer ${isTimerWarning ? 'warning' : ''}`}>
+            ⏳ {formatTime(displayTime)}
           </div>
         )}
 
