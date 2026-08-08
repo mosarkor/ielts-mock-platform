@@ -991,6 +991,64 @@ app.post('/api/admin/upload-test', async (req, res) => {
           } catch (e) {}
         }
 
+        function __shrinkPartBanner() {
+          // The reading template's "Part 1/2/3" banner (.part-banner / #partBanner)
+          // is real, useful content (a heading plus the part's instructions), not
+          // chrome to hide -- but its default padding and margin cost real
+          // passage-reading room. Shrink them, then (same reasoning as the header
+          // above) the passage/questions container has a hardcoded top offset sized
+          // to clear the banner at its old height, so recompute that offset directly
+          // from the banner's new, shorter bottom edge instead of guessing a delta
+          // to subtract -- this template doesn't exist in every variant, so this
+          // no-ops harmlessly wherever the banner (and thus this whole function)
+          // isn't present at all.
+          try {
+            var banner = document.querySelector('.part-banner') || document.getElementById('partBanner');
+            if (!banner) return;
+            banner.style.padding = '6px 16px';
+            banner.style.margin = '4px 16px';
+
+            var passage = document.querySelector('.passage-panel') || document.getElementById('passagePanel')
+              || document.querySelector('.questions-panel') || document.getElementById('questionsPanel');
+            if (!passage) return;
+            var container = passage.parentElement;
+            while (container && container !== document.body) {
+              var pos = getComputedStyle(container).position;
+              if (pos === 'absolute' || pos === 'fixed') break;
+              container = container.parentElement;
+            }
+            if (!container || container === document.body) return;
+
+            function __repositionPanels() {
+              var offsetParent = container.offsetParent || document.body;
+              var bannerBottom = banner.getBoundingClientRect().bottom;
+              var offsetParentTop = offsetParent.getBoundingClientRect().top;
+              var newTop = bannerBottom - offsetParentTop;
+              // getBoundingClientRect() returns all zeros for every element in this
+              // document whenever an ancestor OUTSIDE it (the platform's own tab
+              // switcher) has it display:none -- both iframes mount immediately when
+              // the exam starts, but only the active tab's is actually visible, and
+              // Reading isn't the default tab. So this can't just retry a few times
+              // and give up: it may need to wait for the student to switch to this
+              // tab at all, whenever that happens. Keep polling (cheap, and the
+              // interval clears itself the moment it succeeds) rather than capping
+              // the attempts.
+              if (newTop > 0) { container.style.top = newTop + 'px'; return true; }
+              return false;
+            }
+            if (!__repositionPanels()) {
+              var __pollId = setInterval(function() {
+                if (__repositionPanels()) clearInterval(__pollId);
+              }, 250);
+            }
+            // Keep watching afterwards too: the banner's height also changes
+            // whenever the student switches parts (Part 1 -> Part 2, etc).
+            new MutationObserver(__repositionPanels).observe(banner, {
+              childList: true, subtree: true, characterData: true
+            });
+          } catch (e) {}
+        }
+
         function __findCheckButton() {
           var idCandidates = ['checkBtn', 'checkAnswersBtn'];
           for (var i = 0; i < idCandidates.length; i++) {
@@ -1006,6 +1064,7 @@ app.post('/api/admin/upload-test', async (req, res) => {
 
         function __installBridge() {
           __reclaimHeaderSpace();
+          __shrinkPartBanner();
           var btn = __findCheckButton();
           if (!btn) return;
           // Strip any addEventListener-bound handlers by cloning, then replace the

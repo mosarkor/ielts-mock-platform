@@ -834,15 +834,11 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         )}
       </div>
 
-      {/* 4. Bottom Dock */}
-      {activeModuleIsIframe ? (
-        <footer className="ielts-bottom-dock" style={{ justifyContent: 'center' }}>
-          <span style={{ color: '#cbd5e1', fontSize: '0.85rem' }}>
-            This section has its own navigation and "Complete Section" button inside the window above.
-            {moduleResults[activeModule] ? ' ✓ Section completed — switch tabs or submit when ready.' : ' Mark it complete there before submitting the whole test.'}
-          </span>
-        </footer>
-      ) : (
+      {/* 4. Bottom Dock -- skipped entirely for iframe modules. They have their own
+          complete navigation/status bar, and every pixel here is worth giving back
+          to the passage/audio content instead of duplicating status the student can
+          already see (the tab checkmark above, and the module's own nav bar). */}
+      {activeModuleIsIframe ? null : (
       <footer className="ielts-bottom-dock">
         {/* Navigation buttons */}
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
