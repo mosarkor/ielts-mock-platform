@@ -1178,7 +1178,16 @@ app.post('/api/admin/upload-test', async (req, res) => {
 
         function __installBridge() {
           __reclaimHeaderSpace();
-          __shrinkPartBanner();
+          // __shrinkPartBanner() disabled: real students reported broken passage
+          // switching (stuck on the same question across all passages) and answers
+          // that couldn't be selected, both on Reading-27-family tests shortly after
+          // this shipped. It repositions the passage/questions container every time
+          // the banner's own content changes -- which is exactly what happens when a
+          // student switches Part 1/2/3 -- so it's the leading suspect for interfering
+          // with the template's own passage-switch rendering. It only ever saved a
+          // modest amount of vertical space; not worth the risk until it's been
+          // isolated and fixed with a live repro, not just re-shipped on a guess.
+          // __shrinkPartBanner();
           var btn = __findCheckButton();
           if (!btn) return;
           // Strip any addEventListener-bound handlers by cloning, then replace the
