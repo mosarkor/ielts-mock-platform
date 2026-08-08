@@ -7,7 +7,7 @@
   },
   "scripts": {
     "install:all": "npm ci && npm ci --prefix server && npm ci --prefix client",
-    "build": "npm ci --prefix server && npm ci --prefix client && npm run build --prefix client",
+    "build": "node server/check-react-styles.js && npm ci --prefix server && npm ci --prefix client && npm run build --prefix client",
     "start": "node server/server.js",
     "dev": "concurrently \"npm run start --prefix server\" \"npm run dev --prefix client\"",
     "check:mocks": "node scripts/check-full-mocks.mjs",
