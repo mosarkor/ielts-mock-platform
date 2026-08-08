@@ -1438,7 +1438,31 @@ app.post('/api/admin/upload-test', async (req, res) => {
           return null;
         }
 
+        // Real IELTS Listening audio plays exactly once -- no pausing, rewinding,
+        // or replaying once started. Some template generations enforce this
+        // themselves; this one (and evidently others) simply don't, leaving a
+        // working pause button with nothing stopping a student from pausing to
+        // think, take notes at leisure, or look something up. Overriding
+        // .pause() as a no-op stops the template's own play/pause button (which
+        // calls it directly); the 'pause' listener catches anything else that
+        // manages to pause the element some other way (OS media keys, browser
+        // media session controls) and resumes immediately, unless it actually
+        // finished.
+        function __enforceNoAudioPause() {
+          try {
+            if (__bridgeModuleType !== 'listening') return;
+            var audioEl = document.getElementById('mainAudio') || document.querySelector('audio');
+            if (!audioEl || audioEl.dataset.noPauseEnforced === '1') return;
+            audioEl.dataset.noPauseEnforced = '1';
+            audioEl.pause = function () {};
+            audioEl.addEventListener('pause', function () {
+              if (!audioEl.ended) { try { audioEl.play().catch(function () {}); } catch (e) {} }
+            });
+          } catch (e) {}
+        }
+
         function __installBridge() {
+          __enforceNoAudioPause();
           __reclaimHeaderSpace();
           // __shrinkPartBanner() disabled: real students reported broken passage
           // switching (stuck on the same question across all passages) and answers
