@@ -2,6 +2,7 @@
 const fmtScore = (v) => (v === null || v === undefined || isNaN(Number(v))) ? '—' : Number(v).toFixed(1);
 import React, { useState, useEffect, useCallback } from 'react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
+import { generateDetailedReviewPdf } from '../utils/pdfReport';
 
 export default function StudentDashboard({ user, onLogout, onStartTest, onStartSpeaking, theme, toggleTheme }) {
   const [showPwdModal, setShowPwdModal] = useState(false);
@@ -86,6 +87,27 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
       console.error('Failed to load answer key:', err);
     } finally {
       setLoadingKey(false);
+    }
+  };
+
+  const handleDownloadDetailedReviewPdf = () => {
+    if (!selectedReview) return;
+    try {
+      generateDetailedReviewPdf({
+        studentName: user.name,
+        studentId: user.id,
+        testTitle: selectedReview.title,
+        submittedAt: selectedReview.submitted_at,
+        listeningScore: selectedReview.listening_score,
+        readingScore: selectedReview.reading_score,
+        listeningDetail: selectedReview.listening_detail,
+        readingDetail: selectedReview.reading_detail,
+        listeningAnswers: selectedReview.listening_answers,
+        readingAnswers: selectedReview.reading_answers,
+        answerKey,
+      });
+    } catch (err) {
+      alert('Could not generate PDF: ' + err.message);
     }
   };
 
@@ -957,24 +979,71 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
               {selectedReview.writing_scores && (
                 <div style={{ ...styles.rubricSection, backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--glass-border)' }}>
                   <h5 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '0.75rem' }}>Writing Evaluation Criteria Breakdown</h5>
-                  <div style={styles.rubricsGrid}>
-                    <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Task Response / Achievement:</span>
-                      <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.ta.toFixed(1)}</strong>
+                  {selectedReview.writing_scores.task1 && selectedReview.writing_scores.task2 ? (
+                    /* Current grading form scores Task 1 and Task 2 separately (33%/67%
+                       IELTS weighting) -- this is the shape every submission graded
+                       through the teacher dashboard now has. The single flat {ta,cc,lr,gra}
+                       shape below is a fallback for older submissions graded before that. */
+                    <>
+                      <div style={{ fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.4rem' }}>Task 1 (33%)</div>
+                      <div style={{ ...styles.rubricsGrid, marginBottom: '0.75rem' }}>
+                        <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Task Achievement:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.task1.ta.toFixed(1)}</strong>
+                        </div>
+                        <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Coherence & Cohesion:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.task1.cc.toFixed(1)}</strong>
+                        </div>
+                        <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Lexical Resource:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.task1.lr.toFixed(1)}</strong>
+                        </div>
+                        <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Grammatical Range & Accuracy:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.task1.gra.toFixed(1)}</strong>
+                        </div>
+                      </div>
+                      <div style={{ fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.4rem' }}>Task 2 (67%)</div>
+                      <div style={styles.rubricsGrid}>
+                        <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Task Response:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.task2.tr.toFixed(1)}</strong>
+                        </div>
+                        <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Coherence & Cohesion:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.task2.cc.toFixed(1)}</strong>
+                        </div>
+                        <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Lexical Resource:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.task2.lr.toFixed(1)}</strong>
+                        </div>
+                        <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>Grammatical Range & Accuracy:</span>
+                          <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.task2.gra.toFixed(1)}</strong>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={styles.rubricsGrid}>
+                      <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Task Response / Achievement:</span>
+                        <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.ta.toFixed(1)}</strong>
+                      </div>
+                      <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Coherence & Cohesion:</span>
+                        <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.cc.toFixed(1)}</strong>
+                      </div>
+                      <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Lexical Resource (Vocabulary):</span>
+                        <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.lr.toFixed(1)}</strong>
+                      </div>
+                      <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Grammatical Range & Accuracy:</span>
+                        <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.gra.toFixed(1)}</strong>
+                      </div>
                     </div>
-                    <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Coherence & Cohesion:</span>
-                      <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.cc.toFixed(1)}</strong>
-                    </div>
-                    <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Lexical Resource (Vocabulary):</span>
-                      <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.lr.toFixed(1)}</strong>
-                    </div>
-                    <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Grammatical Range & Accuracy:</span>
-                      <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.gra.toFixed(1)}</strong>
-                    </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -1021,7 +1090,8 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
               </div>
             </div>
 
-            <div style={{ ...styles.modalFooter, borderTop: '1px solid var(--glass-border)' }}>
+            <div style={{ ...styles.modalFooter, borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '0.75rem' }}>
+              <button onClick={handleDownloadDetailedReviewPdf} className="btn btn-secondary">📄 Download PDF Report</button>
               <button onClick={() => setSelectedReview(null)} className="btn btn-primary">Close Report</button>
             </div>
           </div>

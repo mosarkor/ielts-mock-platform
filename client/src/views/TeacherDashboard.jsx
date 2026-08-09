@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
+import { generateDetailedReviewPdf } from '../utils/pdfReport';
 
 const fmtScore = (v) => (v === null || v === undefined || isNaN(Number(v))) ? '—' : Number(v).toFixed(1);
 
@@ -546,6 +547,27 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
     
     navigator.clipboard.writeText(report);
     alert('Detailed performance report successfully copied to clipboard!');
+  };
+
+  const handleDownloadDetailedReviewPdf = () => {
+    if (!selectedSub) return;
+    try {
+      generateDetailedReviewPdf({
+        studentName: selectedSub.student_name,
+        studentId: selectedSub.student_id,
+        testTitle: selectedSub.test_title,
+        submittedAt: selectedSub.submitted_at,
+        listeningScore: selectedSub.listening_score,
+        readingScore: selectedSub.reading_score,
+        listeningDetail: selectedSub.listening_detail,
+        readingDetail: selectedSub.reading_detail,
+        listeningAnswers: selectedSub.listening_answers,
+        readingAnswers: selectedSub.reading_answers,
+        answerKey,
+      });
+    } catch (err) {
+      alert('Could not generate PDF: ' + err.message);
+    }
   };
 
   const handleCopyScoresOnly = () => {
@@ -1152,7 +1174,15 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                       {renderReviewColumn(selectedSub.reading_detail, 'r', selectedSub.reading_answers)}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginTop: '1.25rem' }}>
-                      <button 
+                      <button
+                        onClick={handleDownloadDetailedReviewPdf}
+                        className="btn btn-primary"
+                        style={{ width: '100%', justifyContent: 'center' }}
+                        title="Downloads the same per-question review shown here as a PDF. The student can download this same report themselves from their own dashboard once results are released."
+                      >
+                        📄 Download Detailed PDF Report
+                      </button>
+                      <button
                         onClick={handleCopyScoresOnly}
                         className="btn btn-secondary"
                         style={{ width: '100%', justifyContent: 'center', backgroundColor: 'var(--text-secondary)', borderColor: 'var(--text-secondary)' }}
