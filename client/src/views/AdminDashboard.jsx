@@ -1054,7 +1054,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                         onClick={handleSyncMock10} 
                         className="btn btn-success"
                         style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                        title="Force sync IELTS Hard Prediction Mock Test 10 into test library"
+                        title="Re-syncs Writing Task 1/2 prompts and the Task 1 chart for Prediction Mock Test 10 from the bundled snapshot. Listening/Reading are never touched by this."
                       >
                         ⚡ Sync Prediction Test 10
                       </button>

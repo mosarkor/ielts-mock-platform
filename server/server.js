@@ -606,7 +606,16 @@ app.get('/api/admin/tests', async (req, res) => {
   }
 });
 
-// Force sync IELTS Hard Prediction Mock Test 10
+// Force sync IELTS Hard Prediction Mock Test 10 -- but only writing_data when
+// the test already exists. Real incident: this endpoint used to overwrite
+// listening_data/reading_data too, straight from this static JSON snapshot.
+// The test was later rebuilt to point Listening/Reading at proper iframe
+// modules (via /link-modules), but this snapshot file was never updated to
+// match -- so calling this on an already-rebuilt test silently reverted it
+// back to old broken native-format data, reproducing the exact
+// "Cannot read properties of undefined (reading 'map')" crash that rebuild
+// was meant to fix. listening_data/reading_data are only ever used here for
+// the one-time bootstrap insert, when there's nothing else to regress.
 app.all('/api/admin/sync-mock10', async (req, res) => {
   try {
     const jsonPath = path.join(__dirname, 'data', 'mocks', 'mock10.json');
@@ -618,10 +627,10 @@ app.all('/api/admin/sync-mock10', async (req, res) => {
     const existing = await db.get("SELECT id FROM tests WHERE title LIKE '%Hard Prediction Mock Test 10%' LIMIT 1");
     if (existing) {
       await db.run(
-        `UPDATE tests SET listening_data = ?, reading_data = ?, writing_data = ? WHERE id = ?`,
-        [JSON.stringify(mockData.listening_data), JSON.stringify(mockData.reading_data), JSON.stringify(mockData.writing_data), existing.id]
+        `UPDATE tests SET writing_data = ? WHERE id = ?`,
+        [JSON.stringify(mockData.writing_data), existing.id]
       );
-      return res.json({ success: true, message: `Updated IELTS Hard Prediction Mock Test 10 (ID: ${existing.id}).` });
+      return res.json({ success: true, message: `Updated writing_data for IELTS Hard Prediction Mock Test 10 (ID: ${existing.id}). Listening/Reading were left untouched.` });
     }
 
     const result = await db.run(
@@ -1596,6 +1605,32 @@ app.post('/api/admin/tests/:id/link-modules', async (req, res) => {
       if (!src || !src.reading_data) return res.status(404).json({ error: `Source reading test ${readingFromTestId} not found` });
       await db.run('UPDATE tests SET reading_data = ? WHERE id = ?', [src.reading_data, targetId]);
     }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Updates only a test's writing_data (Task 1/2 prompts and Task 1 chart
+// image), leaving listening_data/reading_data untouched. Exists for the same
+// reason link-modules does above: a real incident where fixing Task 1's chart
+// via /api/admin/sync-mock10 (which overwrites all three module fields from a
+// stale JSON snapshot) silently reverted this test's listening/reading back
+// to old broken native-format data, reproducing the exact crash it had
+// before being rebuilt into iframe modules -- because that snapshot file was
+// never updated after the rebuild. Fixing one module's content should never
+// risk regressing another's.
+app.post('/api/admin/tests/:id/writing-data', async (req, res) => {
+  const targetId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(targetId)) return res.status(400).json({ error: 'Invalid test id' });
+  const { writingData } = req.body;
+  if (!writingData || typeof writingData !== 'object') {
+    return res.status(400).json({ error: 'writingData object is required' });
+  }
+  try {
+    const target = await db.get('SELECT id FROM tests WHERE id = ?', [targetId]);
+    if (!target) return res.status(404).json({ error: `Test ${targetId} not found` });
+    await db.run('UPDATE tests SET writing_data = ? WHERE id = ?', [JSON.stringify(writingData), targetId]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
