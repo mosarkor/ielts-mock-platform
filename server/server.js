@@ -1637,6 +1637,70 @@ app.post('/api/admin/tests/:id/writing-data', async (req, res) => {
   }
 });
 
+// One-time data-repair endpoint (safe to call more than once -- it only ever
+// acts on rows matching the exact bug signature below, so a second run is a
+// no-op). Fixes a real, now-closed bug: before /api/student/submit/:testId
+// correctly returned null for a module a test has no component for,
+// standalone Listening-only (or Reading-only) test submissions had the OTHER
+// score computed against an empty/undefined question set and stored as 0 --
+// not null -- for that module. That's silently corrupt data, not a real
+// score: getIeltsBand() can never naturally produce exactly 0 for a genuine
+// attempt (it returns null for zero questions, or at minimum 3.0 for a very
+// low but real one), so a stored 0 only ever means "this module never
+// existed for this test." That in turn dragged the affected skill's average
+// on the student's own dashboard toward 0 any time it was mixed with a
+// genuinely-graded submission -- confirmed live across dozens of real
+// students on production. Precisely nulls out listening_score/reading_score
+// only where the submission's own test genuinely has no such module, rather
+// than blanket-nulling every stored 0 (which the null-min-3.0 property makes
+// safe to do broadly, but checking against the actual test definition is the
+// more defensible fix and costs nothing extra here).
+app.post('/api/admin/fix-phantom-module-scores', async (req, res) => {
+  const dryRun = req.query.dryRun === 'true';
+  try {
+    const submissions = await db.all(`
+      SELECT s.id, s.test_id, s.listening_score, s.reading_score, t.listening_data, t.reading_data
+      FROM submissions s
+      JOIN tests t ON s.test_id = t.id
+      WHERE s.listening_score IS NOT NULL OR s.reading_score IS NOT NULL
+    `);
+
+    const hasListeningModule = (listeningData) => {
+      const d = parseJson(listeningData, {});
+      return d.isIframe === true || (Array.isArray(d.sections) && d.sections.length > 0);
+    };
+    const hasReadingModule = (readingData) => {
+      const d = parseJson(readingData, {});
+      return d.isIframe === true || (Array.isArray(d.passages) && d.passages.length > 0);
+    };
+
+    const toFix = [];
+    for (const sub of submissions) {
+      const clearListening = sub.listening_score !== null && !hasListeningModule(sub.listening_data);
+      const clearReading = sub.reading_score !== null && !hasReadingModule(sub.reading_data);
+      if (clearListening || clearReading) {
+        toFix.push({ id: sub.id, testId: sub.test_id, clearListening, clearReading, oldListening: sub.listening_score, oldReading: sub.reading_score });
+      }
+    }
+
+    if (!dryRun) {
+      for (const fix of toFix) {
+        if (fix.clearListening && fix.clearReading) {
+          await db.run('UPDATE submissions SET listening_score = NULL, reading_score = NULL WHERE id = ?', [fix.id]);
+        } else if (fix.clearListening) {
+          await db.run('UPDATE submissions SET listening_score = NULL WHERE id = ?', [fix.id]);
+        } else if (fix.clearReading) {
+          await db.run('UPDATE submissions SET reading_score = NULL WHERE id = ?', [fix.id]);
+        }
+      }
+    }
+
+    res.json({ success: true, dryRun, submissionsScanned: submissions.length, submissionsFixed: toFix.length, details: toFix });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Toggle a test's navigation style: sequential-locked (Listening then Reading
 // then Writing, one-way, no going back -- matching the real computer-delivered
 // exam) vs the platform's normal free tab-switching between modules.

@@ -431,18 +431,35 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
   };
 
   const getSkillsBreakdown = () => {
-    const graded = submissions.filter(s => s.listening_score !== null);
-    
-    // Calculate averages
-    const totalTests = graded.length;
-    const avgL = totalTests > 0 ? (graded.reduce((acc, s) => acc + s.listening_score, 0) / totalTests) : 0;
-    const avgR = totalTests > 0 ? (graded.reduce((acc, s) => acc + s.reading_score, 0) / totalTests) : 0;
-    const gradedWriting = graded.filter(s => s.writing_score !== null);
-    const avgW = gradedWriting.length > 0 ? (gradedWriting.reduce((acc, s) => acc + s.writing_score, 0) / gradedWriting.length) : 0;
-    
-    // Calculate overall average
-    const avgOverall = totalTests > 0 ? (graded.reduce((acc, s) => {
-      const overallVal = (s.listening_score + s.reading_score + (s.writing_score || 0)) / (s.writing_score !== null ? 3 : 2);
+    // Each skill's average must only be computed from submissions that actually
+    // have a score for THAT skill, filtered independently -- not from whichever
+    // submissions happen to have a listening_score. A standalone Listening-only
+    // practice test has no Reading component at all (reading_score is legitimately
+    // null, not zero), but the old code lumped every submission with a
+    // listening_score into one "graded" set and then averaged reading_score
+    // across that same set -- silently dragging a student's Reading Average
+    // toward 0 any time their only graded work included a Listening-only test.
+    // Confirmed live: this hit the vast majority of students with any submissions
+    // at all, not an edge case.
+    const listeningGraded = submissions.filter(s => s.listening_score !== null);
+    const readingGraded = submissions.filter(s => s.reading_score !== null);
+    const writingGraded = submissions.filter(s => s.writing_score !== null);
+
+    const avgL = listeningGraded.length > 0 ? (listeningGraded.reduce((acc, s) => acc + s.listening_score, 0) / listeningGraded.length) : 0;
+    const avgR = readingGraded.length > 0 ? (readingGraded.reduce((acc, s) => acc + s.reading_score, 0) / readingGraded.length) : 0;
+    const avgW = writingGraded.length > 0 ? (writingGraded.reduce((acc, s) => acc + s.writing_score, 0) / writingGraded.length) : 0;
+
+    // "Overall Average" and the motivational message only make sense across
+    // genuine full 4-skill submissions (an IELTS Overall Band isn't a real
+    // concept for a standalone Listening-only or Reading-only practice test) --
+    // same criterion the Progress Tracker card already uses for "full mock".
+    const fullMockSubmissions = submissions.filter(s => s.writing_score !== null);
+    const totalTests = fullMockSubmissions.length;
+
+    // Calculate overall average (fullMockSubmissions all have listening_score,
+    // reading_score, and writing_score present -- they're genuine 4-skill exams)
+    const avgOverall = totalTests > 0 ? (fullMockSubmissions.reduce((acc, s) => {
+      const overallVal = (s.listening_score + s.reading_score + s.writing_score) / 3;
       const decimal = overallVal - Math.floor(overallVal);
       let roundedOverall = Math.floor(overallVal);
       if (decimal >= 0.25 && decimal < 0.75) roundedOverall += 0.5;
