@@ -88,10 +88,6 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
       setTests(testsData);
       setAssignments(asgData);
 
-      if (testsData.length > 0) {
-        setSelectedTestIds([testsData[0].id]);
-      }
-
       // Load speaking data
       const [spkPromptsRes, settingsRes] = await Promise.all([
         fetch('/api/admin/speaking/prompts'),
