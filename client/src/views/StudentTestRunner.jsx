@@ -930,9 +930,9 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
                     ? (test.writing_data?.task1?.prompt || 'No Task 1 prompt is available for this test.')
                     : (test.writing_data?.task2?.prompt || 'No Task 2 prompt is available for this test.')}
                 </p>
-                {activeWritingTask === 'task1' && test.writing_data?.task1?.imageUrl && (
+                {activeWritingTask === 'task1' && (test.writing_data?.task1?.imageUrl || test.writing_data?.task1?.image) && (
                   <img
-                    src={test.writing_data.task1.imageUrl}
+                    src={test.writing_data.task1.imageUrl || test.writing_data.task1.image}
                     alt="Task 1 chart"
                     style={{ maxWidth: '100%', marginTop: '1rem', border: '1px solid #d1d5db', borderRadius: '4px' }}
                   />
