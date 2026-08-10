@@ -705,6 +705,37 @@ app.post('/api/admin/upload-test', async (req, res) => {
     // 2. Process and clean the HTML content
     let content = htmlContent;
 
+    // Re-uploading an already-processed file has to be safe: the served
+    // /tests/mockN.html is sometimes the only surviving copy of a test, so
+    // fixing a bug in the bridge below means feeding that served file back
+    // through here. Without this, the old bridge stays and a second one is
+    // stacked on top -- two submit handlers, two postMessages, and scoring
+    // that silently depends on which one wins. Drop any bridge a previous
+    // upload injected so this endpoint is idempotent and always yields the
+    // CURRENT bridge. Done by scanning whole <script> blocks rather than with
+    // a regex: a lazy pattern spanning from an earlier <script> to our marker
+    // would swallow the template's own script along with it.
+    const stripInjectedBridge = (html) => {
+      const marker = /__recordLiveAnswer|__installHarvestBridge|__installDayFamilyBridge/;
+      let out = '';
+      let rest = html;
+      for (;;) {
+        const start = rest.indexOf('<script>');
+        if (start === -1) { out += rest; break; }
+        const end = rest.indexOf('</script>', start);
+        if (end === -1) { out += rest; break; }
+        const blockEnd = end + '</script>'.length;
+        if (marker.test(rest.slice(start, blockEnd))) {
+          out += rest.slice(0, start);
+        } else {
+          out += rest.slice(0, blockEnd);
+        }
+        rest = rest.slice(blockEnd);
+      }
+      return out;
+    };
+    content = stripInjectedBridge(content);
+
     // Listening tests commonly embed their whole audio track inline as a
     // base64 data: URI -- for a real track that alone can be 15+ MB, meaning
     // the entire page (audio included) has to finish downloading before
@@ -1114,8 +1145,15 @@ app.post('/api/admin/upload-test', async (req, res) => {
         // Computed once per group and cached, since both answer harvesting and
         // correctness checking need the same result for the same question.
         var __groupCreditCache = {};
-        function __checkboxGroupCredit(n) {
-          if (Object.prototype.hasOwnProperty.call(__groupCreditCache, n)) return __groupCreditCache[n];
+        function __checkboxGroupCredit(n, fallbackAnswer) {
+          // The cached result is reused except when it was computed from an empty
+          // live DOM and a harvested value is now available -- the student may have
+          // navigated away from this part and had its boxes rebuilt out from under
+          // us, which is exactly the data-loss case __liveAnswers exists to cover.
+          if (Object.prototype.hasOwnProperty.call(__groupCreditCache, n)
+            && !(fallbackAnswer && __groupCreditCache[n] && !__groupCreditCache[n].userAnswer)) {
+            return __groupCreditCache[n];
+          }
           var result = null;
           try {
             var groupNames = Array.from(document.querySelectorAll('input[type="checkbox"][name^="q"][name*="_"]'))
@@ -1126,12 +1164,29 @@ app.post('/api/admin/upload-test', async (req, res) => {
               var pos = parts.indexOf(n);
               if (pos === -1) continue;
               var checkedVals = Array.from(document.querySelectorAll('input[name="' + groupName + '"]:checked')).map(function (c) { return c.value; });
+              if (!checkedVals.length && fallbackAnswer) {
+                checkedVals = String(fallbackAnswer).split(',')
+                  .map(function (s) { return s.trim(); })
+                  .filter(Boolean);
+              }
               var __ca = __getCorrectAnswers();
               // correctAnswers is keyed by question numbers, which may or may not
               // include the "q" prefix the input's own name attribute carries --
               // try both rather than assuming one convention.
               var __caGroup = (typeof __ca === 'object' && __ca) ? (__ca[groupName] || __ca[groupName.slice(1)]) : undefined;
               var correctSet = Array.isArray(__caGroup) ? __caGroup : [];
+              // Other generations in this family key the SAME shared checkbox group
+              // per individual question instead ("'21':'C','22':'D'" rather than
+              // "'21_22':['C','D']"). Both halves of the pair then harvest the same
+              // combined "C, D" string, which can never equal a single letter, so
+              // without this a student who ticked exactly the right two boxes loses
+              // the mark on BOTH questions. Rebuild the set from the group's own
+              // question numbers whenever no group-keyed entry exists.
+              if (!correctSet.length && typeof __ca === 'object' && __ca) {
+                correctSet = parts
+                  .map(function (p) { return __ca[String(p)]; })
+                  .filter(function (v) { return typeof v === 'string' && v; });
+              }
               var matchCount = checkedVals.filter(function (v) { return correctSet.indexOf(v) !== -1; }).length;
               result = {
                 userAnswer: checkedVals.join(', '),
@@ -1273,20 +1328,25 @@ app.post('/api/admin/upload-test', async (req, res) => {
             var correctAnswerForN = undefined;
             var isCorrectForN = false;
             try {
-              if (typeof __correctAnswers === 'object' && __correctAnswers && __correctAnswers[n] !== undefined) {
+              // A shared "choose two letters" checkbox group must be scored as a SET
+              // before any single-answer comparison is attempted. Both halves of the
+              // pair harvest the same combined "C, D" value, so exact-matching that
+              // against an individually-keyed answer ('21':'C') marks a fully correct
+              // pair wrong on both questions -- real students lost real marks to this.
+              // Group scoring therefore runs first, not merely as an "else" for the
+              // templates that happen to key the pair as '21_22'.
+              var groupResult = __checkboxGroupCredit(n, userAns);
+              if (groupResult) {
+                correctAnswerForN = groupResult.correctAnswer;
+                isCorrectForN = groupResult.isCorrect;
+                if (isCorrectForN) correctCount++;
+              } else if (typeof __correctAnswers === 'object' && __correctAnswers && __correctAnswers[n] !== undefined) {
                 var correct = __correctAnswers[n];
                 correctAnswerForN = Array.isArray(correct) ? correct[0] : correct;
                 var isMatch = Array.isArray(correct)
                   ? correct.some(function(c) { return __normalize(c) === __normalize(userAns); })
                   : __normalize(correct) === __normalize(userAns);
                 if (isMatch) { correctCount++; isCorrectForN = true; }
-              } else {
-                var groupResult = __checkboxGroupCredit(n);
-                if (groupResult) {
-                  correctAnswerForN = groupResult.correctAnswer;
-                  isCorrectForN = groupResult.isCorrect;
-                  if (isCorrectForN) correctCount++;
-                }
               }
             } catch (e) {}
             var explanationHtml = undefined;
