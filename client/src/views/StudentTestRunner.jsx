@@ -70,6 +70,12 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   const hasTask2 = !!test?.writing_data?.task2?.prompt;
   const hasWritingContent = hasTask1 || hasTask2;
 
+  // Real IELTS allots 20 minutes to Task 1 and 40 to Task 2. A test that sets
+  // only one of them gets only that task's time, rather than the full hour --
+  // otherwise a Task-2-only paper hands the candidate 60 minutes for a 40-minute
+  // essay and stops being useful timed practice.
+  const writingSeconds = (hasTask1 ? 1200 : 0) + (hasTask2 ? 2400 : 0) || 3600;
+
   // Legacy standalone full-mock uploads (pre-dating the harvest bridge) are a single
   // iframe that submits itself and owns the whole screen, with no platform chrome.
   const isLegacyFullScreen = listeningIsIframe
@@ -349,8 +355,8 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
   // Reset the per-module clocks whenever a (new) hybrid test loads.
   useEffect(() => {
-    if (isHybridWithIframeModules) setHybridTimers({ reading: 3600, writing: 3600 });
-  }, [test, isHybridWithIframeModules]);
+    if (isHybridWithIframeModules) setHybridTimers({ reading: 3600, writing: writingSeconds });
+  }, [test, isHybridWithIframeModules, writingSeconds]);
 
   // Mark whichever module is active as "visited" so its iframe mounts (see the
   // mount conditions below) -- lazily, the first time the student actually gets
