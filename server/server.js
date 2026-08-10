@@ -1155,41 +1155,82 @@ app.post('/api/admin/upload-test', async (req, res) => {
         // the template's exact state classes (answered/active/correct/incorrect),
         // and appendChild reorders everything into 1..N.
         var __navFilling = false;
+        // Three reading template generations exist, each with its own container
+        // id, number attribute and click entry point ('sub-questions'/data-qnum/
+        // goToQuestion, 'qNavWrap'/data-q/goToQuestion, 'questionRow'/data-q/
+        // scrollToQuestion). They agree on the .subQuestion class, so the nav is
+        // located by that rather than by hardcoding one generation's markup.
+        function __findQuestionNav() {
+          var first = document.querySelector('.subQuestion');
+          if (first && first.parentElement) return first.parentElement;
+          var ids = ['sub-questions', 'qNavWrap', 'questionRow'];
+          for (var i = 0; i < ids.length; i++) {
+            var el = document.getElementById(ids[i]);
+            if (el) return el;
+          }
+          return null;
+        }
+        function __navNumberOf(btn) {
+          var v = btn.getAttribute('data-qnum');
+          if (v === null) v = btn.getAttribute('data-q');
+          return v === null ? null : String(v);
+        }
+        function __goToQuestionAnyTemplate(q) {
+          // Every generation's own handler already switches part when the target
+          // is in another passage, so reuse it rather than reimplementing it.
+          if (typeof window.goToQuestion === 'function') return window.goToQuestion(q);
+          if (typeof window.scrollToQuestion === 'function') return window.scrollToQuestion(q);
+        }
         function __fillFullQuestionNav() {
-          var container = document.getElementById('sub-questions');
+          var container = __findQuestionNav();
           if (!container) return;
+          var drawn = container.querySelectorAll('.subQuestion');
+          if (!drawn.length) return;
+
+          var existing = {};
+          for (var d = 0; d < drawn.length; d++) {
+            var key = __navNumberOf(drawn[d]);
+            if (key !== null) existing[key] = drawn[d];
+          }
+
           var minQ = Infinity;
           var maxQ = 0;
           try {
-            var tabs = document.querySelectorAll('.part-tab small');
-            for (var t = 0; t < tabs.length; t++) {
-              var m = String(tabs[t].textContent || '').match(/(\\d+)\\D+(\\d+)/);
-              if (m) { minQ = Math.min(minQ, Number(m[1])); maxQ = Math.max(maxQ, Number(m[2])); }
+            var ranges = window.partRanges || window.parts || null;
+            if (ranges) {
+              for (var k in ranges) {
+                if (!Object.prototype.hasOwnProperty.call(ranges, k)) continue;
+                var r = ranges[k];
+                var s = Array.isArray(r) ? r[0] : r.start;
+                var e2 = Array.isArray(r) ? r[1] : r.end;
+                if (s) minQ = Math.min(minQ, Number(s));
+                if (e2) maxQ = Math.max(maxQ, Number(e2));
+              }
             }
           } catch (e) {}
           if (!isFinite(minQ) || !maxQ) { minQ = 1; maxQ = 40; }
 
-          var existing = {};
-          var drawn = container.querySelectorAll('.subQuestion');
-          if (!drawn.length) return;
-          for (var d = 0; d < drawn.length; d++) {
-            existing[String(drawn[d].getAttribute('data-qnum'))] = drawn[d];
-          }
+          // Clone one of the template's own buttons so the added ones are
+          // identical in markup, classes and styling to the ones it draws --
+          // rather than guessing at each generation's inner structure.
+          var model = drawn[0];
           var frag = document.createDocumentFragment();
           for (var n = minQ; n <= maxQ; n++) {
             var btn = existing[String(n)];
             if (!btn) {
-              btn = document.createElement('button');
+              btn = model.cloneNode(true);
               btn.className = 'subQuestion';
-              btn.setAttribute('data-qnum', n);
-              btn.innerHTML = '<span aria-hidden="true">' + n + '</span>';
+              btn.removeAttribute('disabled');
+              if (model.hasAttribute('data-qnum')) btn.setAttribute('data-qnum', n);
+              if (model.hasAttribute('data-q')) btn.setAttribute('data-q', n);
+              if (!model.hasAttribute('data-qnum') && !model.hasAttribute('data-q')) btn.setAttribute('data-q', n);
+              var span = btn.querySelector('span');
+              if (span) span.textContent = String(n); else btn.textContent = String(n);
               btn.addEventListener('click', (function (q) {
-                return function () {
-                  if (typeof window.goToQuestion === 'function') window.goToQuestion(q);
-                };
+                return function () { __goToQuestionAnyTemplate(q); };
               })(n));
-              // Same answered styling the template gives its own buttons, using
-              // the harvester so every question type is judged consistently.
+              // Answered styling judged by the harvester, so every question type
+              // is treated the same way the submission treats it.
               try { if (__harvestAnswer(n)) btn.classList.add('answered'); } catch (e) {}
             }
             frag.appendChild(btn);
@@ -1201,8 +1242,15 @@ app.post('/api/admin/upload-test', async (req, res) => {
         }
 
         function __installFullQuestionNav() {
-          var container = document.getElementById('sub-questions');
-          if (!container) return;
+          var container = __findQuestionNav();
+          if (!container) {
+            // The nav may not exist yet on first paint; watch for it once.
+            var bodyObserver = new MutationObserver(function () {
+              if (__findQuestionNav()) { bodyObserver.disconnect(); __installFullQuestionNav(); }
+            });
+            bodyObserver.observe(document.body, { childList: true, subtree: true });
+            return;
+          }
           new MutationObserver(function () {
             if (__navFilling) return;
             __fillFullQuestionNav();
