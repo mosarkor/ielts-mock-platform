@@ -1175,6 +1175,28 @@ app.post('/api/admin/upload-test', async (req, res) => {
           if (v === null) v = btn.getAttribute('data-q');
           return v === null ? null : String(v);
         }
+        // Purely read-only: no template calls, no caching, no side effects --
+        // this only decides whether a navigator button looks "answered".
+        function __navHasAnswer(n) {
+          try {
+            if (Object.prototype.hasOwnProperty.call(__liveAnswers, n) && __liveAnswers[n]) return true;
+            var el = document.getElementById('q' + n);
+            if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT') && String(el.value || '').trim()) return true;
+            if (document.querySelector('input[name="q' + n + '"]:checked')) return true;
+            var slot = document.querySelector('.dnd-slot[data-q="' + n + '"]');
+            if (slot && slot.dataset && slot.dataset.value) return true;
+            // Shared "choose two letters" groups (q20_21 and friends): any tick
+            // in a group this question belongs to counts as answered.
+            var groups = document.querySelectorAll('input[type="checkbox"][name^="q"][name*="_"]:checked');
+            for (var g = 0; g < groups.length; g++) {
+              var parts = String(groups[g].name).slice(1).split('_');
+              for (var p = 0; p < parts.length; p++) {
+                if (Number(parts[p]) === n) return true;
+              }
+            }
+          } catch (e) {}
+          return false;
+        }
         function __goToQuestionAnyTemplate(q) {
           // Every generation's own handler already switches part when the target
           // is in another passage, so reuse it rather than reimplementing it.
@@ -1229,9 +1251,13 @@ app.post('/api/admin/upload-test', async (req, res) => {
               btn.addEventListener('click', (function (q) {
                 return function () { __goToQuestionAnyTemplate(q); };
               })(n));
-              // Answered styling judged by the harvester, so every question type
-              // is treated the same way the submission treats it.
-              try { if (__harvestAnswer(n)) btn.classList.add('answered'); } catch (e) {}
+              // Answered styling is probed WITHOUT going through __harvestAnswer:
+              // that path falls through to the checkbox-group scorer, whose
+              // result is cached, so merely drawing the navigator would freeze a
+              // pair's verdict as "nothing ticked" for the rest of the session.
+              // A read-only DOM check keeps this display concern from touching
+              // scoring state at all.
+              try { if (__navHasAnswer(n)) btn.classList.add('answered'); } catch (e) {}
             }
             frag.appendChild(btn);
           }
@@ -1441,6 +1467,13 @@ app.post('/api/admin/upload-test', async (req, res) => {
           // ever runs once the student clicks the button, long after the
           // template's own DOMContentLoaded handler has had every chance to run.
           var __correctAnswers = __getCorrectAnswers();
+          // Scoring must never inherit a checkbox-group verdict computed earlier
+          // in the page's life. Anything that probes an answer before submission
+          // (the question navigator's "answered" highlight, for one) would
+          // otherwise cache an empty result from before the student ticked
+          // anything, and that stale verdict would win here -- silently zeroing a
+          // correctly answered pair. Recompute from the live DOM at submit time.
+          __groupCreditCache = {};
           for (var n = 1; n <= 40; n++) {
             var userAns = __harvestAnswer(n);
             answers[n] = userAns;
