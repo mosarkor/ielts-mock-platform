@@ -1818,6 +1818,130 @@ app.post('/api/admin/tests/:id/writing-data', async (req, res) => {
 // than blanket-nulling every stored 0 (which the null-min-3.0 property makes
 // safe to do broadly, but checking against the actual test definition is the
 // more defensible fix and costs nothing extra here).
+// Re-grade submissions that lost marks to the shared-checkbox-group bug, where
+// a fully correct "choose two letters" pair scored zero because both halves
+// harvested the same combined "C, D" string and were exact-matched against a
+// single letter. The stored detail already contains everything needed to redo
+// this: each question's picked set, its key, and the old verdict -- so marks are
+// recomputed from what the student actually submitted, never invented.
+// Supports ?dryRun=true, and is idempotent (re-running changes nothing further).
+app.post('/api/admin/regrade-checkbox-pairs', async (req, res) => {
+  const dryRun = req.query.dryRun === 'true';
+  // Same table the injected bridge uses (and identical to the templates' own
+  // calculateBandScore), so bands only move because marks moved.
+  const bandFor = (correct) => {
+    if (correct >= 39) return 9.0;
+    if (correct >= 37) return 8.5;
+    if (correct >= 35) return 8.0;
+    if (correct >= 32) return 7.5;
+    if (correct >= 30) return 7.0;
+    if (correct >= 26) return 6.5;
+    if (correct >= 23) return 6.0;
+    if (correct >= 18) return 5.5;
+    if (correct >= 16) return 5.0;
+    if (correct >= 13) return 4.5;
+    return 4.0;
+  };
+
+  const regradeDetail = (detail) => {
+    const nums = Object.keys(detail).map(Number).filter(Number.isInteger).sort((a, b) => a - b);
+    const next = JSON.parse(JSON.stringify(detail));
+    let changed = 0;
+    let i = 0;
+    while (i < nums.length) {
+      const n = nums[i];
+      const picked = String(detail[n]?.userAnswer ?? '');
+      // A shared checkbox group shows up as consecutive questions carrying the
+      // identical multi-value answer string -- that IS the group membership.
+      if (!picked.includes(',')) { i += 1; continue; }
+      const members = [n];
+      let j = i + 1;
+      while (j < nums.length && String(detail[nums[j]]?.userAnswer ?? '') === picked) {
+        members.push(nums[j]);
+        j += 1;
+      }
+      if (members.length > 1) {
+        const correctSet = members.map(m => String(detail[m]?.correctAnswer ?? '').trim().toUpperCase());
+        const chosen = picked.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+        const matchCount = chosen.filter(c => correctSet.includes(c)).length;
+        members.forEach((m, pos) => {
+          const shouldBe = matchCount >= pos + 1;
+          if (!!next[m].isCorrect !== shouldBe) {
+            next[m].isCorrect = shouldBe;
+            changed += 1;
+          }
+        });
+      }
+      i = j;
+    }
+    return { next, changed };
+  };
+
+  try {
+    const submissions = await db.all(`
+      SELECT s.id, s.student_id, s.test_id, s.listening_score, s.reading_score,
+             s.listening_detail, s.reading_detail, u.name AS student_name, t.title AS test_title
+      FROM submissions s
+      JOIN users u ON s.student_id = u.id
+      JOIN tests t ON s.test_id = t.id
+    `);
+
+    const changes = [];
+    const skipped = [];
+    for (const sub of submissions) {
+      for (const mod of ['listening', 'reading']) {
+        const detail = parseJson(sub[`${mod}_detail`], null);
+        if (!detail || typeof detail !== 'object' || !Object.keys(detail).length) continue;
+        const oldCorrect = Object.values(detail).filter(d => d && d.isCorrect).length;
+        const { next, changed } = regradeDetail(detail);
+        if (!changed) continue;
+        const storedBand = sub[`${mod}_score`];
+        // Only touch a submission whose stored band this table actually
+        // reproduces. Anything else was graded by different rules, and quietly
+        // rewriting it would be a second bug rather than a fix.
+        if (storedBand !== null && Math.abs(bandFor(oldCorrect) - Number(storedBand)) > 0.001) {
+          skipped.push({
+            submissionId: sub.id, student: sub.student_name, module: mod,
+            reason: 'stored band does not match this band table',
+            storedBand, bandFromStoredMarks: bandFor(oldCorrect)
+          });
+          continue;
+        }
+        const newCorrect = Object.values(next).filter(d => d && d.isCorrect).length;
+        changes.push({
+          submissionId: sub.id, studentId: sub.student_id, student: sub.student_name,
+          test: sub.test_title, module: mod,
+          marksRegained: newCorrect - oldCorrect,
+          oldMarks: oldCorrect, newMarks: newCorrect,
+          oldBand: storedBand, newBand: bandFor(newCorrect),
+          _detail: next
+        });
+      }
+    }
+
+    if (!dryRun) {
+      for (const c of changes) {
+        await db.run(
+          `UPDATE submissions SET ${c.module}_detail = ?, ${c.module}_score = ? WHERE id = ?`,
+          [JSON.stringify(c._detail), c.newBand, c.submissionId]
+        );
+      }
+    }
+
+    res.json({
+      success: true,
+      dryRun,
+      submissionsScanned: submissions.length,
+      modulesChanged: changes.length,
+      bandsChanged: changes.filter(c => Number(c.oldBand) !== c.newBand).length,
+      skipped,
+      changes: changes.map(({ _detail, ...rest }) => rest)
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/admin/fix-phantom-module-scores', async (req, res) => {
   const dryRun = req.query.dryRun === 'true';
   try {
