@@ -296,7 +296,9 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
 
     setSelectedSub(cleanSub);
     setViewMode('grading');
-    setActiveTaskTab('task1');
+    // Open on a task this test actually sets, so a Task-2-only submission does
+    // not present an empty Task 1 rubric as the thing to grade.
+    setActiveTaskTab(sub?.test_writing_data?.task1?.prompt || !sub?.test_writing_data?.task2?.prompt ? 'task1' : 'task2');
     if (parsedRubric && typeof parsedRubric === 'object') {
       if (parsedRubric.task1 && parsedRubric.task2) {
         setRubricTask1({
@@ -328,6 +330,17 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
     setReleaseImmediately(sub.is_revealed === 1);
   };
 
+  // Which tasks this submission's test actually sets. A Task-2-only test (e.g.
+  // the "Day N" files) must not demand a Task 1 grade: the rubric defaults to
+  // 6.0 across the board, and at 33% weight that quietly drags the student's
+  // Writing band toward 6 no matter what they actually wrote for Task 2.
+  const subHasTask1 = !!selectedSub?.test_writing_data?.task1?.prompt;
+  const subHasTask2 = !!selectedSub?.test_writing_data?.task2?.prompt;
+  // Fall back to showing both only when the test declares neither, so older
+  // submissions with no stored prompts keep the previous behaviour.
+  const gradeTask1 = subHasTask1 || (!subHasTask1 && !subHasTask2);
+  const gradeTask2 = subHasTask2 || (!subHasTask1 && !subHasTask2);
+
   const roundIeltsBand = (avg) => {
     const decimal = avg - Math.floor(avg);
     if (decimal < 0.25) return Math.floor(avg);
@@ -356,6 +369,10 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   const calculateLiveOverall = () => {
     const t1 = calculateTask1Band();
     const t2 = calculateTask2Band();
+    // Only weight the tasks the test actually sets, otherwise a missing task's
+    // default rubric would count as a real score.
+    if (!gradeTask1) return t2;
+    if (!gradeTask2) return t1;
     return roundIeltsBand((t1 * 1 + t2 * 2) / 3);
   };
 
@@ -369,11 +386,12 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Only store the tasks this test actually sets, so a Task-2-only test
+          // does not save an untouched default Task 1 rubric that the student
+          // would then see presented as a real Task 1 band.
           writingScores: {
-            task1: rubricTask1,
-            task2: rubricTask2,
-            task1Band: calculateTask1Band(),
-            task2Band: calculateTask2Band()
+            ...(gradeTask1 ? { task1: rubricTask1, task1Band: calculateTask1Band() } : {}),
+            ...(gradeTask2 ? { task2: rubricTask2, task2Band: calculateTask2Band() } : {})
           },
           teacherFeedback: feedbackText,
           gradedBy: user.id
@@ -962,17 +980,20 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                     <h4 style={{ color: 'var(--text-primary)' }}>Student Writing Answers</h4>
                   </div>
 
+                  {gradeTask1 && (
                   <div style={styles.essayBox}>
                     <div style={styles.essayBoxHeader}>
                       <h5>Writing Task 1 Prompt:</h5>
                     </div>
                     <p style={styles.writingPrompt}>Refer to Task 1 instructions assigned in this test.</p>
-                    
+
                     <h5 style={{ color: 'var(--text-secondary)', marginTop: '1rem', marginBottom: '0.5rem' }}>Student Essay (Word count: {getWordCount((selectedSub?.writing_answers?.task1 || ""))}):</h5>
                     <div style={styles.rawEssayText}>{(selectedSub?.writing_answers?.task1 || "") || "No answer submitted"}</div>
                   </div>
+                  )}
 
-                  <div style={{ ...styles.essayBox, marginTop: '2rem' }}>
+                  {gradeTask2 && (
+                  <div style={{ ...styles.essayBox, marginTop: gradeTask1 ? '2rem' : 0 }}>
                     <div style={styles.essayBoxHeader}>
                       <h5>Writing Task 2 Prompt:</h5>
                     </div>
@@ -981,17 +1002,21 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                     <h5 style={{ color: 'var(--text-secondary)', marginTop: '1rem', marginBottom: '0.5rem' }}>Student Essay (Word count: {getWordCount((selectedSub?.writing_answers?.task2 || ""))}):</h5>
                     <div style={styles.rawEssayText}>{(selectedSub?.writing_answers?.task2 || "") || "No answer submitted"}</div>
                   </div>
+                  )}
                 </div>
 
                 {/* Right Grading Panel */}
                 <form onSubmit={handleSaveGrade} className="card" style={styles.gradingPanel}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '0.75rem' }}>
                     <h4 style={{ color: 'var(--text-primary)', margin: 0 }}>IELTS Writing Rubric Assessment</h4>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>Task 1 (33%) + Task 2 (67%)</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '600' }}>
+                      {gradeTask1 && gradeTask2 ? 'Task 1 (33%) + Task 2 (67%)' : (gradeTask2 ? 'Task 2 only (100%)' : 'Task 1 only (100%)')}
+                    </span>
                   </div>
 
                                     {/* Task 1 / Task 2 Tab Toggle */}
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.25rem', borderRadius: '6px' }}>
+                    {gradeTask1 && (
                     <button
                       type="button"
                       onClick={() => setActiveTaskTab('task1')}
@@ -1002,8 +1027,10 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                         color: activeTaskTab === 'task1' ? '#ffffff' : '#94a3b8', transition: 'all 0.2s'
                       }}
                     >
-                      📝 Task 1 — Band {calculateTask1Band().toFixed(1)} (33%)
+                      📝 Task 1 — Band {calculateTask1Band().toFixed(1)} {gradeTask2 ? '(33%)' : '(100%)'}
                     </button>
+                    )}
+                    {gradeTask2 && (
                     <button
                       type="button"
                       onClick={() => setActiveTaskTab('task2')}
@@ -1014,8 +1041,9 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                         color: activeTaskTab === 'task2' ? '#ffffff' : '#94a3b8', transition: 'all 0.2s'
                       }}
                     >
-                      ✍️ Task 2 — Band {calculateTask2Band().toFixed(1)} (67%)
+                      ✍️ Task 2 — Band {calculateTask2Band().toFixed(1)} {gradeTask1 ? '(67%)' : '(100%)'}
                     </button>
+                    )}
                   </div>
 
                   {activeTaskTab === 'task1' ? (
@@ -1085,7 +1113,13 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   {/* Live Score Summary Bar */}
                   <div style={{ backgroundColor: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)', borderRadius: '6px', padding: '0.6rem 1rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                     <div style={{ fontSize: '0.83rem', color: 'var(--text-secondary)' }}>
-                      Task 1: <strong>Band {calculateTask1Band().toFixed(1)}</strong> (33%) &nbsp;|&nbsp; Task 2: <strong>Band {calculateTask2Band().toFixed(1)}</strong> (67%)
+                      {gradeTask1 && gradeTask2 ? (
+                        <>Task 1: <strong>Band {calculateTask1Band().toFixed(1)}</strong> (33%) &nbsp;|&nbsp; Task 2: <strong>Band {calculateTask2Band().toFixed(1)}</strong> (67%)</>
+                      ) : gradeTask2 ? (
+                        <>Task 2: <strong>Band {calculateTask2Band().toFixed(1)}</strong> (100% &mdash; this test sets no Task 1)</>
+                      ) : (
+                        <>Task 1: <strong>Band {calculateTask1Band().toFixed(1)}</strong> (100% &mdash; this test sets no Task 2)</>
+                      )}
                     </div>
                     <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#2563eb' }}>
                       Overall Writing: Band {calculateLiveOverall().toFixed(1)}

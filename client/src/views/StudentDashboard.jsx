@@ -996,13 +996,20 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
               {selectedReview.writing_scores && (
                 <div style={{ ...styles.rubricSection, backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--glass-border)' }}>
                   <h5 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '0.75rem' }}>Writing Evaluation Criteria Breakdown</h5>
-                  {selectedReview.writing_scores.task1 && selectedReview.writing_scores.task2 ? (
+                  {selectedReview.writing_scores.task1 || selectedReview.writing_scores.task2 ? (
                     /* Current grading form scores Task 1 and Task 2 separately (33%/67%
                        IELTS weighting) -- this is the shape every submission graded
-                       through the teacher dashboard now has. The single flat {ta,cc,lr,gra}
-                       shape below is a fallback for older submissions graded before that. */
+                       through the teacher dashboard now has. Either task may be absent
+                       on its own: a Task-2-only test (e.g. the "Day N" files) stores no
+                       Task 1 at all, and rendering it would both invent a band the
+                       teacher never gave and crash on the missing values. The single
+                       flat {ta,cc,lr,gra} shape below is a fallback for older
+                       submissions graded before that. */
                     <>
-                      <div style={{ fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.4rem' }}>Task 1 (33%)</div>
+                      {selectedReview.writing_scores.task1 && (<>
+                      <div style={{ fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
+                        Task 1 {selectedReview.writing_scores.task2 ? '(33%)' : '(100%)'}
+                      </div>
                       <div style={{ ...styles.rubricsGrid, marginBottom: '0.75rem' }}>
                         <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
                           <span style={{ color: 'var(--text-secondary)' }}>Task Achievement:</span>
@@ -1021,7 +1028,11 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                           <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.task1.gra.toFixed(1)}</strong>
                         </div>
                       </div>
-                      <div style={{ fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.4rem' }}>Task 2 (67%)</div>
+                      </>)}
+                      {selectedReview.writing_scores.task2 && (<>
+                      <div style={{ fontWeight: '600', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.4rem' }}>
+                        Task 2 {selectedReview.writing_scores.task1 ? '(67%)' : '(100%)'}
+                      </div>
                       <div style={styles.rubricsGrid}>
                         <div style={{ ...styles.rubricRow, borderBottom: '1px solid var(--glass-border)' }}>
                           <span style={{ color: 'var(--text-secondary)' }}>Task Response:</span>
@@ -1040,6 +1051,7 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                           <strong style={{ color: 'var(--text-primary)' }}>{selectedReview.writing_scores.task2.gra.toFixed(1)}</strong>
                         </div>
                       </div>
+                      </>)}
                     </>
                   ) : (
                     <div style={styles.rubricsGrid}>

@@ -66,7 +66,9 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   const readingIsIframe = test?.reading_data?.isIframe === true;
   const hasListeningContent = listeningIsIframe || test?.listening_data?.sections?.length > 0;
   const hasReadingContent = readingIsIframe || test?.reading_data?.passages?.length > 0;
-  const hasWritingContent = !!(test?.writing_data?.task1?.prompt || test?.writing_data?.task2?.prompt);
+  const hasTask1 = !!test?.writing_data?.task1?.prompt;
+  const hasTask2 = !!test?.writing_data?.task2?.prompt;
+  const hasWritingContent = hasTask1 || hasTask2;
 
   // Legacy standalone full-mock uploads (pre-dating the harvest bridge) are a single
   // iframe that submits itself and owns the whole screen, with no platform chrome.
@@ -218,6 +220,16 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         setModuleResults(prev => ({ ...prev, [moduleType]: { answers, detail, correctCount, band } }));
         if (moduleType === 'listening') setListeningAnswers(answers);
         else setReadingAnswers(answers);
+
+        // Some templates ship their own essay box inside the module iframe. That
+        // duplicate is hidden now, but a student who typed into it before would
+        // otherwise lose the essay entirely -- it never reaches the teacher.
+        // Adopt it ONLY when this student's own Task 2 box is still empty, so a
+        // stale iframe value can never overwrite what they actually wrote here.
+        const iframeEssay = typeof event.data.essay === 'string' ? event.data.essay.trim() : '';
+        if (iframeEssay) {
+          setWritingAnswers(prev => (prev.task2 && prev.task2.trim() ? prev : { ...prev, task2: iframeEssay }));
+        }
       }
     };
     window.addEventListener('message', handleIframeMessage);
@@ -387,8 +399,10 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     if (!nextModule) return;
     setActiveModule(nextModule);
     if (nextModule === 'writing') {
-      setActiveQuestionId('task1');
-      setActiveWritingTask('task1');
+      // Open on the task this test actually has -- a Task-2-only test must not
+      // land the student on a blank Task 1.
+      setActiveQuestionId(hasTask1 ? 'task1' : 'task2');
+      setActiveWritingTask(hasTask1 ? 'task1' : 'task2');
     }
   };
 
@@ -505,7 +519,10 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     });
   } else if (activeModule === 'writing') {
     // Writing tasks
-    questionsForActiveModule = [{ id: 'task1', label: 'T1' }, { id: 'task2', label: 'T2' }];
+    questionsForActiveModule = [
+      ...(hasTask1 ? [{ id: 'task1', label: 'T1' }] : []),
+      ...(hasTask2 ? [{ id: 'task2', label: 'T2' }] : [])
+    ];
   }
 
   const activeQuestionIndex = questionsForActiveModule.findIndex(q => q.id === activeQuestionId);
@@ -649,8 +666,8 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
             onClick={() => {
               if (sequentialLock && moduleOrder.indexOf('writing') !== currentStageIndex) return;
               setActiveModule('writing');
-              setActiveQuestionId('task1');
-              setActiveWritingTask('task1');
+              setActiveQuestionId(hasTask1 ? 'task1' : 'task2');
+              setActiveWritingTask(hasTask1 ? 'task1' : 'task2');
             }}
           >
             ✍️ Writing {sequentialLock && moduleOrder.indexOf('writing') > currentStageIndex ? '🔒' : ''}
@@ -892,33 +909,42 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           <div style={{ display: 'flex', width: '100%', overflow: 'hidden' }}>
             {/* Left Prompt Panel */}
             <div className={`ielts-passage-pane font-${fontSize}`} style={{ flex: '0.45' }}>
+              {/* Only offer the tasks this test actually sets. A Task-2-only
+                  test (e.g. the "Day N" files) otherwise opened on an empty
+                  Task 1 reading "No Task 1 prompt is available", which looks
+                  like the test failed to load and hides the real essay behind
+                  a second tab. */}
               <div style={styles.writingSelectorBar}>
-                <button 
-                  onClick={() => {
-                    setActiveWritingTask('task1');
-                    setActiveQuestionId('task1');
-                  }}
-                  style={{
-                    ...styles.writingSelTab,
-                    borderBottomColor: activeWritingTask === 'task1' ? '#2563eb' : 'transparent',
-                    color: activeWritingTask === 'task1' ? '#2563eb' : '#374151'
-                  }}
-                >
-                  Writing Task 1 (Min 150 Words)
-                </button>
-                <button 
-                  onClick={() => {
-                    setActiveWritingTask('task2');
-                    setActiveQuestionId('task2');
-                  }}
-                  style={{
-                    ...styles.writingSelTab,
-                    borderBottomColor: activeWritingTask === 'task2' ? '#2563eb' : 'transparent',
-                    color: activeWritingTask === 'task2' ? '#2563eb' : '#374151'
-                  }}
-                >
-                  Writing Task 2 (Min 250 Words)
-                </button>
+                {hasTask1 && (
+                  <button
+                    onClick={() => {
+                      setActiveWritingTask('task1');
+                      setActiveQuestionId('task1');
+                    }}
+                    style={{
+                      ...styles.writingSelTab,
+                      borderBottomColor: activeWritingTask === 'task1' ? '#2563eb' : 'transparent',
+                      color: activeWritingTask === 'task1' ? '#2563eb' : '#374151'
+                    }}
+                  >
+                    Writing Task 1 (Min 150 Words)
+                  </button>
+                )}
+                {hasTask2 && (
+                  <button
+                    onClick={() => {
+                      setActiveWritingTask('task2');
+                      setActiveQuestionId('task2');
+                    }}
+                    style={{
+                      ...styles.writingSelTab,
+                      borderBottomColor: activeWritingTask === 'task2' ? '#2563eb' : 'transparent',
+                      color: activeWritingTask === 'task2' ? '#2563eb' : '#374151'
+                    }}
+                  >
+                    Writing Task 2 (Min 250 Words)
+                  </button>
+                )}
               </div>
 
               <div style={{ padding: '1rem 0' }}>

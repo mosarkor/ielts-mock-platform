@@ -488,17 +488,23 @@ app.post('/api/teacher/grade/:submissionId', async (req, res) => {
   const calculateOverallWritingBand = (scores) => {
     if (!scores) return 6.0;
     // Support dual task scoring: { task1: { ta, cc, lr, gra }, task2: { tr, cc, lr, gra } }
+    const bandOfTask = (task) => {
+      const vals = Object.values(task).map(Number).filter(v => !isNaN(v));
+      return roundIelts(vals.reduce((a, b) => a + b, 0) / (vals.length || 4));
+    };
     if (scores.task1 && scores.task2) {
-      const t1Vals = Object.values(scores.task1).map(Number);
-      const t2Vals = Object.values(scores.task2).map(Number);
-      const t1Avg = t1Vals.reduce((a, b) => a + b, 0) / (t1Vals.length || 4);
-      const t2Avg = t2Vals.reduce((a, b) => a + b, 0) / (t2Vals.length || 4);
-      const t1Band = roundIelts(t1Avg);
-      const t2Band = roundIelts(t2Avg);
+      const t1Band = bandOfTask(scores.task1);
+      const t2Band = bandOfTask(scores.task2);
       // Official IELTS weighting: Task 1 is 1/3, Task 2 is 2/3
       const weightedAvg = (t1Band * 1 + t2Band * 2) / 3;
       return roundIelts(weightedAvg);
     }
+    // A test may set only one of the two tasks (e.g. the Task-2-only "Day N"
+    // files). That task is then the whole Writing band. Without this, the flat
+    // fallback below looks for ta/cc/lr/gra, finds none, averages an empty list
+    // and stores a Writing band of 0 for a genuinely graded essay.
+    if (scores.task2) return bandOfTask(scores.task2);
+    if (scores.task1) return bandOfTask(scores.task1);
     // Fallback for single rubric { ta, cc, lr, gra }
     const vals = [scores.ta, scores.cc, scores.lr, scores.gra].map(Number).filter(v => !isNaN(v));
     const avg = vals.reduce((a, b) => a + b, 0) / (vals.length || 4);
@@ -1660,7 +1666,32 @@ app.post('/api/admin/upload-test', async (req, res) => {
           return { answers: answers, detail: detail, correctCount: correctCount };
         }
 
+        // This template carries its own "Writing Task 2" tab with an essay box
+        // inside the Listening iframe, while the platform ALSO shows the same
+        // Task 2 prompt in its native (gradeable) Writing module. Two boxes for
+        // one essay, and the in-iframe one is the obvious place to type -- so
+        // students wrote there and the essay was silently thrown away, never
+        // reaching the teacher. Hide the duplicate so there is exactly one place
+        // to write: the native module the teacher actually grades. The prompt
+        // itself is not lost; it is shown verbatim in that module.
+        function __hideDuplicateWritingTab() {
+          try {
+            var tabs = document.querySelectorAll('.stab');
+            for (var i = 0; i < tabs.length; i++) {
+              if (/writing/i.test(tabs[i].textContent || '')) tabs[i].style.display = 'none';
+            }
+          } catch (e) {}
+        }
+
+        function __harvestEssay() {
+          try {
+            var box = document.getElementById('essayText');
+            return box ? String(box.value || '').trim() : '';
+          } catch (e) { return ''; }
+        }
+
         function __installDayFamilyBridge() {
+          __hideDuplicateWritingTab();
           var btn = document.querySelector('.btn-submit');
           if (!btn) return;
           var freshBtn = btn.cloneNode(true);
@@ -1678,7 +1709,11 @@ app.post('/api/admin/upload-test', async (req, res) => {
               answers: result.answers,
               detail: result.detail,
               correctCount: result.correctCount,
-              band: __computeBand(result.correctCount)
+              band: __computeBand(result.correctCount),
+              // Safety net for anyone who reached the in-iframe essay box before
+              // it was hidden: the parent adopts this only when its own Task 2
+              // box is still empty, so it can never overwrite the student's work.
+              essay: __harvestEssay()
             }, window.location.origin);
             freshBtn.textContent = '✓ Section Completed';
             freshBtn.disabled = true;
