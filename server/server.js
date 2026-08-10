@@ -1142,6 +1142,77 @@ app.post('/api/admin/upload-test', async (req, res) => {
         new MutationObserver(function () { __restoreLiveAnswersIntoDom(); })
           .observe(document.body, { childList: true, subtree: true });
 
+        // The footer question navigator only ever renders the CURRENT part's
+        // numbers (buildSubNav clears it and redraws just partRange[p]), so a
+        // student on Part 2 sees 14-26 and has no way to see or reach 1-13 from
+        // there -- it looks like the earlier questions vanished. Teacher asked
+        // for every question to be listed so candidates can start from whichever
+        // passage they like. The template's own goToQuestion() already switches
+        // part when the target is elsewhere, so the missing piece is purely the
+        // buttons. Rather than replace buildSubNav (a script-scoped function this
+        // separately-injected script cannot rebind), let it draw its part as
+        // usual and fill in the rest around it: the current part's buttons keep
+        // the template's exact state classes (answered/active/correct/incorrect),
+        // and appendChild reorders everything into 1..N.
+        var __navFilling = false;
+        function __fillFullQuestionNav() {
+          var container = document.getElementById('sub-questions');
+          if (!container) return;
+          var minQ = Infinity;
+          var maxQ = 0;
+          try {
+            var tabs = document.querySelectorAll('.part-tab small');
+            for (var t = 0; t < tabs.length; t++) {
+              var m = String(tabs[t].textContent || '').match(/(\\d+)\\D+(\\d+)/);
+              if (m) { minQ = Math.min(minQ, Number(m[1])); maxQ = Math.max(maxQ, Number(m[2])); }
+            }
+          } catch (e) {}
+          if (!isFinite(minQ) || !maxQ) { minQ = 1; maxQ = 40; }
+
+          var existing = {};
+          var drawn = container.querySelectorAll('.subQuestion');
+          if (!drawn.length) return;
+          for (var d = 0; d < drawn.length; d++) {
+            existing[String(drawn[d].getAttribute('data-qnum'))] = drawn[d];
+          }
+          var frag = document.createDocumentFragment();
+          for (var n = minQ; n <= maxQ; n++) {
+            var btn = existing[String(n)];
+            if (!btn) {
+              btn = document.createElement('button');
+              btn.className = 'subQuestion';
+              btn.setAttribute('data-qnum', n);
+              btn.innerHTML = '<span aria-hidden="true">' + n + '</span>';
+              btn.addEventListener('click', (function (q) {
+                return function () {
+                  if (typeof window.goToQuestion === 'function') window.goToQuestion(q);
+                };
+              })(n));
+              // Same answered styling the template gives its own buttons, using
+              // the harvester so every question type is judged consistently.
+              try { if (__harvestAnswer(n)) btn.classList.add('answered'); } catch (e) {}
+            }
+            frag.appendChild(btn);
+          }
+          __navFilling = true;
+          try { container.appendChild(frag); } finally {
+            setTimeout(function () { __navFilling = false; }, 0);
+          }
+        }
+
+        function __installFullQuestionNav() {
+          var container = document.getElementById('sub-questions');
+          if (!container) return;
+          new MutationObserver(function () {
+            if (__navFilling) return;
+            __fillFullQuestionNav();
+          }).observe(container, { childList: true });
+          __fillFullQuestionNav();
+        }
+
+        if (document.readyState !== 'loading') __installFullQuestionNav();
+        else document.addEventListener('DOMContentLoaded', __installFullQuestionNav);
+
         // "Choose N answers" checkbox questions (e.g. Q20/21 sharing one
         // checkbox group named "q20_21") are scored by how many of the
         // student's checked boxes are in the correct set, not by matching one
