@@ -303,9 +303,18 @@ app.post('/api/student/submit/:testId', async (req, res) => {
     const isListeningIframe = listeningData?.isIframe === true;
     const isReadingIframe = readingData?.isIframe === true;
 
+    // Real incident: a student submitted the whole exam without ever completing
+    // the Listening section (iframe never posted a band back), so req.body.listeningScore
+    // was undefined here -- and node:sqlite's DatabaseSync.run() throws
+    // "Provided value cannot be bound to SQLite parameter" for undefined (unlike
+    // null, which it accepts fine), crashing the ENTIRE submission with a 500 and
+    // losing every module the student did complete, not just the missing one.
+    // null is the correct "no score for this module" value everywhere else in
+    // this endpoint (getIeltsBand already returns null for the same case) --
+    // this must match, not silently diverge to undefined.
     const validBand = (value) => {
       const number = Number(value);
-      if (!Number.isFinite(number) || number < 0 || number > 9) return undefined;
+      if (!Number.isFinite(number) || number < 0 || number > 9) return null;
       return Math.round(number * 2) / 2;
     };
 
@@ -1534,6 +1543,100 @@ app.post('/api/admin/upload-test', async (req, res) => {
       })();
       `;
       content = content.replace('</body>', `<script>${harvestBridgeSnippet}</script>\n</body>`);
+    } else if (
+      content.includes('function submitTest(')
+      && content.includes('const ANSWERS')
+      && content.includes('renderDots')
+    ) {
+      // A different, newer self-scoring template generation (e.g. the
+      // "Day N" Listening + bonus-Writing-Task-2 files) -- no checkAnswers/
+      // getUserAnswer/correctAnswers naming at all, so the harvest-bridge
+      // signature above never matches it, and it doesn't call
+      // /api/student/submit or postMessage anything to the parent either.
+      // Left completely unintegrated, a student could take it but the
+      // teacher would never see a result and it wouldn't count toward
+      // Skills Averages -- same silent-gap problem the harvest bridge above
+      // exists to close, just for a template that names everything
+      // differently. Every answer element shares one convention here
+      // (id="a"+questionNumber, whether <input> or <select>), and ANSWERS/
+      // PAIR_CORRECT are bare top-level consts (not inside an IIFE), so
+      // they're reachable from this separately-injected <script> tag.
+      const dayFamilyBridgeSnippet = `
+      (function() {
+        var params = new URLSearchParams(window.location.search);
+        var __bridgeTestId = params.get('testId') || '${testId}';
+        var __bridgeModuleType = params.get('moduleType') || '${moduleType}';
+
+        function __computeBand(correctCount) {
+          var bands = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
+          for (var i = 0; i < bands.length; i++) { if (correctCount >= bands[i][0]) return bands[i][1]; }
+          return 2.5;
+        }
+
+        function __harvestAll() {
+          var answers = {};
+          var detail = {};
+          var correctCount = 0;
+          for (var n = 1; n <= 40; n++) {
+            var el = document.getElementById('a' + n);
+            if (!el) continue;
+            var userAnswer = String(el.value || '').trim();
+            var isCorrect = false;
+            var correctAnswerDisplay = '';
+            try {
+              if (typeof PAIR_CORRECT !== 'undefined' && PAIR_CORRECT[n]) {
+                var pair = PAIR_CORRECT[n];
+                isCorrect = pair.indexOf(userAnswer) !== -1;
+                correctAnswerDisplay = pair.join(' or ');
+              } else if (typeof ANSWERS !== 'undefined' && ANSWERS[n] !== undefined) {
+                correctAnswerDisplay = ANSWERS[n];
+                isCorrect = userAnswer.toLowerCase() === String(ANSWERS[n]).toLowerCase();
+              }
+            } catch (e) {}
+            if (isCorrect) correctCount++;
+            answers[n] = userAnswer;
+            detail[n] = { userAnswer: userAnswer, correctAnswer: correctAnswerDisplay, isCorrect: isCorrect };
+          }
+          return { answers: answers, detail: detail, correctCount: correctCount };
+        }
+
+        function __installDayFamilyBridge() {
+          var btn = document.querySelector('.btn-submit');
+          if (!btn) return;
+          var freshBtn = btn.cloneNode(true);
+          btn.parentNode.replaceChild(freshBtn, btn);
+          freshBtn.textContent = '✓ Complete Section';
+          freshBtn.onclick = function() {
+            if (freshBtn.dataset.bridgeSubmitted === '1') return;
+            freshBtn.dataset.bridgeSubmitted = '1';
+            try { var a = document.getElementById('mainAudio'); if (a) a.pause(); } catch (e) {}
+            var result = __harvestAll();
+            window.parent.postMessage({
+              type: 'IELTS_MODULE_COMPLETE',
+              testId: __bridgeTestId,
+              moduleType: __bridgeModuleType,
+              answers: result.answers,
+              detail: result.detail,
+              correctCount: result.correctCount,
+              band: __computeBand(result.correctCount)
+            }, window.location.origin);
+            freshBtn.textContent = '✓ Section Completed';
+            freshBtn.disabled = true;
+            freshBtn.style.opacity = '0.6';
+            freshBtn.style.cursor = 'default';
+            alert('This section is marked complete and saved. You can switch tabs or submit the whole test when ready.');
+          };
+          window.__ieltsBridgeComplete = freshBtn.onclick;
+        }
+
+        if (document.readyState !== 'loading') {
+          __installDayFamilyBridge();
+        } else {
+          document.addEventListener('DOMContentLoaded', __installDayFamilyBridge);
+        }
+      })();
+      `;
+      content = content.replace('</body>', `<script>${dayFamilyBridgeSnippet}</script>\n</body>`);
     }
 
     // 2b. Safety net on top of the branch-specific handling above: fix any
