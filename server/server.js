@@ -21,16 +21,91 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Initialize Database connection
-let db;
-try {
-  db = await initDb();
-  console.log('Database initialized successfully.');
-} catch (error) {
-  console.error('Failed to initialize database:', error);
-  process.exitCode = 1;
-  throw error;
+// Initialize Database connection.
+//
+// This used to be a top-level `await initDb()`, which meant the module body
+// never reached app.listen() unless the database answered. When the provider
+// started refusing queries ("exceeded the data transfer quota"), the port never
+// opened, the host had nothing to route to, and every request hung with no
+// response at all -- a silently dead site rather than a legible error. The
+// database being down must degrade the platform, not prevent it from starting.
+//
+// So: connect in the background, let the server listen immediately, and answer
+// API calls with a clear 503 until the database is actually usable. The retry
+// loop also means the platform recovers on its own once the database returns,
+// with no redeploy needed.
+let realDb = null;
+let dbError = null;
+let dbAttempts = 0;
+
+// A stable handle so every `db.get/all/run/exec/prepare(...)` call site keeps
+// working unchanged; calls simply reject with a clear error until connected.
+const db = new Proxy({}, {
+  get(_target, prop) {
+    if (prop === 'then') return undefined; // must not look like a promise
+    return (...args) => {
+      if (!realDb) {
+        return Promise.reject(new Error(
+          `Database unavailable: ${dbError ? dbError.message : 'not connected yet'}`
+        ));
+      }
+      const value = realDb[prop];
+      return typeof value === 'function' ? value.apply(realDb, args) : value;
+    };
+  }
+});
+
+const isDbReady = () => realDb !== null;
+
+async function connectDatabaseWithRetry() {
+  // Capped exponential backoff: quick enough to recover promptly from a blip,
+  // slow enough not to hammer a database that is refusing connections.
+  const delays = [2_000, 5_000, 10_000, 30_000, 60_000];
+  for (;;) {
+    dbAttempts += 1;
+    try {
+      realDb = await initDb();
+      dbError = null;
+      console.log(`Database initialized successfully (attempt ${dbAttempts}).`);
+      return;
+    } catch (error) {
+      realDb = null;
+      dbError = error;
+      const wait = delays[Math.min(dbAttempts - 1, delays.length - 1)];
+      console.error(
+        `Failed to initialize database (attempt ${dbAttempts}): ${error.message}. Retrying in ${wait / 1000}s.`
+      );
+      await new Promise(resolve => setTimeout(resolve, wait));
+    }
+  }
 }
+
+connectDatabaseWithRetry();
+
+// Reports whether the platform is actually usable, so an outage is visible
+// immediately instead of being inferred from hanging requests.
+app.get('/api/health', (req, res) => {
+  res.status(isDbReady() ? 200 : 503).json({
+    ok: isDbReady(),
+    database: isDbReady() ? 'connected' : 'unavailable',
+    attempts: dbAttempts,
+    // error.message only -- never the connection string.
+    detail: isDbReady() ? undefined : (dbError ? dbError.message : 'connecting'),
+    retrying: !isDbReady()
+  });
+});
+
+// Anything touching data fails fast and legibly while the database is down,
+// rather than surfacing as an opaque 500 (or, before this, no response at all).
+app.use('/api', (req, res, next) => {
+  if (isDbReady() || req.path === '/health') return next();
+  res.status(503).json({
+    error: 'The platform is temporarily unavailable because its database cannot be reached. '
+      + 'It will reconnect automatically. Please do not start a test until this clears.',
+    database: 'unavailable',
+    retrying: true
+  });
+});
 
 const submissionLocks = new Set();
 
