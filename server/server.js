@@ -1818,9 +1818,41 @@ app.post('/api/admin/upload-test', async (req, res) => {
           } catch (e) {}
         }
 
+        // Scores, bands and correct-answer tables belong to the teacher's release,
+        // not to the test page. Some generations render them into a modal and an
+        // explanations panel the moment their own checkAnswers() runs, so this
+        // hides them whenever they appear. Kept running briefly afterwards because
+        // the results markup is sometimes built asynchronously, after the click.
+        function __suppressRevealedResults() {
+          var SELECTORS = [
+            '.results-overlay', '.results-modal', '#resultsModal', '#results-modal',
+            '.all-explanations', '#toggle-all-explanations-btn', '#retakeBtn'
+          ];
+          var hide = function () {
+            for (var i = 0; i < SELECTORS.length; i++) {
+              var found = document.querySelectorAll(SELECTORS[i]);
+              for (var j = 0; j < found.length; j++) {
+                try { found[j].style.setProperty('display', 'none', 'important'); } catch (e) {}
+              }
+            }
+          };
+          hide();
+          var until = Date.now() + 10000;
+          var timer = setInterval(function () {
+            hide();
+            if (Date.now() > until) clearInterval(timer);
+          }, 200);
+        }
+
         function __installBridge() {
           __enforceNoAudioPause();
           __reclaimHeaderSpace();
+          // Hidden up front, not just after submitting: it is a student-facing
+          // control whose whole purpose is revealing the answer key.
+          try {
+            var explToggle = document.getElementById('toggle-all-explanations-btn');
+            if (explToggle) explToggle.style.setProperty('display', 'none', 'important');
+          } catch (e) {}
           // __shrinkPartBanner() disabled: real students reported broken passage
           // switching (stuck on the same question across all passages) and answers
           // that couldn't be selected, both on Reading-27-family tests shortly after
@@ -1842,7 +1874,8 @@ app.post('/api/admin/upload-test', async (req, res) => {
           // deliberately never shows the student. Relabel it as a plain completion
           // action before it's ever clicked, not just after.
           freshBtn.textContent = '✓ Complete Section';
-          freshBtn.onclick = function() {
+
+          var __bridgeComplete = function() {
             if (freshBtn.dataset.bridgeSubmitted === '1') return;
             freshBtn.dataset.bridgeSubmitted = '1';
             __silentCheckAndReport();
@@ -1850,8 +1883,31 @@ app.post('/api/admin/upload-test', async (req, res) => {
             freshBtn.disabled = true;
             freshBtn.style.opacity = '0.6';
             freshBtn.style.cursor = 'default';
+            // Belt and braces: even if some other handler still manages to run
+            // the template's own scoring, the student must not see the marks.
+            __suppressRevealedResults();
             alert('This section is marked complete and saved. You can switch tabs or submit the whole test when ready.');
           };
+
+          // Cloning the button strips handlers bound BEFORE this point, but some
+          // template generations run their own attachEvents()/initialize() after
+          // this bridge installs and bind checkAnswers() to the replacement button.
+          // Both then fire on one click: the bridge reports the result silently
+          // AND the template pops its own results modal, showing the student their
+          // score, band and the full correct-answer table -- exactly what
+          // teacher-controlled release exists to prevent. A capture-phase listener
+          // runs before any of those bubble-phase handlers, and
+          // stopImmediatePropagation keeps them from running at all.
+          freshBtn.addEventListener('click', function(event) {
+            try {
+              event.stopImmediatePropagation();
+              event.preventDefault();
+            } catch (e) {}
+            __bridgeComplete();
+          }, true);
+          // Not via .onclick: that is itself a bubble-phase handler and would be
+          // cancelled by the stopImmediatePropagation above.
+          freshBtn.onclick = null;
           // The parent platform needs to be able to trigger completion itself
           // (a module's own clock running out, or a sequential-locked exam
           // moving the student on) without a real user click -- but every
@@ -1864,7 +1920,7 @@ app.post('/api/admin/upload-test', async (req, res) => {
           // because the parent's button-matching heuristics didn't recognize
           // this button once it had already been relabeled. Exposing the
           // handler directly removes the need to find the button at all.
-          window.__ieltsBridgeComplete = freshBtn.onclick;
+          window.__ieltsBridgeComplete = __bridgeComplete;
         }
 
         if (document.readyState !== 'loading') {
