@@ -150,8 +150,17 @@ app.get('/tests/:fileName', async (req, res, next) => {
   try {
     const test = await db.get('SELECT html_content FROM tests WHERE id = ?', [match[1]]);
     if (!test?.html_content) return next();
-    res.set('Cache-Control', 'no-store');
-    res.type('html').send(test.html_content);
+
+    // Was Cache-Control: no-store, so every student -- and every reload --
+    // re-read the whole ~200 KB page out of the database. Combined with the
+    // audio route that was the shape of the traffic which exhausted the
+    // provider's transfer quota. A test's content only changes when it is
+    // re-uploaded, so serve it revalidated instead: the ETag lets browsers
+    // answer with 304 and no body, while a re-upload changes the tag and is
+    // still picked up immediately (no stale paper for anyone mid-exam).
+    res.set('Cache-Control', 'no-cache');
+    res.type('html');
+    res.send(test.html_content);
   } catch (error) {
     next(error);
   }
