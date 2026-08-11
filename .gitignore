@@ -7,3 +7,4 @@ client/dist/
 *.sqlite-shm
 *.log
 .DS_Store
+server/audio-cache/

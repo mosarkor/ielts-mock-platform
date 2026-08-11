@@ -83,46 +83,76 @@ app.get('/tests/:fileName', async (req, res, next) => {
 });
 
 // Serves listening audio that was extracted out of an uploaded test's HTML
-// (see the harvest-bridge upload path below) -- stored in the database, same
-// as the test HTML itself, so it survives an ephemeral deploy filesystem.
-// Supports Range requests, since <audio> relies on them for real streaming
-// and seeking rather than blocking on the whole file up front.
+// (see the harvest-bridge upload path below). The database stays the source of
+// truth, because the deploy filesystem is ephemeral -- but it is read ONCE per
+// deploy per track, not once per request.
+//
+// This previously did "SELECT data_base64" on every request and decoded the
+// whole track just to slice out the requested bytes. <audio> issues many Range
+// requests while streaming and seeking, so a single student could pull a 15 MB
+// track out of Postgres dozens of times over. Across a class that is gigabytes
+// of database egress for one listening sitting, which is exactly what exhausted
+// the provider's data-transfer quota and took the platform down.
+//
+// Now the track is materialised to a local cache file on first use and served
+// from disk thereafter: Range handling, ETag and streaming come from sendFile,
+// and the database sees one read per deploy instead of thousands.
+// Deliberately outside public/: the route below is the only way in, so the
+// cache files and their sidecars are never exposed as a directory listing.
+const audioCacheDir = path.join(__dirname, 'audio-cache');
+const audioMaterialising = new Map();
+
+function materialiseAudio(id) {
+  // Concurrent misses (a whole class starting at once) must trigger ONE
+  // database read, not one per request -- otherwise the very stampede this
+  // exists to prevent happens on every cold deploy.
+  if (audioMaterialising.has(id)) return audioMaterialising.get(id);
+
+  const job = (async () => {
+    const asset = await db.get('SELECT mime_type, data_base64 FROM test_audio_assets WHERE id = ?', [id]);
+    if (!asset) return null;
+
+    await fs.promises.mkdir(audioCacheDir, { recursive: true });
+    const filePath = path.join(audioCacheDir, `${id}.bin`);
+    const tempPath = `${filePath}.${process.pid}.tmp`;
+    // Write to a temp file and rename: a half-written cache file must never be
+    // servable, or a student gets a truncated, silently broken track.
+    await fs.promises.writeFile(tempPath, Buffer.from(asset.data_base64, 'base64'));
+    await fs.promises.rename(tempPath, filePath);
+    await fs.promises.writeFile(`${filePath}.type`, asset.mime_type || 'audio/mpeg');
+    return { filePath, mimeType: asset.mime_type || 'audio/mpeg' };
+  })().finally(() => {
+    audioMaterialising.delete(id);
+  });
+
+  audioMaterialising.set(id, job);
+  return job;
+}
+
 app.get('/tests-audio/:id', async (req, res, next) => {
   const id = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(id)) return next();
 
   try {
-    const asset = await db.get('SELECT mime_type, data_base64 FROM test_audio_assets WHERE id = ?', [id]);
-    if (!asset) return next();
+    const filePath = path.join(audioCacheDir, `${id}.bin`);
+    let mimeType;
+    try {
+      await fs.promises.access(filePath);
+      mimeType = await fs.promises.readFile(`${filePath}.type`, 'utf8').catch(() => 'audio/mpeg');
+    } catch {
+      const made = await materialiseAudio(id);
+      if (!made) return next();
+      mimeType = made.mimeType;
+    }
 
-    const buffer = Buffer.from(asset.data_base64, 'base64');
-    const total = buffer.length;
-    res.set('Accept-Ranges', 'bytes');
     res.set('Cache-Control', 'public, max-age=31536000, immutable');
-    res.type(asset.mime_type);
-
-    const range = req.headers.range;
-    if (!range) {
-      res.set('Content-Length', total);
-      res.status(200).send(buffer);
-      return;
-    }
-
-    const match2 = /^bytes=(\d*)-(\d*)$/.exec(range);
-    if (!match2) {
-      res.status(416).set('Content-Range', `bytes */${total}`).end();
-      return;
-    }
-    let start = match2[1] ? Number.parseInt(match2[1], 10) : 0;
-    let end = match2[2] ? Number.parseInt(match2[2], 10) : total - 1;
-    if (Number.isNaN(start) || Number.isNaN(end) || start > end || end >= total) {
-      res.status(416).set('Content-Range', `bytes */${total}`).end();
-      return;
-    }
-    res.status(206);
-    res.set('Content-Range', `bytes ${start}-${end}/${total}`);
-    res.set('Content-Length', end - start + 1);
-    res.send(buffer.subarray(start, end + 1));
+    res.type(mimeType);
+    // sendFile streams from disk and handles Range/206 and conditional
+    // requests itself, so seeking still works without loading the track into
+    // memory -- let alone re-reading it from the database.
+    res.sendFile(filePath, (error) => {
+      if (error && !res.headersSent) next(error);
+    });
   } catch (error) {
     next(error);
   }
