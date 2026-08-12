@@ -1844,9 +1844,53 @@ app.post('/api/admin/upload-test', async (req, res) => {
           }, 200);
         }
 
+        // These templates show which option is selected using CSS alone:
+        //   .tf-option:has(input:checked) { background: ...; }
+        // Nothing in JS maintains that state. Teacher reported that on the
+        // True/False/Not Given questions you cannot change an answer -- pick TRUE,
+        // realise it is FALSE, and the highlight stays on TRUE. The radio value
+        // does change (scoring is unaffected), but :has() style invalidation on a
+        // radio change is browser- and version-dependent, so the highlight can
+        // stick to the first choice and the question looks locked.
+        //
+        // Mirroring the same appearance with a plain class removes the dependency
+        // on :has() entirely. Purely visual -- no answer handling is touched.
+        function __installSelectionHighlight() {
+          try {
+            var style = document.createElement('style');
+            style.textContent =
+              '.tf-option.__bridgeChecked, .multi-choice-option.__bridgeChecked' +
+              '{background:#cfe3f9 !important;border-color:#7db3f5 !important;}' +
+              '[data-theme="dark"] .tf-option.__bridgeChecked,' +
+              '[data-theme="dark"] .multi-choice-option.__bridgeChecked' +
+              '{background:#2e4766 !important;border-color:#7db3f5 !important;}';
+            document.head.appendChild(style);
+          } catch (e) {}
+
+          var sync = function () {
+            try {
+              var radios = document.querySelectorAll('.tf-option input[type="radio"], .multi-choice-option input[type="radio"]');
+              for (var i = 0; i < radios.length; i++) {
+                var label = radios[i].closest('.tf-option, .multi-choice-option');
+                if (!label) continue;
+                if (radios[i].checked) label.classList.add('__bridgeChecked');
+                else label.classList.remove('__bridgeChecked');
+              }
+            } catch (e) {}
+          };
+
+          // Capture phase, so the highlight updates even if something downstream
+          // stops the event; click as well as change, because a click that lands
+          // on an already-selected option fires no change event.
+          document.addEventListener('change', sync, true);
+          document.addEventListener('click', function () { setTimeout(sync, 0); }, true);
+          sync();
+        }
+
         function __installBridge() {
           __enforceNoAudioPause();
           __reclaimHeaderSpace();
+          __installSelectionHighlight();
           // Hidden up front, not just after submitting: it is a student-facing
           // control whose whole purpose is revealing the answer key.
           try {
