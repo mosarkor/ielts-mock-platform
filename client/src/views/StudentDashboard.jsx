@@ -17,6 +17,12 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
   const [loadingKey, setLoadingKey] = useState(false);
   const [showOnlyMistakes, setShowOnlyMistakes] = useState(false);
   const [expandedExplanation, setExpandedExplanation] = useState(null); // e.g. 'l-5' or 'r-12'
+  // Full-paper review: reopens the test itself in read-only review mode, where it
+  // renders its own explanations with the supporting evidence highlighted in the
+  // passage. Only ever opened for a result the teacher has already released --
+  // the dashboard only receives released submissions in the first place.
+  const [fullReview, setFullReview] = useState(null); // { url, moduleType, answers }
+  const [fullReviewModules, setFullReviewModules] = useState([]);
   const [targetScore, setTargetScore] = useState(() => parseFloat(localStorage.getItem(`targetScore_${user.id}`)) || 7.0);
   const [activeGuide, setActiveGuide] = useState(null);
   const [speakingAssignments, setSpeakingAssignments] = useState([]);
@@ -29,6 +35,57 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
       setAnswerKey(null);
     }
   }, [selectedReview]);
+
+  // Which of this paper's modules can be reopened for the full explanation view.
+  // Only standalone (iframe) modules carry their own review; native tests are
+  // already fully covered by the per-question table in this modal.
+  useEffect(() => {
+    let cancelled = false;
+    if (!selectedReview) { setFullReviewModules([]); return undefined; }
+    (async () => {
+      try {
+        const res = await fetch(`/api/student/test/${selectedReview.test_id}`);
+        const test = await res.json();
+        const found = [];
+        for (const moduleType of ['listening', 'reading']) {
+          const data = test[`${moduleType}_data`];
+          if (data?.isIframe && data.iframeUrl) found.push({ moduleType, url: data.iframeUrl });
+        }
+        if (!cancelled) setFullReviewModules(found);
+      } catch {
+        if (!cancelled) setFullReviewModules([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedReview]);
+
+  // The review page asks for the answers once it has loaded, so they are sent in
+  // response rather than fired blindly at an iframe that may not be listening yet.
+  useEffect(() => {
+    if (!fullReview) return undefined;
+    const onMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type !== 'IELTS_REVIEW_READY') return;
+      const frame = document.getElementById('fullReviewFrame');
+      frame?.contentWindow?.postMessage(
+        { type: 'IELTS_REVIEW_ANSWERS', answers: fullReview.answers || {} },
+        window.location.origin
+      );
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [fullReview]);
+
+  const openFullReview = (moduleType, url) => {
+    const answers = moduleType === 'listening'
+      ? (selectedReview?.listening_answers || {})
+      : (selectedReview?.reading_answers || {});
+    setFullReview({
+      moduleType,
+      answers,
+      src: `${url}?testId=${selectedReview.test_id}&moduleType=${moduleType}&multiModule=0&review=1`
+    });
+  };
 
   const loadAnswerKey = async (testId) => {
     setLoadingKey(true);
@@ -1120,6 +1177,16 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
             </div>
 
             <div style={{ ...styles.modalFooter, borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '0.75rem' }}>
+              {fullReviewModules.map(m => (
+                <button
+                  key={m.moduleType}
+                  onClick={() => openFullReview(m.moduleType, m.url)}
+                  className="btn btn-secondary"
+                  title="Reopen the paper with the correct answers and the supporting evidence highlighted"
+                >
+                  📖 Study {m.moduleType === 'listening' ? 'Listening' : 'Reading'} Explanations
+                </button>
+              ))}
               <button onClick={handleDownloadDetailedReviewPdf} className="btn btn-secondary">📄 Download PDF Report</button>
               <button onClick={() => setSelectedReview(null)} className="btn btn-primary">Close Report</button>
             </div>
@@ -1127,9 +1194,46 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
         </div>
       )}
 
+      {fullReview && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 3000,
+          backgroundColor: 'rgba(2, 6, 15, 0.92)', display: 'flex', flexDirection: 'column'
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '0.75rem 1.25rem', backgroundColor: 'var(--bg-secondary)',
+            borderBottom: '1px solid var(--glass-border)', flexShrink: 0
+          }}>
+            <div style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+              📖 {fullReview.moduleType === 'listening' ? 'Listening' : 'Reading'} Explanations
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: '0.85rem', marginLeft: '0.75rem' }}>
+                Your answers with the correct ones and the evidence — review only, nothing is re-submitted.
+              </span>
+            </div>
+            <button onClick={() => setFullReview(null)} className="btn btn-danger" style={{ padding: '0.35rem 0.9rem' }}>
+              Close ✕
+            </button>
+          </div>
+          <iframe
+            id="fullReviewFrame"
+            title="Answer explanations"
+            src={fullReview.src}
+            // Also send on load, in case the page's ready signal arrived before
+            // this listener was attached. Applying the answers twice is harmless.
+            onLoad={(e) => {
+              e.currentTarget.contentWindow?.postMessage(
+                { type: 'IELTS_REVIEW_ANSWERS', answers: fullReview.answers || {} },
+                window.location.origin
+              );
+            }}
+            style={{ flex: 1, width: '100%', border: 'none', backgroundColor: '#fff' }}
+          />
+        </div>
+      )}
+
       {showPwdModal && (
-        <ChangePasswordModal 
-          userId={user.id} 
+        <ChangePasswordModal
+          userId={user.id}
           onClose={() => setShowPwdModal(false)} 
         />
       )}

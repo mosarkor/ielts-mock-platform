@@ -1887,10 +1887,93 @@ app.post('/api/admin/upload-test', async (req, res) => {
           sync();
         }
 
+        // Teacher-released review. These templates already carry a rich review --
+        // the passage with the evidence for each answer highlighted, the correct
+        // answer per question, and explanations -- which the exam flow above
+        // deliberately suppresses so students cannot see answers while sitting the
+        // paper. Once the teacher releases a result, that same view is exactly what
+        // they want the student to study, so this mode puts the student's stored
+        // answers back and lets the template render its own review.
+        //
+        // Reached only via ?review=1, which the platform uses solely for a released
+        // submission, and the page is read-only: the submit button is gone and
+        // nothing is reported back.
+        function __applyReviewAnswers(answers) {
+          for (var n = 1; n <= 40; n++) {
+            var value = answers[n] != null ? String(answers[n]) : '';
+            if (!value) continue;
+            try {
+              var el = document.getElementById('q' + n);
+              if (el && (el.tagName === 'INPUT' || el.tagName === 'SELECT')) {
+                el.value = value;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+                continue;
+              }
+              var radios = document.querySelectorAll('input[type="radio"][name="q' + n + '"]');
+              if (radios.length) {
+                for (var r = 0; r < radios.length; r++) {
+                  if (radios[r].value === value) {
+                    radios[r].checked = true;
+                    radios[r].dispatchEvent(new Event('change', { bubbles: true }));
+                  }
+                }
+                continue;
+              }
+              // Shared "choose two letters" groups store one combined value
+              // ("C, D") against every question in the group.
+              var picked = value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+              var boxes = document.querySelectorAll('input[type="checkbox"][name^="q"][name*="_"]');
+              for (var b = 0; b < boxes.length; b++) {
+                var parts = String(boxes[b].name).slice(1).split('_');
+                if (parts.indexOf(String(n)) === -1) continue;
+                if (picked.indexOf(boxes[b].value) !== -1 && !boxes[b].checked) {
+                  boxes[b].checked = true;
+                  boxes[b].dispatchEvent(new Event('change', { bubbles: true }));
+                }
+              }
+            } catch (e) {}
+          }
+        }
+
+        function __installReviewMode() {
+          try {
+            var btn = __findCheckButton();
+            if (btn) btn.style.setProperty('display', 'none', 'important');
+          } catch (e) {}
+
+          window.addEventListener('message', function (event) {
+            if (event.origin !== window.location.origin) return;
+            if (!event.data || event.data.type !== 'IELTS_REVIEW_ANSWERS') return;
+            var answers = event.data.answers && typeof event.data.answers === 'object' ? event.data.answers : {};
+            __applyReviewAnswers(answers);
+            // The template's own grading renders the passage evidence, the correct
+            // answers and the explanations, and locks the inputs afterwards.
+            try {
+              if (typeof window.checkAnswers === 'function') window.checkAnswers();
+            } catch (e) {}
+          });
+
+          // Tell the platform this page is ready to receive the answers.
+          try {
+            window.parent.postMessage({ type: 'IELTS_REVIEW_READY' }, window.location.origin);
+          } catch (e) {}
+        }
+
         function __installBridge() {
           __enforceNoAudioPause();
           __reclaimHeaderSpace();
           __installSelectionHighlight();
+
+          var __reviewMode = false;
+          try {
+            __reviewMode = new URLSearchParams(window.location.search).get('review') === '1';
+          } catch (e) {}
+          if (__reviewMode) {
+            __installReviewMode();
+            return;   // no exam wiring, no suppression: this IS the reveal
+          }
+
           // Hidden up front, not just after submitting: it is a student-facing
           // control whose whole purpose is revealing the answer key.
           try {
