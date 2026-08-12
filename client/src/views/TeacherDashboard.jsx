@@ -295,7 +295,9 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
     };
 
     setSelectedSub(cleanSub);
-    setViewMode('grading');
+    // A Reading- or Listening-only paper has nothing to grade, so open straight
+    // on the per-question review rather than an empty writing rubric.
+    setViewMode(hasWritingTask(cleanSub) ? 'grading' : 'detailed_review');
     // Open on a task this test actually sets, so a Task-2-only submission does
     // not present an empty Task 1 rubric as the thing to grade.
     setActiveTaskTab(sub?.test_writing_data?.task1?.prompt || !sub?.test_writing_data?.task2?.prompt ? 'task1' : 'task2');
@@ -336,10 +338,13 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   // Writing band toward 6 no matter what they actually wrote for Task 2.
   const subHasTask1 = !!selectedSub?.test_writing_data?.task1?.prompt;
   const subHasTask2 = !!selectedSub?.test_writing_data?.task2?.prompt;
-  // Fall back to showing both only when the test declares neither, so older
-  // submissions with no stored prompts keep the previous behaviour.
-  const gradeTask1 = subHasTask1 || (!subHasTask1 && !subHasTask2);
-  const gradeTask2 = subHasTask2 || (!subHasTask1 && !subHasTask2);
+  // Fall back to showing both only for an older submission that has writing but
+  // no stored prompts. A Reading- or Listening-only paper has no writing at all,
+  // and must not be given two empty rubrics to grade.
+  const subHasAnyWriting = !!(selectedSub?.writing_answers?.task1 || selectedSub?.writing_answers?.task2)
+    || subHasTask1 || subHasTask2;
+  const gradeTask1 = subHasTask1 || (subHasAnyWriting && !subHasTask1 && !subHasTask2);
+  const gradeTask2 = subHasTask2 || (subHasAnyWriting && !subHasTask1 && !subHasTask2);
 
   const roundIeltsBand = (avg) => {
     const decimal = avg - Math.floor(avg);
@@ -938,15 +943,20 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   )}
                 </div>
               </div>
-              <div style={styles.liveScoreBadge}>
-                <span style={styles.liveScoreNum}>{calculateLiveOverall().toFixed(1)}</span>
-                <span style={styles.liveScoreLabel}>Live Writing Band</span>
-              </div>
+              {hasWritingTask(selectedSub) && (
+                <div style={styles.liveScoreBadge}>
+                  <span style={styles.liveScoreNum}>{calculateLiveOverall().toFixed(1)}</span>
+                  <span style={styles.liveScoreLabel}>Live Writing Band</span>
+                </div>
+              )}
             </div>
 
-            {/* View Mode Tabs */}
+            {/* View Mode Tabs. The writing tab is offered only when the test
+                actually sets a Writing task -- otherwise it leads to an empty
+                rubric that grades nothing. */}
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', userSelect: 'none' }}>
-              <button 
+              {hasWritingTask(selectedSub) && (
+              <button
                 onClick={() => setViewMode('grading')}
                 className="btn"
                 style={{
@@ -958,7 +968,8 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
               >
                 ✏️ Grade Writing Tasks
               </button>
-              <button 
+              )}
+              <button
                 onClick={() => setViewMode('detailed_review')}
                 className="btn"
                 style={{
@@ -1657,15 +1668,20 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                       </button>
                     </div>
 
-                    {hasWritingTask(sub) && (
-                      <button
-                        onClick={() => handleSelectSubmission(sub)}
-                        className="btn btn-secondary"
-                        style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}
-                      >
-                        🔍 Edit Grade & Feedback
-                      </button>
-                    )}
+                    {/* Opening a submission was gated on it having a Writing task,
+                        because this button used to lead only to writing grading.
+                        The workspace it opens also holds the per-question
+                        Listening & Reading review -- so for a standalone Reading
+                        or Listening test, where there is no Writing, the teacher
+                        had no way in at all: just a band number and a PDF, with
+                        the question-by-question breakdown unreachable. */}
+                    <button
+                      onClick={() => handleSelectSubmission(sub)}
+                      className="btn btn-secondary"
+                      style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}
+                    >
+                      {hasWritingTask(sub) ? '🔍 Edit Grade & Feedback' : '🔍 View Detailed Answers'}
+                    </button>
                     <button
                       onClick={() => downloadPdfReport(sub)}
                       className="btn btn-primary"
