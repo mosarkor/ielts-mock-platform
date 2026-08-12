@@ -2154,7 +2154,56 @@ app.post('/api/admin/upload-test', async (req, res) => {
           } catch (e) { return ''; }
         }
 
+        // Teacher-released review, same idea as the other bridge: put the
+        // student's stored answers back and let the template's own submitTest()
+        // render its results grid with the correct answers. Read-only, reached
+        // only via ?review=1, which the platform opens solely for a released
+        // submission.
+        function __installDayFamilyReview() {
+          try {
+            var submitBtn = document.querySelector('.btn-submit');
+            if (submitBtn) submitBtn.style.setProperty('display', 'none', 'important');
+          } catch (e) {}
+
+          window.addEventListener('message', function (event) {
+            if (event.origin !== window.location.origin) return;
+            if (!event.data || event.data.type !== 'IELTS_REVIEW_ANSWERS') return;
+            var answers = event.data.answers && typeof event.data.answers === 'object' ? event.data.answers : {};
+            for (var n = 1; n <= 40; n++) {
+              try {
+                var el = document.getElementById('a' + n);
+                if (!el) continue;
+                var value = answers[n] != null ? String(answers[n]) : '';
+                if (!value) continue;
+                el.value = value;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+              } catch (e) {}
+            }
+            try {
+              if (typeof window.submitTest === 'function') window.submitTest();
+            } catch (e) {}
+            // Its own grading leaves the fields editable; lock them so this
+            // stays a review rather than something that looks re-answerable.
+            try {
+              var fields = document.querySelectorAll('input, select, textarea');
+              for (var f = 0; f < fields.length; f++) fields[f].disabled = true;
+            } catch (e) {}
+          });
+
+          try {
+            window.parent.postMessage({ type: 'IELTS_REVIEW_READY' }, window.location.origin);
+          } catch (e) {}
+        }
+
         function __installDayFamilyBridge() {
+          var __reviewMode = false;
+          try { __reviewMode = params.get('review') === '1'; } catch (e) {}
+          if (__reviewMode) {
+            __installDayFamilyReview();
+            return;
+          }
+
           __hideDuplicateWritingTab();
           var btn = document.querySelector('.btn-submit');
           if (!btn) return;
