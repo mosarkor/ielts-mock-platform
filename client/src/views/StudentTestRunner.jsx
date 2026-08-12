@@ -732,7 +732,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
             {isExamStarted && visitedModules.listening && (
               <iframe
                 ref={listeningIframeRef}
-                src={`${window.location.origin}${test.listening_data.iframeUrl}?studentId=${encodeURIComponent(user.id)}&testId=${testId}&moduleType=listening`}
+                src={`${window.location.origin}${test.listening_data.iframeUrl}?studentId=${encodeURIComponent(user.id)}&testId=${testId}&moduleType=listening&multiModule=${moduleOrder.length > 1 ? 1 : 0}`}
                 style={{ width: '100%', height: '100%', border: 'none' }}
                 title={`${test.title} — Listening`}
               />
@@ -833,7 +833,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
             {isExamStarted && visitedModules.reading && (
               <iframe
                 ref={readingIframeRef}
-                src={`${window.location.origin}${test.reading_data.iframeUrl}?studentId=${encodeURIComponent(user.id)}&testId=${testId}&moduleType=reading`}
+                src={`${window.location.origin}${test.reading_data.iframeUrl}?studentId=${encodeURIComponent(user.id)}&testId=${testId}&moduleType=reading&multiModule=${moduleOrder.length > 1 ? 1 : 0}`}
                 style={{ width: '100%', height: '100%', border: 'none' }}
                 title={`${test.title} — Reading`}
               />

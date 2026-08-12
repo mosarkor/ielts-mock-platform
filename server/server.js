@@ -1908,6 +1908,21 @@ app.post('/api/admin/upload-test', async (req, res) => {
           // Not via .onclick: that is itself a bubble-phase handler and would be
           // cancelled by the stopImmediatePropagation above.
           freshBtn.onclick = null;
+
+          // "Complete Section" only means something in a multi-module exam, where
+          // a section is locked before moving to the next one. On a single-module
+          // test the section IS the test, so it sat next to the platform's own
+          // Submit Test button as a second, redundant way to finish -- and it used
+          // to be the only one that actually saved anything. Submit now harvests
+          // by itself, so on a single-module test this button is hidden rather
+          // than offered as a confusing choice. It stays in the DOM and fully
+          // wired, because the platform still triggers it programmatically (via
+          // __ieltsBridgeComplete) on submit, timeout and module hand-off.
+          try {
+            if (new URLSearchParams(window.location.search).get('multiModule') === '0') {
+              freshBtn.style.setProperty('display', 'none', 'important');
+            }
+          } catch (e) {}
           // The parent platform needs to be able to trigger completion itself
           // (a module's own clock running out, or a sequential-locked exam
           // moving the student on) without a real user click -- but every
@@ -2044,6 +2059,15 @@ app.post('/api/admin/upload-test', async (req, res) => {
             alert('This section is marked complete and saved. You can switch tabs or submit the whole test when ready.');
           };
           window.__ieltsBridgeComplete = freshBtn.onclick;
+
+          // Same reasoning as the bridge above: redundant next to the platform's
+          // Submit Test button when this module is the whole test. Hidden, not
+          // removed -- the platform still fires it programmatically.
+          try {
+            if (params.get('multiModule') === '0') {
+              freshBtn.style.setProperty('display', 'none', 'important');
+            }
+          } catch (e) {}
         }
 
         if (document.readyState !== 'loading') {
