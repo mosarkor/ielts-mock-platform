@@ -59,6 +59,10 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
   const submissionInFlightRef = useRef(false);
   const completionCheckRef = useRef(false);
   const latestSubmissionRef = useRef(null);
+  // Mirrors what each iframe module has reported. Submitting has to read the
+  // freshly harvested values synchronously -- React state set from the module's
+  // postMessage is not visible inside the submit call that triggered it.
+  const harvestedRef = useRef({ listening: null, reading: null });
 
   // A module can independently be native (JSON questions) or a standalone iframe.
   // Computed here (not just in the render body) so effects can use it too.
@@ -223,6 +227,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         const band = Number(event.data.band) || 0;
         const correctCount = Number(event.data.correctCount) || 0;
 
+        harvestedRef.current[moduleType] = { answers, detail, correctCount, band };
         setModuleResults(prev => ({ ...prev, [moduleType]: { answers, detail, correctCount, band } }));
         if (moduleType === 'listening') setListeningAnswers(answers);
         else setReadingAnswers(answers);
@@ -300,6 +305,35 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
 
+    // Answers inside an iframe module only reach this component when that module
+    // reports them, which until now happened solely because the student pressed
+    // the module's own "Complete Section" button. A student who answered
+    // everything and then pressed Submit Test -- the obvious thing to do, and the
+    // only button on a single-module test that looks like it ends the exam --
+    // submitted an empty paper with no score. Harvest anything outstanding here so
+    // Submit alone is always sufficient.
+    const pending = [];
+    if (listeningIsIframe && !harvestedRef.current.listening) {
+      autoCompleteIframeModule(listeningIframeRef);
+      pending.push('listening');
+    }
+    if (readingIsIframe && !harvestedRef.current.reading) {
+      autoCompleteIframeModule(readingIframeRef);
+      pending.push('reading');
+    }
+    if (pending.length) {
+      // The module answers via postMessage, so give it a moment to arrive; the
+      // values are read from the ref below rather than from state, which this
+      // call cannot see updated.
+      const deadline = Date.now() + 3000;
+      while (pending.some(m => !harvestedRef.current[m]) && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
+
+    const listening = harvestedRef.current.listening || moduleResults.listening;
+    const reading = harvestedRef.current.reading || moduleResults.reading;
+
     try {
       const res = await fetch(`/api/student/submit/${testId}`, {
         method: 'POST',
@@ -307,13 +341,13 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         signal: controller.signal,
         body: JSON.stringify({
           studentId: user.id,
-          listeningAnswers,
-          readingAnswers,
+          listeningAnswers: listening?.answers || listeningAnswers,
+          readingAnswers: reading?.answers || readingAnswers,
           writingAnswers,
-          listeningDetail: moduleResults.listening?.detail,
-          readingDetail: moduleResults.reading?.detail,
-          listeningScore: moduleResults.listening?.band,
-          readingScore: moduleResults.reading?.band,
+          listeningDetail: listening?.detail,
+          readingDetail: reading?.detail,
+          listeningScore: listening?.band,
+          readingScore: reading?.band,
           violationsCount: violations
         })
       });
