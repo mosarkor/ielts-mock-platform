@@ -2473,6 +2473,34 @@ app.post('/api/admin/upload-test', async (req, res) => {
             return { answers: answers, detail: detail, correctCount: correct };
           }
 
+          // This template ships its own "Review" control, and it is live from
+          // the moment the page loads -- a student can press it before answering
+          // anything and get the full transcript, the answer key and unlocked
+          // audio, mid-exam. Hiding the results screen on submit was never
+          // enough, because the leak does not wait for a submit.
+          //
+          // Kept during a released review, where showing the transcript and the
+          // answers is the entire point.
+          function __hideOwnReviewControl() {
+            if (__review) return;
+            // Taken out of the document rather than just hidden: display:none
+            // stops the click a student can make, but leaves the control and its
+            // handler sitting there for anyone who reaches it another way. This
+            // one reveals the answer key, so it should not survive at all.
+            function hide() {
+              try {
+                var el = document.getElementById('review-btn');
+                if (el && el.parentNode) el.parentNode.removeChild(el);
+              } catch (e) {}
+            }
+            hide();
+            // It sits behind the template's start screens, so it can appear
+            // later; and re-hide if the template ever re-renders its chrome.
+            try {
+              new MutationObserver(hide).observe(document.documentElement, { childList: true, subtree: true });
+            } catch (e) {}
+          }
+
           function __install() {
             var btn = document.getElementById('submit-check-btn');
             if (!btn) return;
@@ -2523,6 +2551,11 @@ app.post('/api/admin/upload-test', async (req, res) => {
             }, true);
             window.__ieltsBridgeComplete = function () { btn.click(); };
           }
+
+          // Straight away, not once the submit button turns up: the Review
+          // control is reachable from the first paint, long before the student
+          // reaches a screen that has a submit button on it.
+          __hideOwnReviewControl();
 
           // The button lives behind this template's own start screens, so it may
           // not exist yet when this first runs. Keep looking rather than giving
