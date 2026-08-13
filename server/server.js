@@ -2291,6 +2291,180 @@ app.post('/api/admin/upload-test', async (req, res) => {
       })();
       `;
       content = content.replace('</body>', `<script>${dayFamilyBridgeSnippet}</script>\n</body>`);
+    } else if (
+      content.includes('const answerKey = {')
+      && content.includes('submit-check-btn')
+      && content.includes('data-q=')
+    ) {
+      // A third self-scoring generation (the "Authentic Listening" files). It
+      // reports nothing at all -- no fetch, no postMessage -- so without this a
+      // student could sit the whole paper and the teacher would see no score,
+      // and it would not count toward Skills Averages.
+      //
+      // Unlike the other two, this template's whole script is wrapped in an
+      // IIFE, so answerKey/acceptedAnswers are unreachable from a separately
+      // injected <script>. They are static object literals though, so they are
+      // parsed out here and baked into the bridge instead of being read from
+      // the page at runtime.
+      const literalToJson = (source, name) => {
+        const start = source.indexOf(`${name} = {`);
+        if (start === -1) return null;
+        const open = source.indexOf('{', start);
+        let depth = 0;
+        for (let i = open; i < source.length; i += 1) {
+          if (source[i] === '{') depth += 1;
+          else if (source[i] === '}') {
+            depth -= 1;
+            if (depth === 0) {
+              const body = source.slice(open, i + 1);
+              try {
+                // Numeric keys are unquoted in the source; JSON needs them quoted.
+                return JSON.parse(body.replace(/([{,]\s*)(\d+)\s*:/g, '$1"$2":'));
+              } catch (e) {
+                return null;
+              }
+            }
+          }
+        }
+        return null;
+      };
+
+      const parsedKey = literalToJson(content, 'const answerKey');
+      const parsedAccepted = literalToJson(content, 'acceptedAnswers') || {};
+
+      if (!parsedKey) {
+        console.error(`Upload "${title}": recognised the authentic-listening template but could not read its answer key; results would not be reported.`);
+      } else {
+        const authenticBridgeSnippet = `
+        (function() {
+          var params = new URLSearchParams(window.location.search);
+          var __testId = params.get('testId') || '${testId}';
+          var __moduleType = params.get('moduleType') || '${moduleType}';
+          var __review = params.get('review') === '1';
+          var KEY = ${JSON.stringify(parsedKey)};
+          var ACCEPTED = ${JSON.stringify(parsedAccepted)};
+
+          function __band(c) {
+            var t = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
+            for (var i = 0; i < t.length; i++) { if (c >= t[i][0]) return t[i][1]; }
+            return 2.5;
+          }
+          function __norm(v) { return String(v == null ? '' : v).trim().toLowerCase().replace(/[ \\t\\n\\r]+/g, ' '); }
+
+          function __fieldFor(n) {
+            return document.querySelector('[data-q="' + n + '"]');
+          }
+
+          // This template renders one part at a time -- only ten answer fields
+          // exist in the DOM at any moment -- so reading the page at submit time
+          // would capture the last part and silently lose the other thirty
+          // answers. Every answer is therefore recorded as the student enters it.
+          var __live = {};
+          function __track(el) {
+            if (!el || !el.getAttribute) return;
+            var q = el.getAttribute('data-q');
+            if (!q) return;
+            __live[q] = el.value;
+          }
+          document.addEventListener('input', function (e) { __track(e.target); }, true);
+          document.addEventListener('change', function (e) { __track(e.target); }, true);
+
+          function __harvest() {
+            var answers = {}, detail = {}, correct = 0;
+            // Sweep whatever is on screen now, so a part never navigated away
+            // from is still included.
+            try {
+              var present = document.querySelectorAll('[data-q]');
+              for (var p = 0; p < present.length; p++) __track(present[p]);
+            } catch (e) {}
+            for (var n = 1; n <= 40; n++) {
+              var el = __fieldFor(n);
+              var given = el ? String(el.value || '').trim() : String(__live[n] == null ? '' : __live[n]).trim();
+              var accepted = ACCEPTED[n] || (KEY[n] !== undefined ? [KEY[n]] : []);
+              var ok = false;
+              if (given) {
+                for (var a = 0; a < accepted.length; a++) {
+                  if (__norm(accepted[a]) === __norm(given)) { ok = true; break; }
+                }
+              }
+              if (ok) correct++;
+              answers[n] = given;
+              detail[n] = {
+                userAnswer: given,
+                correctAnswer: accepted.join(' / ') || String(KEY[n] == null ? '' : KEY[n]),
+                isCorrect: ok
+              };
+            }
+            return { answers: answers, detail: detail, correctCount: correct };
+          }
+
+          function __install() {
+            var btn = document.getElementById('submit-check-btn');
+            if (!btn) return;
+
+            if (__review) {
+              // Released review: put the stored answers back and let the
+              // template show its own results screen. Read-only.
+              btn.style.setProperty('display', 'none', 'important');
+              window.addEventListener('message', function (event) {
+                if (event.origin !== window.location.origin) return;
+                if (!event.data || event.data.type !== 'IELTS_REVIEW_ANSWERS') return;
+                var given = event.data.answers || {};
+                for (var n = 1; n <= 40; n++) {
+                  var el = __fieldFor(n);
+                  if (!el || given[n] == null || given[n] === '') continue;
+                  el.value = given[n];
+                  el.dispatchEvent(new Event('input', { bubbles: true }));
+                  el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                try { btn.style.removeProperty('display'); btn.click(); btn.style.setProperty('display', 'none', 'important'); } catch (e) {}
+              });
+              try { window.parent.postMessage({ type: 'IELTS_REVIEW_READY' }, window.location.origin); } catch (e) {}
+              return;
+            }
+
+            // Exam: report silently and never let its own results screen show.
+            var done = false;
+            btn.addEventListener('click', function (event) {
+              try { event.stopImmediatePropagation(); event.preventDefault(); } catch (e) {}
+              if (done) return;
+              done = true;
+              var result = __harvest();
+              try { document.querySelectorAll('audio').forEach(function (a) { a.pause(); }); } catch (e) {}
+              window.parent.postMessage({
+                type: 'IELTS_MODULE_COMPLETE',
+                testId: __testId, moduleType: __moduleType,
+                answers: result.answers, detail: result.detail,
+                correctCount: result.correctCount, band: __band(result.correctCount)
+              }, window.location.origin);
+              btn.textContent = '✓ Completed';
+              btn.disabled = true;
+              btn.style.opacity = '0.6';
+              try {
+                var results = document.getElementById('screen-results');
+                if (results) results.style.setProperty('display', 'none', 'important');
+              } catch (e) {}
+              alert('This section is marked complete and saved. You can submit the whole test when ready.');
+            }, true);
+            window.__ieltsBridgeComplete = function () { btn.click(); };
+          }
+
+          // The button lives behind this template's own start screens, so it may
+          // not exist yet when this first runs. Keep looking rather than giving
+          // up silently -- a bridge that quietly does not install is exactly the
+          // failure this exists to prevent.
+          var __tries = 0;
+          function __installWhenReady() {
+            if (document.getElementById('submit-check-btn')) { __install(); return; }
+            if (++__tries > 100) return;
+            setTimeout(__installWhenReady, 150);
+          }
+          if (document.readyState !== 'loading') __installWhenReady();
+          else document.addEventListener('DOMContentLoaded', __installWhenReady);
+        })();
+        `;
+        content = content.replace('</body>', `<script>${authenticBridgeSnippet}</script>\n</body>`);
+      }
     }
 
     // 2b. Safety net on top of the branch-specific handling above: fix any
