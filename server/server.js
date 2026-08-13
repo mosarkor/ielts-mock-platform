@@ -1997,10 +1997,44 @@ app.post('/api/admin/upload-test', async (req, res) => {
           } catch (e) {}
         }
 
+        // Real report: on the True/False/Not Given questions, choosing TRUE by
+        // accident left the answer stuck -- clicking FALSE or NOT GIVEN did
+        // nothing.
+        //
+        // Cause is the passage-highlighting tool. Its mouseup handler is bound to
+        // the whole document, so a click that also selects the option's word
+        // (a double-click, or a click with the slightest drag) counts as a text
+        // selection and pops the highlight toolbar at the cursor. The toolbar
+        // prefers to sit above the cursor but flips below when there is no room
+        // -- which is the case near the top of a passage -- and at ~146px tall it
+        // then covers the next two or three options, swallowing the clicks. It
+        // depends on where on the page you click, which is why it looked
+        // intermittent.
+        //
+        // Highlighting is for studying the passage, not for the answer options,
+        // so the selection is dropped when it lands inside an option. Their
+        // handler runs on a 10ms timer and then sees nothing selected, so no
+        // toolbar appears and the click reaches the option. Passage highlighting
+        // is untouched.
+        function __keepOptionsClickable() {
+          var OPTION = '.tf-option, .multi-choice-option, .tf-options label, .options label';
+          document.addEventListener('mouseup', function (event) {
+            try {
+              var target = event.target;
+              var el = target && target.nodeType === 1 ? target : (target && target.parentElement);
+              if (!el || !el.closest || !el.closest(OPTION)) return;
+              var selection = window.getSelection();
+              if (!selection || selection.isCollapsed || !String(selection).trim()) return;
+              selection.removeAllRanges();
+            } catch (e) {}
+          }, true);
+        }
+
         function __installBridge() {
           __enforceNoAudioPause();
           __reclaimHeaderSpace();
           __installSelectionHighlight();
+          __keepOptionsClickable();
 
           var __reviewMode = false;
           try {
