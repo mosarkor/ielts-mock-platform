@@ -2487,6 +2487,41 @@ app.post('/api/admin/upload-test', async (req, res) => {
     // mojibake from the source file's original encoding, and guarantee the
     // password/Test-Taker-ID gate is neutralized even if this file's function
     // names didn't match either branch above.
+    // These files come from public Telegram channels and carry their branding:
+    // a handle in the <title>, a watermark overlay, and a "join the channel"
+    // button. Students sitting the teacher's paper should not be shown someone
+    // else's channel, so the tags are stripped on upload rather than left for
+    // each file to be hand-edited.
+    const stripChannelTags = (html) => {
+      let out = html;
+      let removed = 0;
+      const drop = (pattern, replacement = '') => {
+        const before = out;
+        out = out.replace(pattern, replacement);
+        if (out !== before) removed += 1;
+      };
+
+      // Whole anchor elements that exist only to promote a channel.
+      drop(/<a\b[^>]*>(?:(?!<\/a>)[\s\S])*?(?:tg-icon|Join\s+[A-Za-z0-9_]+\s+on\s+Telegram)(?:(?!<\/a>)[\s\S])*?<\/a>/gi);
+      // The watermark overlay's handle line and its "content protected" notice.
+      drop(/<div class="t">\s*@[A-Za-z0-9_]{3,}\s*<\/div>/gi);
+      // Any remaining bare @handle in visible text. CSS at-rules must survive,
+      // so those names are excluded explicitly rather than matched loosely.
+      drop(/@(?!media\b|keyframes\b|import\b|font-face\b|supports\b|charset\b|page\b|namespace\b|layer\b|container\b)[A-Za-z0-9_]{3,}/g);
+      // Titles left as "Real Title | " once the handle above is gone.
+      drop(/<title>([^<]*?)[\s|—-]+<\/title>/i, '<title>$1</title>');
+      // Href mangled by the older Jasurbek/t.me replacements running in order.
+      drop(/href="#[^"]*"/gi, 'href="#"');
+
+      return { html: out, removed };
+    };
+
+    const tagStrip = stripChannelTags(content);
+    content = tagStrip.html;
+    if (tagStrip.removed > 0) {
+      console.log(`Upload "${title}": stripped ${tagStrip.removed} channel-branding pattern(s).`);
+    }
+
     const sanitized = sanitizeTestHtml(content);
     content = sanitized.html;
     if (sanitized.mojibakeFixedCount > 0) {
