@@ -250,8 +250,19 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
     }
   };
 
-  const handleSelectSubmission = (sub) => {
-    if (!sub) return;
+  const handleSelectSubmission = async (listSub) => {
+    if (!listSub) return;
+    // The list no longer carries the per-question detail -- it is the bulk of
+    // that response and is only needed for the paper actually being opened, so
+    // it is fetched here. Falls back to the list row if the fetch fails, which
+    // still gives the writing grading view rather than nothing.
+    let sub = listSub;
+    try {
+      const res = await fetch(`/api/teacher/submission/${listSub.id}`);
+      if (res.ok) sub = await res.json();
+    } catch {
+      // keep listSub
+    }
     let parsedWriting = sub.writing_answers;
     if (typeof parsedWriting === 'string') {
       try { parsedWriting = JSON.parse(parsedWriting); } catch(_) { parsedWriting = { task1: String(sub.writing_answers || ''), task2: '' }; }

@@ -565,6 +565,36 @@ app.post('/api/student/assignment/start', async (req, res) => {
 // ----------------------------------------
 
 // Fetch submissions (both pending and completed)
+// One submission in full, including the per-question detail the list above
+// leaves out. Fetched only when a teacher opens a paper, so the weight is paid
+// once for one student rather than for every student on every dashboard load.
+app.get('/api/teacher/submission/:id', async (req, res) => {
+  try {
+    const sub = await db.get(`
+      SELECT s.*, u.name as student_name, u.group_name as student_group, t.title as test_title, t.writing_data
+      FROM submissions s
+      JOIN users u ON s.student_id = u.id
+      JOIN tests t ON s.test_id = t.id
+      WHERE s.id = ?
+    `, [req.params.id]);
+    if (!sub) return res.status(404).json({ error: 'Submission not found' });
+
+    res.json({
+      ...sub,
+      listening_answers: JSON.parse(sub.listening_answers || '{}'),
+      reading_answers: JSON.parse(sub.reading_answers || '{}'),
+      writing_answers: JSON.parse(sub.writing_answers || '{}'),
+      writing_scores: JSON.parse(sub.writing_scores || 'null'),
+      listening_detail: parseJson(sub.listening_detail, null),
+      reading_detail: parseJson(sub.reading_detail, null),
+      writing_data: undefined,
+      test_writing_data: JSON.parse(sub.writing_data || '{}')
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get('/api/teacher/submissions', async (req, res) => {
   try {
     const submissions = await db.all(`
@@ -574,19 +604,26 @@ app.get('/api/teacher/submissions', async (req, res) => {
       JOIN tests t ON s.test_id = t.id
       ORDER BY s.submitted_at DESC
     `);
+    // Deliberately omits the per-question detail. It is the bulk of this
+    // response -- 0.62 MB of 0.96 MB across 65 submissions, thousands of
+    // explanationHtml blocks -- and it grows with every paper sat, while the
+    // dashboard list only shows names, tests and bands. It was being shipped on
+    // every dashboard load and after most actions, on a free instance and a
+    // metered database. The detail is fetched per submission when a teacher
+    // actually opens one, via the route below.
     res.json(submissions.map(sub => ({
       ...sub,
       listening_answers: JSON.parse(sub.listening_answers || '{}'),
       reading_answers: JSON.parse(sub.reading_answers || '{}'),
       writing_answers: JSON.parse(sub.writing_answers || '{}'),
       writing_scores: JSON.parse(sub.writing_scores || 'null'),
-      // Per-question {userAnswer, correctAnswer, isCorrect, explanationHtml},
-      // harvested from standalone iframe modules that support it -- the
-      // student dashboard already reads these; the teacher dashboard never
-      // did, so the only per-question review it could show was for the old
-      // single-file mock1-9 templates, nothing for any harvest-bridge test.
-      listening_detail: parseJson(sub.listening_detail, null),
-      reading_detail: parseJson(sub.reading_detail, null),
+      listening_detail: undefined,
+      reading_detail: undefined,
+      // The joined module data is only needed to know whether a Writing task
+      // exists; the listening/reading blobs behind it are never read here.
+      listening_data: undefined,
+      reading_data: undefined,
+      writing_data: undefined,
       test_writing_data: JSON.parse(sub.writing_data || '{}')
     })));
   } catch (error) {
