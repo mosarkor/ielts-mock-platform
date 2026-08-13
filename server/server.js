@@ -2331,6 +2331,11 @@ app.post('/api/admin/upload-test', async (req, res) => {
 
       const parsedKey = literalToJson(content, 'const answerKey');
       const parsedAccepted = literalToJson(content, 'acceptedAnswers') || {};
+      // This template ships the supporting evidence for each answer. Without
+      // passing it through, the teacher's per-question review and the student's
+      // released review show a correct answer with no reason for it -- which is
+      // the part that actually teaches.
+      const parsedExplanations = literalToJson(content, 'answerExplanations') || {};
 
       if (!parsedKey) {
         console.error(`Upload "${title}": recognised the authentic-listening template but could not read its answer key; results would not be reported.`);
@@ -2343,6 +2348,12 @@ app.post('/api/admin/upload-test', async (req, res) => {
           var __review = params.get('review') === '1';
           var KEY = ${JSON.stringify(parsedKey)};
           var ACCEPTED = ${JSON.stringify(parsedAccepted)};
+          var EXPLAIN = ${JSON.stringify(parsedExplanations)};
+
+          function __escape(s) {
+            return String(s == null ? '' : s)
+              .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          }
 
           function __band(c) {
             var t = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
@@ -2394,6 +2405,11 @@ app.post('/api/admin/upload-test', async (req, res) => {
                 correctAnswer: accepted.join(' / ') || String(KEY[n] == null ? '' : KEY[n]),
                 isCorrect: ok
               };
+              if (EXPLAIN[n]) {
+                detail[n].explanationHtml =
+                  '<div class="__genericExplanation"><p><em>Where this is answered:</em> '
+                  + __escape(EXPLAIN[n]) + '</p></div>';
+              }
             }
             return { answers: answers, detail: detail, correctCount: correct };
           }
