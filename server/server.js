@@ -1462,7 +1462,20 @@ app.post('/api/admin/upload-test', async (req, res) => {
               .reduce(function (names, el) { if (names.indexOf(el.name) === -1) names.push(el.name); return names; }, []);
             for (var g = 0; g < groupNames.length; g++) {
               var groupName = groupNames[g];
-              var parts = groupName.slice(1).split('_').map(Number);
+              // The name is an inclusive RANGE, not a list: "q11_13" is the
+              // "choose THREE letters" group covering questions 11, 12 and 13.
+              // Reading it as just 11 and 13 dropped question 12 out of the
+              // group entirely, so it could never be credited and every student
+              // silently lost that mark. Consecutive names like "q20_21" mean
+              // the same thing either way, which is why this only surfaced on a
+              // three-question group.
+              var bounds = groupName.slice(1).split('_').map(Number);
+              var parts = [];
+              if (bounds.length === 2 && bounds[1] > bounds[0]) {
+                for (var b = bounds[0]; b <= bounds[1]; b++) parts.push(b);
+              } else {
+                parts = bounds;
+              }
               var pos = parts.indexOf(n);
               if (pos === -1) continue;
               var checkedVals = Array.from(document.querySelectorAll('input[name="' + groupName + '"]:checked')).map(function (c) { return c.value; });
@@ -1485,9 +1498,21 @@ app.post('/api/admin/upload-test', async (req, res) => {
               // the mark on BOTH questions. Rebuild the set from the group's own
               // question numbers whenever no group-keyed entry exists.
               if (!correctSet.length && typeof __ca === 'object' && __ca) {
-                correctSet = parts
-                  .map(function (p) { return __ca[String(p)]; })
-                  .filter(function (v) { return typeof v === 'string' && v; });
+                // Generations differ: some key each question in the group to its
+                // own letter ("11":"C"), others repeat the whole accepted set
+                // against every question in it ("11":["C","D","E"]). Flatten
+                // both into one set of accepted letters, de-duplicated -- taking
+                // only strings dropped the array form entirely and left the
+                // group with no key at all, marking every answer wrong.
+                var collected = [];
+                for (var pi = 0; pi < parts.length; pi++) {
+                  var value = __ca[String(parts[pi])];
+                  var list = Array.isArray(value) ? value : (typeof value === 'string' && value ? [value] : []);
+                  for (var li = 0; li < list.length; li++) {
+                    if (collected.indexOf(list[li]) === -1) collected.push(list[li]);
+                  }
+                }
+                correctSet = collected;
               }
               var matchCount = checkedVals.filter(function (v) { return correctSet.indexOf(v) !== -1; }).length;
               result = {
