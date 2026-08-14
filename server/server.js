@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import { sanitizeTestHtml } from './contentSanitizer.js';
 import { hashPassword, verifyPassword } from './auth.js';
 
@@ -3190,7 +3191,20 @@ CRITICAL RULES:
 - Return ONLY the punctuated text without commentary.`;
 
   try {
-    if (aiSettings.provider === 'openai' && aiSettings.openai_api_key) {
+    if (aiSettings.provider === 'claude' && aiSettings.anthropic_api_key) {
+      const anthropic = new Anthropic({ apiKey: aiSettings.anthropic_api_key });
+      const res = await anthropic.messages.create({
+        model: 'claude-opus-5',
+        max_tokens: 4000,
+        // Restoring punctuation is mechanical, and this runs on every part of
+        // every submission -- low effort keeps it quick and cheap.
+        output_config: { effort: 'low' },
+        system: systemPrompt,
+        messages: [{ role: 'user', content: `Raw Speech Transcript:\n${rawText}` }]
+      });
+      const text = res.content.find((block) => block.type === 'text');
+      return text ? text.text.trim() : rawText;
+    } else if (aiSettings.provider === 'openai' && aiSettings.openai_api_key) {
       const openai = new OpenAI({ apiKey: aiSettings.openai_api_key });
       const res = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
@@ -3253,7 +3267,50 @@ The "overall" score should be the mean of the four criteria rounded to the neare
   try {
     let raw;
     let provider;
-    if (aiSettings.provider === 'openai' && aiSettings.openai_api_key) {
+    if (aiSettings.provider === 'claude' && aiSettings.anthropic_api_key) {
+      const anthropic = new Anthropic({ apiKey: aiSettings.anthropic_api_key });
+      const tip = { type: 'string' };
+      const band = { type: 'number' };
+      const response = await anthropic.messages.create({
+        model: 'claude-opus-5',
+        // Scoring against band descriptors is judgment work, so thinking is left
+        // on (the default). max_tokens caps thinking and answer together, so it
+        // is set well above the size of the JSON itself -- too tight a limit
+        // truncates mid-answer rather than returning a short one.
+        max_tokens: 16000,
+        // The schema is enforced rather than requested, so the reply is always
+        // parseable JSON with every score present. The old prompt-only approach
+        // is what parseAiJsonResponse below exists to clean up after.
+        output_config: {
+          format: {
+            type: 'json_schema',
+            schema: {
+              type: 'object',
+              properties: {
+                fluency: band, lexical: band, grammar: band,
+                pronunciation: band, overall: band,
+                feedback: {
+                  type: 'object',
+                  properties: {
+                    fluency: tip, lexical: tip, grammar: tip,
+                    pronunciation: tip, overall: tip
+                  },
+                  required: ['fluency', 'lexical', 'grammar', 'pronunciation', 'overall'],
+                  additionalProperties: false
+                }
+              },
+              required: ['fluency', 'lexical', 'grammar', 'pronunciation', 'overall', 'feedback'],
+              additionalProperties: false
+            }
+          }
+        },
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }]
+      });
+      const text = response.content.find((block) => block.type === 'text');
+      raw = text ? text.text : '';
+      provider = 'claude';
+    } else if (aiSettings.provider === 'openai' && aiSettings.openai_api_key) {
       const openai = new OpenAI({ apiKey: aiSettings.openai_api_key });
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
@@ -3327,10 +3384,17 @@ app.get('/api/admin/settings', async (req, res) => {
     if (settings) {
       settings.gemini_api_key_set = !!(settings.gemini_api_key);
       settings.openai_api_key_set = !!(settings.openai_api_key);
+      settings.anthropic_api_key_set = !!(settings.anthropic_api_key);
       delete settings.gemini_api_key;
       delete settings.openai_api_key;
+      delete settings.anthropic_api_key;
     }
-    res.json(settings || { provider: 'gemini', gemini_api_key_set: false, openai_api_key_set: false });
+    res.json(settings || {
+      provider: 'gemini',
+      gemini_api_key_set: false,
+      openai_api_key_set: false,
+      anthropic_api_key_set: false
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -3338,7 +3402,7 @@ app.get('/api/admin/settings', async (req, res) => {
 
 // Admin Settings — Update
 app.post('/api/admin/settings', async (req, res) => {
-  const { provider, gemini_api_key, openai_api_key } = req.body;
+  const { provider, gemini_api_key, openai_api_key, anthropic_api_key } = req.body;
   try {
     const existing = await db.get('SELECT id FROM ai_settings LIMIT 1');
     if (existing) {
@@ -3350,10 +3414,19 @@ app.post('/api/admin/settings', async (req, res) => {
       if (openai_api_key !== undefined && openai_api_key !== '') {
         updates.push('openai_api_key = ?'); vals.push(openai_api_key);
       }
+      // Blank means "keep the stored key", matching the other two -- the form
+      // never receives the saved value back, so an empty field is the normal
+      // state when changing any other setting.
+      if (anthropic_api_key !== undefined && anthropic_api_key !== '') {
+        updates.push('anthropic_api_key = ?'); vals.push(anthropic_api_key);
+      }
       vals.push(existing.id);
       await db.run(`UPDATE ai_settings SET ${updates.join(', ')} WHERE id = ?`, vals);
     } else {
-      await db.run('INSERT INTO ai_settings (provider, gemini_api_key, openai_api_key) VALUES (?, ?, ?)', [provider, gemini_api_key || null, openai_api_key || null]);
+      await db.run(
+        'INSERT INTO ai_settings (provider, gemini_api_key, openai_api_key, anthropic_api_key) VALUES (?, ?, ?, ?)',
+        [provider, gemini_api_key || null, openai_api_key || null, anthropic_api_key || null]
+      );
     }
     res.json({ success: true });
   } catch (error) {

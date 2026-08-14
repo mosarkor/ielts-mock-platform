@@ -233,6 +233,9 @@ export async function initDb() {
     await db.exec('ALTER TABLE submissions ADD COLUMN violations_count INTEGER DEFAULT 0').catch(() => {});
     await db.exec('ALTER TABLE submissions ADD COLUMN listening_detail TEXT').catch(() => {});
     await db.exec('ALTER TABLE submissions ADD COLUMN reading_detail TEXT').catch(() => {});
+    // The CREATE TABLE above only runs on a fresh database, so a platform that
+    // already has an ai_settings table needs the column added separately.
+    await db.exec('ALTER TABLE ai_settings ADD COLUMN anthropic_api_key TEXT').catch(() => {});
 
     // Speaking module tables
     await db.exec(`
@@ -289,6 +292,7 @@ export async function initDb() {
         provider TEXT DEFAULT 'gemini',
         gemini_api_key TEXT,
         openai_api_key TEXT,
+        anthropic_api_key TEXT,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -562,6 +566,7 @@ export async function initDb() {
       provider TEXT DEFAULT 'gemini',
       gemini_api_key TEXT,
       openai_api_key TEXT,
+      anthropic_api_key TEXT,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);

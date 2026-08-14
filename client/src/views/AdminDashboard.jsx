@@ -47,7 +47,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
 
   // Speaking Module States
   const [speakingPrompts, setSpeakingPrompts] = useState([]);
-  const [aiSettings, setAiSettings] = useState({ provider: 'gemini', gemini_api_key_set: false, openai_api_key_set: false });
+  const [aiSettings, setAiSettings] = useState({ provider: 'gemini', gemini_api_key_set: false, openai_api_key_set: false, anthropic_api_key_set: false });
   const [showSpeakingPanel, setShowSpeakingPanel] = useState(false);
   const [spTitle, setSpTitle] = useState('');
   const [spPart1, setSpPart1] = useState('Tell me about your hometown.\nWhat do you like to do in your free time?\nDo you prefer studying alone or with others?');
@@ -56,6 +56,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
   const [savingPrompt, setSavingPrompt] = useState(false);
   const [newGeminiKey, setNewGeminiKey] = useState('');
   const [newOpenaiKey, setNewOpenaiKey] = useState('');
+  const [newAnthropicKey, setNewAnthropicKey] = useState('');
   const [newAiProvider, setNewAiProvider] = useState('gemini');
   const [savingSettings, setSavingSettings] = useState(false);
   const [speakingAssignStudents, setSpeakingAssignStudents] = useState([]);
@@ -277,7 +278,8 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
         body: JSON.stringify({
           provider: newAiProvider,
           gemini_api_key: newGeminiKey,
-          openai_api_key: newOpenaiKey
+          openai_api_key: newOpenaiKey,
+          anthropic_api_key: newAnthropicKey
         })
       });
       if (!res.ok) throw new Error('Failed to update AI settings');
@@ -1307,6 +1309,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                     <span>Active Provider: <strong style={{ color: '#6366f1', textTransform: 'uppercase' }}>{aiSettings.provider || 'gemini'}</strong></span>
                     <span>Gemini Key: <strong style={{ color: aiSettings.gemini_api_key_set ? '#10b981' : '#f43f5e' }}>{aiSettings.gemini_api_key_set ? '✅ Set' : '❌ Not Set'}</strong></span>
                     <span>OpenAI Key: <strong style={{ color: aiSettings.openai_api_key_set ? '#10b981' : '#f43f5e' }}>{aiSettings.openai_api_key_set ? '✅ Set' : '❌ Not Set'}</strong></span>
+                    <span>Claude Key: <strong style={{ color: aiSettings.anthropic_api_key_set ? '#10b981' : '#f43f5e' }}>{aiSettings.anthropic_api_key_set ? '✅ Set' : '❌ Not Set'}</strong></span>
                   </div>
 
                   {showSpeakingPanel && (
@@ -1319,6 +1322,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                           <select className="form-input" value={newAiProvider} onChange={e => setNewAiProvider(e.target.value)}>
                             <option value="gemini">Google Gemini 2.0 Flash (Recommended)</option>
                             <option value="openai">OpenAI GPT-4o</option>
+                            <option value="claude">Anthropic Claude Opus 5</option>
                           </select>
                         </div>
                         <div className="form-group">
@@ -1328,6 +1332,10 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                         <div className="form-group">
                           <label className="form-label">OpenAI API Key {aiSettings.openai_api_key_set && '(Already configured — leave blank to keep)'}</label>
                           <input type="password" className="form-input" placeholder="sk-..." value={newOpenaiKey} onChange={e => setNewOpenaiKey(e.target.value)} />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">Anthropic (Claude) API Key {aiSettings.anthropic_api_key_set && '(Already configured — leave blank to keep)'}</label>
+                          <input type="password" className="form-input" placeholder="sk-ant-..." value={newAnthropicKey} onChange={e => setNewAnthropicKey(e.target.value)} />
                         </div>
                         <button type="submit" disabled={savingSettings} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.85rem' }}>
                           {savingSettings ? 'Saving...' : 'Save AI Configuration ⚙️'}
