@@ -2694,6 +2694,47 @@ app.post('/api/admin/tests/:id/link-modules', async (req, res) => {
 // before being rebuilt into iframe modules -- because that snapshot file was
 // never updated after the rebuild. Fixing one module's content should never
 // risk regressing another's.
+// Point one test's Listening or Reading at another test's uploaded file.
+//
+// A full mock needs two iframe modules, but an upload always writes to
+// mock<testId>.html -- one file per test row -- so uploading Reading over
+// Listening silently replaces it and the test ends up with both modules
+// pointing at the same file. Real multi-module tests (e.g. Mock 10) instead
+// keep each module as its own "ingredient" test and point at those files; this
+// is the missing step that builds that arrangement, rather than doing it by
+// hand against the database.
+app.post('/api/admin/tests/:id/module-link', async (req, res) => {
+  const targetId = Number.parseInt(req.params.id, 10);
+  const sourceId = Number.parseInt(req.body.sourceTestId, 10);
+  const { moduleType } = req.body;
+  if (!Number.isInteger(targetId) || !Number.isInteger(sourceId)) {
+    return res.status(400).json({ error: 'Numeric test id and sourceTestId are required' });
+  }
+  if (moduleType !== 'listening' && moduleType !== 'reading') {
+    return res.status(400).json({ error: "moduleType must be 'listening' or 'reading'" });
+  }
+  try {
+    const target = await db.get('SELECT id FROM tests WHERE id = ?', [targetId]);
+    if (!target) return res.status(404).json({ error: `Test ${targetId} not found` });
+    const source = await db.get('SELECT id, html_content FROM tests WHERE id = ?', [sourceId]);
+    // Without content there is no served file to point at, and the module would
+    // load a blank iframe mid-exam.
+    if (!source || !source.html_content) {
+      return res.status(400).json({ error: `Test ${sourceId} has no uploaded content to link to` });
+    }
+    const column = moduleType === 'reading' ? 'reading_data' : 'listening_data';
+    const moduleData = {
+      isIframe: true,
+      iframeUrl: `/tests/mock${sourceId}.html`,
+      ...(String(source.html_content).includes('__ieltsBridgeComplete') ? { bridgeType: 'harvest' } : {})
+    };
+    await db.run(`UPDATE tests SET ${column} = ? WHERE id = ?`, [JSON.stringify(moduleData), targetId]);
+    res.json({ success: true, moduleType, iframeUrl: moduleData.iframeUrl });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/admin/tests/:id/writing-data', async (req, res) => {
   const targetId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(targetId)) return res.status(400).json({ error: 'Invalid test id' });
