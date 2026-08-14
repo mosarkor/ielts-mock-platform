@@ -101,12 +101,35 @@ export function removeAccessGate(html) {
   return { html: injected, gateFound: true, changed: true };
 }
 
+// Some passages ship a vocabulary study aid: selected words are wrapped in
+// <span class="vocab-word"> so they appear underlined, and clicking one pops up
+// its pronunciation, definition and translation. That belongs in a study copy,
+// not an exam -- it draws the eye to particular words and hands over meanings a
+// candidate is supposed to work out from context.
+//
+// The wrapper is unwrapped and the word inside is kept: those words are part of
+// the passage, so deleting the element would silently cut text out of the
+// reading. The stylesheet and lookup table are left alone -- with no wrappers
+// left they match nothing, and removing a table other code may still reference
+// risks a script error mid-exam for no visible gain.
+export function removeVocabularyHelpers(html) {
+  if (!html || !html.includes('vocab-word')) return { html, removedCount: 0 };
+  let removedCount = 0;
+  const unwrapped = html.replace(
+    /<span\b[^>]*class="[^"]*\bvocab-word\b[^"]*"[^>]*>([\s\S]*?)<\/span>/gi,
+    (match, inner) => { removedCount++; return inner; }
+  );
+  return { html: unwrapped, removedCount };
+}
+
 export function sanitizeTestHtml(html) {
   const mojibake = fixMojibake(html);
   const gate = removeAccessGate(mojibake.html);
+  const vocab = removeVocabularyHelpers(gate.html);
   return {
-    html: gate.html,
+    html: vocab.html,
     mojibakeFixedCount: mojibake.fixedCount,
-    gateRemoved: gate.changed
+    gateRemoved: gate.changed,
+    vocabHelpersRemoved: vocab.removedCount
   };
 }
