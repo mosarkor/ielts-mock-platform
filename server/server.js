@@ -662,8 +662,17 @@ app.post('/api/teacher/grade/:submissionId', async (req, res) => {
     return roundIelts(avg);
   };
 
+  // No rubric means "not marked", which has to store NULL. Sending nothing used
+  // to fall through to a flat 6.0, and sending {} averaged an empty list to 0 --
+  // and a stored 0 is exactly the corrupt-data signature that drags a student's
+  // skill average toward zero on their own dashboard. Both wrote a number where
+  // the honest answer was "no mark yet", so an empty rubric now clears the grade
+  // instead, which is also the only way to undo a mistaken one.
+  const hasRubric = !!writingScores && typeof writingScores === 'object'
+    && Object.keys(writingScores).length > 0;
+
   try {
-    const writingScore = calculateOverallWritingBand(writingScores);
+    const writingScore = hasRubric ? calculateOverallWritingBand(writingScores) : null;
 
     // graded_by is a foreign key into users, and the browser sends whatever id
     // its stored login holds. After the database move, a teacher whose session
@@ -688,7 +697,7 @@ app.post('/api/teacher/grade/:submissionId', async (req, res) => {
           teacher_feedback = ?,
           graded_by = ?
       WHERE id = ?
-    `, [JSON.stringify(writingScores), writingScore, teacherFeedback, grader, submissionId]);
+    `, [hasRubric ? JSON.stringify(writingScores) : null, writingScore, teacherFeedback, grader, submissionId]);
 
     res.json({ success: true, writingScore });
   } catch (error) {
