@@ -392,6 +392,20 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     if (isHybridWithIframeModules) setHybridTimers({ reading: 3600, writing: writingSeconds });
   }, [test, isHybridWithIframeModules, writingSeconds]);
 
+  // A writing-only paper is not "hybrid", so it fell through to the flat
+  // 40-minute native default and gave students 40 minutes for a paper whose own
+  // rubric asks for 20 on Task 1 and 40 on Task 2. Give it the time its tasks
+  // add up to -- the same figure the hybrid path already uses.
+  //
+  // Only when the clock is still the untouched default: a resumed attempt has
+  // already restored the student's real remaining time just above, and must not
+  // be handed a fresh hour.
+  useEffect(() => {
+    if (!test || isHybridWithIframeModules) return;
+    if (hasListeningContent || hasReadingContent || !hasWritingContent) return;
+    setTimeLeft((current) => (current === 2400 ? writingSeconds : current));
+  }, [test, isHybridWithIframeModules, hasListeningContent, hasReadingContent, hasWritingContent, writingSeconds]);
+
   // Mark whichever module is active as "visited" so its iframe mounts (see the
   // mount conditions below) -- lazily, the first time the student actually gets
   // there, not before.
