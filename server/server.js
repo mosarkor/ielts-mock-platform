@@ -665,6 +665,22 @@ app.post('/api/teacher/grade/:submissionId', async (req, res) => {
   try {
     const writingScore = calculateOverallWritingBand(writingScores);
 
+    // graded_by is a foreign key into users, and the browser sends whatever id
+    // its stored login holds. After the database move, a teacher whose session
+    // predates it sends an id that no longer exists, the constraint rejects the
+    // whole row, and marking fails with nothing saved -- reported as "failed to
+    // save" with no clue that a stale login is the cause.
+    //
+    // Who marked it is an audit note; the marks are the thing worth keeping. An
+    // id that does not resolve is recorded as unknown rather than costing the
+    // teacher the essay they just marked.
+    let grader = null;
+    if (gradedBy) {
+      const known = await db.get('SELECT id FROM users WHERE id = ?', [gradedBy]);
+      if (known) grader = known.id;
+      else console.warn(`Grade on submission ${submissionId}: unknown grader "${gradedBy}" (stale login?); saving marks without it.`);
+    }
+
     await db.run(`
       UPDATE submissions
       SET writing_scores = ?,
@@ -672,7 +688,7 @@ app.post('/api/teacher/grade/:submissionId', async (req, res) => {
           teacher_feedback = ?,
           graded_by = ?
       WHERE id = ?
-    `, [JSON.stringify(writingScores), writingScore, teacherFeedback, gradedBy, submissionId]);
+    `, [JSON.stringify(writingScores), writingScore, teacherFeedback, grader, submissionId]);
 
     res.json({ success: true, writingScore });
   } catch (error) {
