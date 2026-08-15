@@ -436,16 +436,13 @@ app.post('/api/student/submit/:testId', async (req, res) => {
     const getIeltsBand = (correct, total) => {
       if (total === 0) return null;
       const ratio = correct / total;
-      if (ratio >= 0.95) return 9.0;
-      if (ratio >= 0.85) return 8.0;
-      if (ratio >= 0.75) return 7.5;
-      if (ratio >= 0.65) return 7.0;
-      if (ratio >= 0.55) return 6.0;
-      if (ratio >= 0.45) return 5.5;
-      if (ratio >= 0.35) return 5.0;
-      if (ratio >= 0.25) return 4.5;
-      if (ratio >= 0.15) return 4.0;
-      return 3.0;
+      // Scaled to a 40-question equivalent so short papers use the same
+      // official table. The old ratio buckets had no 6.5 or 8.5 at all,
+      // making two of the most common IELTS bands unreachable.
+      const scaled = Math.round((correct / total) * 40);
+      const t = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
+      for (let i = 0; i < t.length; i++) { if (scaled >= t[i][0]) return t[i][1]; }
+      return 2.5;
     };
 
     const scoreQuestions = (groups, answers) => {
@@ -1039,17 +1036,11 @@ app.post('/api/admin/upload-test', async (req, res) => {
 
         // Estimate IELTS bands
         const getIeltsBand = (correct) => {
-          if (correct >= 39) return 9.0;
-          if (correct >= 37) return 8.5;
-          if (correct >= 35) return 8.0;
-          if (correct >= 32) return 7.5;
-          if (correct >= 30) return 7.0;
-          if (correct >= 27) return 6.5;
-          if (correct >= 23) return 6.0;
-          if (correct >= 20) return 5.5;
-          if (correct >= 16) return 5.0;
-          if (correct >= 13) return 4.5;
-          return 4.0;
+          // Official IELTS raw-score conversion. Every band below 4.5 used to
+          // collapse to a flat 4.0, so a blank paper and 12/40 scored the same.
+          var t = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
+          for (var i = 0; i < t.length; i++) { if (correct >= t[i][0]) return t[i][1]; }
+          return 2.5;
         };
 
         const params = new URLSearchParams(window.location.search);
@@ -1165,17 +1156,11 @@ app.post('/api/admin/upload-test', async (req, res) => {
 
         // Estimate IELTS bands
         const getIeltsBand = (correct) => {
-          if (correct >= 39) return 9.0;
-          if (correct >= 37) return 8.5;
-          if (correct >= 35) return 8.0;
-          if (correct >= 32) return 7.5;
-          if (correct >= 30) return 7.0;
-          if (correct >= 27) return 6.5;
-          if (correct >= 23) return 6.0;
-          if (correct >= 20) return 5.5;
-          if (correct >= 16) return 5.0;
-          if (correct >= 13) return 4.5;
-          return 4.0;
+          // Official IELTS raw-score conversion. Every band below 4.5 used to
+          // collapse to a flat 4.0, so a blank paper and 12/40 scored the same.
+          var t = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
+          for (var i = 0; i < t.length; i++) { if (correct >= t[i][0]) return t[i][1]; }
+          return 2.5;
         };
 
         fetch('/api/student/submit/' + tId, {
@@ -1726,17 +1711,11 @@ app.post('/api/admin/upload-test', async (req, res) => {
             }
           }
           function __fallbackBand(correct) {
-            if (correct >= 39) return 9.0;
-            if (correct >= 37) return 8.5;
-            if (correct >= 35) return 8.0;
-            if (correct >= 32) return 7.5;
-            if (correct >= 30) return 7.0;
-            if (correct >= 26) return 6.5;
-            if (correct >= 23) return 6.0;
-            if (correct >= 18) return 5.5;
-            if (correct >= 16) return 5.0;
-            if (correct >= 13) return 4.5;
-            return 4.0;
+            // Official IELTS raw-score conversion. Every band below 4.5 used to
+            // collapse to a flat 4.0, so a blank paper and 12/40 scored the same.
+            var t = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
+            for (var i = 0; i < t.length; i++) { if (correct >= t[i][0]) return t[i][1]; }
+            return 2.5;
           }
           var band = __fallbackBand(correctCount);
           try {
@@ -2767,17 +2746,11 @@ app.post('/api/admin/regrade-checkbox-pairs', async (req, res) => {
   // Same table the injected bridge uses (and identical to the templates' own
   // calculateBandScore), so bands only move because marks moved.
   const bandFor = (correct) => {
-    if (correct >= 39) return 9.0;
-    if (correct >= 37) return 8.5;
-    if (correct >= 35) return 8.0;
-    if (correct >= 32) return 7.5;
-    if (correct >= 30) return 7.0;
-    if (correct >= 26) return 6.5;
-    if (correct >= 23) return 6.0;
-    if (correct >= 18) return 5.5;
-    if (correct >= 16) return 5.0;
-    if (correct >= 13) return 4.5;
-    return 4.0;
+    // Official IELTS raw-score conversion. Every band below 4.5 used to
+    // collapse to a flat 4.0, so a blank paper and 12/40 scored the same.
+    var t = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
+    for (var i = 0; i < t.length; i++) { if (correct >= t[i][0]) return t[i][1]; }
+    return 2.5;
   };
 
   const regradeDetail = (detail) => {

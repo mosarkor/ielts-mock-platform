@@ -152,17 +152,11 @@ async function processMockFiles() {
 
           // Estimate IELTS bands
           const getIeltsBand = (correct) => {
-            if (correct >= 39) return 9.0;
-            if (correct >= 37) return 8.5;
-            if (correct >= 35) return 8.0;
-            if (correct >= 32) return 7.5;
-            if (correct >= 30) return 7.0;
-            if (correct >= 27) return 6.5;
-            if (correct >= 23) return 6.0;
-            if (correct >= 20) return 5.5;
-            if (correct >= 16) return 5.0;
-            if (correct >= 13) return 4.5;
-            return 4.0;
+            // Official IELTS raw-score conversion. Every band below 4.5 used to
+            // collapse to a flat 4.0, so a blank paper and 12/40 scored the same.
+            var t = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
+            for (var i = 0; i < t.length; i++) { if (correct >= t[i][0]) return t[i][1]; }
+            return 2.5;
           };
 
           const params = new URLSearchParams(window.location.search);
@@ -289,17 +283,11 @@ async function processMockFiles() {
 
           // Estimate IELTS bands
           const getIeltsBand = (correct) => {
-            if (correct >= 39) return 9.0;
-            if (correct >= 37) return 8.5;
-            if (correct >= 35) return 8.0;
-            if (correct >= 32) return 7.5;
-            if (correct >= 30) return 7.0;
-            if (correct >= 27) return 6.5;
-            if (correct >= 23) return 6.0;
-            if (correct >= 20) return 5.5;
-            if (correct >= 16) return 5.0;
-            if (correct >= 13) return 4.5;
-            return 4.0;
+            // Official IELTS raw-score conversion. Every band below 4.5 used to
+            // collapse to a flat 4.0, so a blank paper and 12/40 scored the same.
+            var t = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
+            for (var i = 0; i < t.length; i++) { if (correct >= t[i][0]) return t[i][1]; }
+            return 2.5;
           };
 
           fetch(window.location.origin + '/api/student/submit/' + tId, {
