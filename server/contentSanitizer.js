@@ -48,7 +48,11 @@ function stripExistingBypassScripts(html) {
 }
 
 export function removeAccessGate(html) {
-  const gateFound = /id=["']screen-password["']/.test(html) || /REQUIRED_PASSWORD/.test(html);
+  // The welcome-modal generation is a gate too: its Start button is inert until
+  // a name is typed, so without the bypass the test never begins.
+  const gateFound = /id=["']screen-password["']/.test(html)
+    || /REQUIRED_PASSWORD/.test(html)
+    || /id=["']studentNameInput["']/.test(html);
   if (!gateFound) {
     return { html, gateFound: false, changed: false };
   }
@@ -83,6 +87,22 @@ export function removeAccessGate(html) {
     var idSubmit = document.getElementById('id-submit');
     if (idSubmit) {
       setTimeout(function() { idSubmit.click(); }, 50);
+    }
+
+    // Newer generations use a welcome modal asking for a name and group instead
+    // of the password/ID screens above. Its Start button does nothing while the
+    // name is blank -- and says nothing either, so the test simply never begins
+    // and the student is left staring at a modal that looks ready.
+    //
+    // The name is prefilled from the session the platform already authenticated.
+    // The button is deliberately NOT clicked: the audio starts on Start and
+    // cannot be replayed, so beginning it before the student is ready would cost
+    // them the opening of Section 1.
+    var nameInput = document.getElementById('studentNameInput');
+    if (nameInput && !nameInput.value) {
+      nameInput.value = studentId;
+      nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+      nameInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
   }
   if (document.readyState === 'loading') {
