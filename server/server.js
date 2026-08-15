@@ -2137,6 +2137,16 @@ app.post('/api/admin/upload-test', async (req, res) => {
         // template's own wiring. Also applied on load so answers restored into
         // the page do not come back with a number over them.
         function __hideNumberOnceAnswered() {
+          // Setting .filled alone was not enough: the template's own
+          // ".filled::before { opacity: 0 }" loses in the cascade, so the number
+          // stayed painted over the answer even once the class was on. Restate
+          // it here, last and !important, so it actually wins.
+          try {
+            var css = document.createElement('style');
+            css.textContent = '.q-input-wrap.filled::before{opacity:0 !important;visibility:hidden !important;}';
+            document.head.appendChild(css);
+          } catch (err) {}
+
           function sync(field) {
             var wrap = field && field.closest ? field.closest('.q-input-wrap') : null;
             if (!wrap) return;
