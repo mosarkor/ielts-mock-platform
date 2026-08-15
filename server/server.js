@@ -1281,12 +1281,39 @@ app.post('/api/admin/upload-test', async (req, res) => {
       // would break out of the template literal it lands in.
       let embeddedCorrectAnswers = 'null';
       try {
-        const keyMatch = content.match(/correctAnswers\s*=\s*(\{[\s\S]*?\})\s*;/);
-        const literal = keyMatch && keyMatch[1];
-        if (literal && literal.length < 200000 && !literal.includes('`') && !literal.includes('${')) {
-          embeddedCorrectAnswers = literal;
+        const at = content.search(/correctAnswers\s*=\s*\{/);
+        if (at !== -1) {
+          // Walk the braces rather than regex to the first "}". A non-greedy
+          // match stops inside the first nested value -- a key like
+          // '3': ['4.30','4:30'] ended the match mid-array -- and the truncated
+          // literal broke the whole injected script, taking every one of the
+          // template's own functions down with it: no section switching, no
+          // start handler, no scoring.
+          const open = content.indexOf('{', at);
+          let depth = 0, end = -1, quote = null;
+          for (let i = open; i < content.length; i++) {
+            const ch = content[i];
+            if (quote) {
+              if (ch === '\\') i++;
+              else if (ch === quote) quote = null;
+              continue;
+            }
+            if (ch === '"' || ch === "'") { quote = ch; continue; }
+            if (ch === '{') depth++;
+            else if (ch === '}') { depth--; if (depth === 0) { end = i; break; } }
+          }
+          const literal = end !== -1 ? content.slice(open, end + 1) : null;
+          if (literal && literal.length < 200000 && !literal.includes('`') && !literal.includes('${')) {
+            // Compile it before shipping it. new Function checks the syntax
+            // without running the code, so a bad extraction is dropped here
+            // instead of breaking the page it lands in.
+            new Function('return ' + literal);
+            embeddedCorrectAnswers = literal;
+          }
         }
-      } catch (e) { /* leave it null -- the global path still works */ }
+      } catch (e) {
+        embeddedCorrectAnswers = 'null';   // unusable extraction -- the global path still works
+      }
 
       const harvestBridgeSnippet = `
       (function() {
