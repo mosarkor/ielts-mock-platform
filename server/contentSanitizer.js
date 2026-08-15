@@ -125,6 +125,16 @@ export function removeAccessGate(html) {
           started = true;
           document.removeEventListener('click', beginOnFirstGesture, true);
           document.removeEventListener('keydown', beginOnFirstGesture, true);
+          // Start the audio directly. Clicking the template's Start button was
+          // the wrong lever -- in this generation it carries no handler at all,
+          // so nothing happened. The player's own play control does the work,
+          // and its icon renders as a broken glyph here, so a student cannot
+          // reliably find it either. Playback is allowed because this runs
+          // inside the student's own click or keypress.
+          try {
+            var track = document.querySelector('audio');
+            if (track && track.paused) track.play();
+          } catch (e) {}
           try { startBtn.click(); } catch (e) {}
           try { startModal.style.setProperty('display', 'none', 'important'); } catch (e) {}
         };
