@@ -2127,8 +2127,32 @@ app.post('/api/admin/upload-test', async (req, res) => {
           }, true);
         }
 
+        // These templates paint the question number over the answer box with
+        // CSS -- .q-input-wrap::before draws it, and .filled hides it again --
+        // and something in the template's own start-up is meant to add .filled
+        // as the student types. It does not run here, so the number stays
+        // sitting on top of whatever they write.
+        //
+        // Toggled from the bridge instead, which does not depend on any of the
+        // template's own wiring. Also applied on load so answers restored into
+        // the page do not come back with a number over them.
+        function __hideNumberOnceAnswered() {
+          function sync(field) {
+            var wrap = field && field.closest ? field.closest('.q-input-wrap') : null;
+            if (!wrap) return;
+            if (String(field.value || '').trim()) wrap.classList.add('filled');
+            else wrap.classList.remove('filled');
+          }
+          document.addEventListener('input', function (e) { try { sync(e.target); } catch (err) {} }, true);
+          document.addEventListener('change', function (e) { try { sync(e.target); } catch (err) {} }, true);
+          try {
+            document.querySelectorAll('.q-input-wrap > input').forEach(sync);
+          } catch (err) {}
+        }
+
         function __installBridge() {
           __enforceNoAudioPause();
+          __hideNumberOnceAnswered();
           __reclaimHeaderSpace();
           __installSelectionHighlight();
           __keepOptionsClickable();
