@@ -630,6 +630,49 @@ app.get('/api/teacher/submissions', async (req, res) => {
 });
 
 // Grade writing submission
+// Correct a stored Listening or Reading band on one submission.
+//
+// Those bands are only ever written by the test itself at submit time, so a
+// paper whose answer key turns out to be wrong has no route back: the marks are
+// right, the key was not, and there was no way to put the score straight
+// without editing the database by hand. Writing has had a grading endpoint all
+// along; this is the equivalent for the auto-marked modules.
+//
+// Deliberately narrow -- it sets a band that a human has already worked out,
+// and does not recompute anything. Values must be a real IELTS band, so a typo
+// cannot store a number the rest of the platform will not understand.
+app.post('/api/admin/submissions/:id/module-score', async (req, res) => {
+  const submissionId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(submissionId)) return res.status(400).json({ error: 'Invalid submission id' });
+
+  const { moduleType, band, reason } = req.body;
+  if (moduleType !== 'listening' && moduleType !== 'reading') {
+    return res.status(400).json({ error: "moduleType must be 'listening' or 'reading'" });
+  }
+  const value = Number(band);
+  // 0 is excluded on purpose: this file treats a stored 0 as "this module never
+  // existed" (see the phantom-module repair endpoint), so it is not a band a
+  // correction may set.
+  if (!Number.isFinite(value) || value < 1 || value > 9 || Math.round(value * 2) !== value * 2) {
+    return res.status(400).json({ error: 'band must be a whole or half band between 1 and 9' });
+  }
+
+  try {
+    const column = moduleType === 'reading' ? 'reading_score' : 'listening_score';
+    const before = await db.get(`SELECT id, ${column} AS current FROM submissions WHERE id = ?`, [submissionId]);
+    if (!before) return res.status(404).json({ error: `Submission ${submissionId} not found` });
+
+    await db.run(`UPDATE submissions SET ${column} = ? WHERE id = ?`, [value, submissionId]);
+    console.log(
+      `Module score corrected: submission ${submissionId} ${moduleType} ${before.current} -> ${value}` +
+      (reason ? ` (${reason})` : '')
+    );
+    res.json({ success: true, submissionId, moduleType, previous: before.current, band: value });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/teacher/grade/:submissionId', async (req, res) => {
   const { submissionId } = req.params;
   const { writingScores, teacherFeedback, gradedBy } = req.body;
