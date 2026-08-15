@@ -1268,6 +1268,26 @@ app.post('/api/admin/upload-test', async (req, res) => {
         (match) => `${match}\ntry { if (typeof correctAnswers !== 'undefined') window.correctAnswers = correctAnswers; } catch (e) {}`
       );
       usedHarvestBridge = true;
+      // The promotion above only fires on templates that bind checkAnswers in
+      // that one exact way. Whole generations don't, and on those the key stays
+      // sealed in a closure: the bridge finds no correctAnswers, harvests
+      // nothing, and every paper scores the floor band while looking like a
+      // normal submission. Two listening files failed exactly that way.
+      //
+      // So take the key out of the file's text here, where scoping is irrelevant
+      // -- the bridge falls back to this copy when the global is absent. Embedded
+      // verbatim rather than re-serialized: it is already a JS object literal and
+      // may use forms JSON does not accept. Skipped if it contains anything that
+      // would break out of the template literal it lands in.
+      let embeddedCorrectAnswers = 'null';
+      try {
+        const keyMatch = content.match(/correctAnswers\s*=\s*(\{[\s\S]*?\})\s*;/);
+        const literal = keyMatch && keyMatch[1];
+        if (literal && literal.length < 200000 && !literal.includes('`') && !literal.includes('${')) {
+          embeddedCorrectAnswers = literal;
+        }
+      } catch (e) { /* leave it null -- the global path still works */ }
+
       const harvestBridgeSnippet = `
       (function() {
         var params = new URLSearchParams(window.location.search);
@@ -1281,8 +1301,12 @@ app.post('/api/admin/upload-test', async (req, res) => {
         // actually runs, which can easily be after this bridge script's own
         // top-level code executes -- so this must be looked up fresh at the point
         // of use (when the student finishes the section), never cached early.
+        var __embeddedCorrectAnswers = ${embeddedCorrectAnswers};
         function __getCorrectAnswers() {
-          return (typeof correctAnswers !== 'undefined') ? correctAnswers : window.correctAnswers;
+          var live = (typeof correctAnswers !== 'undefined') ? correctAnswers : window.correctAnswers;
+          if (live && typeof live === 'object') return live;
+          // Closure-scoped key: use the copy lifted out of the file at upload.
+          return __embeddedCorrectAnswers;
         }
 
         // Some template generations keep only ONE part/section's questions in the
