@@ -104,6 +104,34 @@ export function removeAccessGate(html) {
       nameInput.dispatchEvent(new Event('input', { bubbles: true }));
       nameInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
+
+    // Prefilling the name was not enough -- the modal still would not clear.
+    // So the window goes entirely: the platform already knows who the student
+    // is, and it only ever stood between them and the test.
+    //
+    // Its Start button is still what begins the audio, and browsers only allow
+    // playback to begin from a real user gesture (which is why a scripted click
+    // could never open this). So the button is pressed on the student's first
+    // real click or keypress anywhere on the page -- inside that gesture, so
+    // playback is permitted -- and only once.
+    var startModal = document.getElementById('startModal');
+    var startBtn = document.getElementById('startTestBtn');
+    if (startModal) {
+      startModal.style.setProperty('display', 'none', 'important');
+      if (startBtn) {
+        var started = false;
+        var beginOnFirstGesture = function () {
+          if (started) return;
+          started = true;
+          document.removeEventListener('click', beginOnFirstGesture, true);
+          document.removeEventListener('keydown', beginOnFirstGesture, true);
+          try { startBtn.click(); } catch (e) {}
+          try { startModal.style.setProperty('display', 'none', 'important'); } catch (e) {}
+        };
+        document.addEventListener('click', beginOnFirstGesture, true);
+        document.addEventListener('keydown', beginOnFirstGesture, true);
+      }
+    }
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', bypassGate);
