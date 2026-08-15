@@ -122,14 +122,46 @@ export function removeVocabularyHelpers(html) {
   return { html: unwrapped, removedCount };
 }
 
+// Uploaded papers carry the source channel's branding -- handles in the title
+// bar, "join the channel" pills, t.me links. Students sit these as the school's
+// own mock, so the other channel's name has no business on the page.
+//
+// Only the markup outside <script> is touched. Script bodies are left exactly as
+// they are: these files use the channel name inside localStorage keys and
+// element ids, and rewriting those would break note-saving and question wiring
+// to remove text nobody ever sees.
+export function removeSourceBranding(html) {
+  if (!html) return { html, removedCount: 0 };
+  // Longest forms first, so "CDIELTSsources" is not left as a stray "sources".
+  const HANDLE = /@?\s*(CD\s*IELTS\s*sources|cdieltssources|ieltsxuz|ieltsx\.com|Fozilbek[^<|,]*|IELTS Mock Team|CD\s*IELTS|CDIELTS)/gi;
+  let removedCount = 0;
+
+  // Split on script/style so their contents are never rewritten.
+  const parts = html.split(/(<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>)/i);
+  const cleaned = parts.map((part, i) => {
+    if (i % 2 === 1) return part;               // odd indexes are the script/style blocks
+    return part
+      // Anchors to the source channel, link and label together.
+      .replace(/<a\b[^>]*href=["'][^"']*t\.me\/[^"']*["'][^>]*>[\s\S]*?<\/a>/gi, () => { removedCount++; return ''; })
+      .replace(HANDLE, () => { removedCount++; return ''; })
+      // Tidy separators left stranded once a handle between them is gone.
+      .replace(/(\s*[|·—–-]\s*)+(?=<\/(title|h1|h2|h3|p|span|div)>)/gi, '')
+      .replace(/<title>\s*[|·—–-]?\s*/i, '<title>');
+  }).join('');
+
+  return { html: cleaned, removedCount };
+}
+
 export function sanitizeTestHtml(html) {
   const mojibake = fixMojibake(html);
   const gate = removeAccessGate(mojibake.html);
   const vocab = removeVocabularyHelpers(gate.html);
+  const branding = removeSourceBranding(vocab.html);
   return {
-    html: vocab.html,
+    html: branding.html,
     mojibakeFixedCount: mojibake.fixedCount,
     gateRemoved: gate.changed,
-    vocabHelpersRemoved: vocab.removedCount
+    vocabHelpersRemoved: vocab.removedCount,
+    brandingRemoved: branding.removedCount
   };
 }
