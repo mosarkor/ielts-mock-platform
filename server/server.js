@@ -2187,9 +2187,26 @@ app.post('/api/admin/upload-test', async (req, res) => {
           } catch (err) {}
         }
 
+        // Drag-to-match questions arrive inert: the template wires the options
+        // and slots in bindListeningDragMatching(), which it calls from the
+        // start-up flow the platform bypasses (students are already logged in,
+        // so that welcome step is skipped). The function is there and works --
+        // it simply never runs, leaving every matching question unanswerable.
+        //
+        // Called by name because that is what these templates define. Anything
+        // absent is skipped, so this is a no-op on generations without it.
+        function __runTemplateInitialisers() {
+          ['bindListeningDragMatching', 'syncListeningMatchUI'].forEach(function (name) {
+            try {
+              if (typeof window[name] === 'function') window[name]();
+            } catch (e) {}
+          });
+        }
+
         function __installBridge() {
           __enforceNoAudioPause();
           __hideNumberOnceAnswered();
+          __runTemplateInitialisers();
           __reclaimHeaderSpace();
           __installSelectionHighlight();
           __keepOptionsClickable();
