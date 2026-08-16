@@ -1024,7 +1024,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                 style={{
                   ...styles.tabBtn,
                   backgroundColor: viewMode === 'grading' ? 'var(--color-indigo)' : 'var(--bg-secondary)',
-                  color: '#ffffff',
+                  color: viewMode === 'grading' ? '#ffffff' : 'var(--text-primary)',
                   border: '1px solid var(--glass-border)',
                 }}
               >
@@ -1037,7 +1037,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                 style={{
                   ...styles.tabBtn,
                   backgroundColor: viewMode === 'detailed_review' ? 'var(--color-indigo)' : 'var(--bg-secondary)',
-                  color: '#ffffff',
+                  color: viewMode === 'detailed_review' ? '#ffffff' : 'var(--text-primary)',
                   border: '1px solid var(--glass-border)',
                 }}
               >
@@ -1344,7 +1344,11 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                     borderRadius: '8px',
                     border: '1px solid var(--glass-border)',
                     backgroundColor: activeSection === key ? 'var(--color-indigo)' : 'var(--bg-secondary)',
-                    color: '#fff',
+                    // White only while this tab is the indigo one. The inactive
+                    // tab sits on --bg-secondary, which is white in light mode,
+                    // so fixed white left its label invisible -- the Speaking tab
+                    // showed nothing but its microphone.
+                    color: activeSection === key ? '#fff' : 'var(--text-primary)',
                     fontWeight: activeSection === key ? '700' : '400',
                     fontSize: '0.9rem',
                     cursor: 'pointer',
