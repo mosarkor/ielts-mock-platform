@@ -305,8 +305,8 @@ export async function initDb() {
     if (parseInt(userCount.count) === 0) {
       console.log('Seeding cloud database initial tables...');
       await db.run(`INSERT INTO users (id, name, password_hash, role) VALUES 
-        ('admin', 'Head Administrator', 'admin123', 'admin'),
-        ('teacher', 'Dr. Sarah Jenkins', 'teacher123', 'teacher'),
+        ('admin', 'Dr Green', 'admin123', 'admin'),
+        ('teacher', 'Mr Green', 'teacher123', 'teacher'),
         ('UNI2026A', 'Aria Thorne', 'student123', 'student'),
         ('UNI2026B', 'Brandon Lee', 'student123', 'student'),
         ('UNI2026C', 'Chloe Varma', 'student123', 'student'),
@@ -582,8 +582,8 @@ export async function initDb() {
     console.log('Seeding initial database tables...');
 
     await db.run(`INSERT INTO users (id, name, password_hash, role) VALUES 
-      ('admin', 'Head Administrator', 'admin123', 'admin'),
-      ('teacher', 'Dr. Sarah Jenkins', 'teacher123', 'teacher'),
+      ('admin', 'Dr Green', 'admin123', 'admin'),
+      ('teacher', 'Mr Green', 'teacher123', 'teacher'),
       ('UNI2026A', 'Aria Thorne', 'student123', 'student'),
       ('UNI2026B', 'Brandon Lee', 'student123', 'student'),
       ('UNI2026C', 'Chloe Varma', 'student123', 'student'),
@@ -700,7 +700,7 @@ async function ensureCustomDataSeeded(db) {
   try {
     const adminExists = await db.get('SELECT 1 FROM users WHERE id = ?', ['admin']);
     if (!adminExists) {
-      await db.run(`INSERT INTO users (id, name, password_hash, role) VALUES ('admin', 'Head Administrator', 'admin123', 'admin')`);
+      await db.run(`INSERT INTO users (id, name, password_hash, role) VALUES ('admin', 'Dr Green', 'admin123', 'admin')`);
     }
     const teacherExists = await db.get('SELECT 1 FROM users WHERE id = ?', ['teacher']);
     if (!teacherExists) {
