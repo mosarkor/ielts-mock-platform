@@ -352,6 +352,31 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   // Fall back to showing both only for an older submission that has writing but
   // no stored prompts. A Reading- or Listening-only paper has no writing at all,
   // and must not be given two empty rubrics to grade.
+  // Copying an essay out to mark it elsewhere was a select-and-drag job over a
+  // scrolling box, which is easy to clip halfway through. The button takes the
+  // whole thing, and says so afterwards, so there is no doubt it copied.
+  const [copiedLabel, setCopiedLabel] = useState('');
+  const copyEssay = async (label, text) => {
+    const essay = String(text || '').trim();
+    if (!essay) return;
+    try {
+      await navigator.clipboard.writeText(essay);
+    } catch {
+      // Clipboard access can be refused (an insecure origin, or a browser that
+      // wants a fresher gesture). Fall back rather than silently doing nothing.
+      const scratch = document.createElement('textarea');
+      scratch.value = essay;
+      scratch.style.position = 'fixed';
+      scratch.style.opacity = '0';
+      document.body.appendChild(scratch);
+      scratch.select();
+      try { document.execCommand('copy'); } catch { /* nothing more to try */ }
+      document.body.removeChild(scratch);
+    }
+    setCopiedLabel(label);
+    setTimeout(() => setCopiedLabel(''), 2000);
+  };
+
   const subHasAnyWriting = !!(selectedSub?.writing_answers?.task1 || selectedSub?.writing_answers?.task2)
     || subHasTask1 || subHasTask2;
   const gradeTask1 = subHasTask1 || (subHasAnyWriting && !subHasTask1 && !subHasTask2);
@@ -1006,6 +1031,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   <div style={styles.essayBox}>
                     <div style={styles.essayBoxHeader}>
                       <h5>Writing Task 1 Prompt:</h5>
+                      <button type="button" onClick={() => copyEssay('Task 1', selectedSub?.writing_answers?.task1)} disabled={!(selectedSub?.writing_answers?.task1 || "").trim()} className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}>{copiedLabel === 'Task 1' ? 'Copied' : 'Copy essay'}</button>
                     </div>
                     <p style={styles.writingPrompt}>Refer to Task 1 instructions assigned in this test.</p>
 
@@ -1018,6 +1044,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   <div style={{ ...styles.essayBox, marginTop: gradeTask1 ? '2rem' : 0 }}>
                     <div style={styles.essayBoxHeader}>
                       <h5>Writing Task 2 Prompt:</h5>
+                      <button type="button" onClick={() => copyEssay('Task 2', selectedSub?.writing_answers?.task2)} disabled={!(selectedSub?.writing_answers?.task2 || "").trim()} className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem' }}>{copiedLabel === 'Task 2' ? 'Copied' : 'Copy essay'}</button>
                     </div>
                     <p style={styles.writingPrompt}>Refer to Task 2 instructions assigned in this test.</p>
                     
