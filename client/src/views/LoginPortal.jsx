@@ -348,7 +348,7 @@ const styles = {
     padding: '0.6rem',
     background: 'transparent',
     border: 'none',
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     cursor: 'pointer',
     borderRadius: '6px',
     fontWeight: '600',
@@ -371,7 +371,7 @@ const styles = {
   },
   hintText: {
     fontSize: '0.8rem',
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     marginTop: '0.5rem',
     lineHeight: '1.4',
   },
@@ -384,7 +384,7 @@ const styles = {
     right: 0,
     bottom: 0,
     backgroundColor: '#f3f4f6',
-    color: '#1f2937',
+    color: 'var(--text-primary)',
     fontFamily: '"Inter", sans-serif',
     display: 'flex',
     alignItems: 'center',
@@ -400,7 +400,7 @@ const styles = {
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
   },
   cdHeader: {
-    backgroundColor: '#1e293b',
+    backgroundcolor: 'var(--text-primary)',
     color: '#ffffff',
     padding: '0.75rem 1.5rem',
     display: 'flex',
@@ -417,7 +417,7 @@ const styles = {
   headerLabel: {
     fontSize: '0.95rem',
     fontWeight: '500',
-    color: '#e2e8f0',
+    color: 'var(--text-primary)',
   },
   cdContent: {
     padding: '2rem',
@@ -426,7 +426,7 @@ const styles = {
     fontSize: '1rem',
     fontWeight: '500',
     marginBottom: '1.5rem',
-    color: '#374151',
+    color: 'var(--text-secondary)',
   },
   detailsGrid: {
     backgroundColor: '#f9fafb',
@@ -443,11 +443,11 @@ const styles = {
   },
   detailLabel: {
     fontWeight: '600',
-    color: '#6b7280',
+    color: 'var(--text-secondary)',
   },
   detailVal: {
     fontWeight: '600',
-    color: '#111827',
+    color: 'var(--text-primary)',
   },
   actionButtons: {
     display: 'flex',
@@ -467,7 +467,7 @@ const styles = {
   },
   btnOutline: {
     backgroundColor: 'transparent',
-    color: '#4b5563',
+    color: 'var(--text-secondary)',
     border: '1px solid #d1d5db',
     borderRadius: '4px',
     padding: '0.6rem 1.5rem',
@@ -496,7 +496,7 @@ const styles = {
   },
   soundSubtext: {
     fontSize: '0.9rem',
-    color: '#4b5563',
+    color: 'var(--text-secondary)',
     lineHeight: '1.5',
   }
 };

@@ -630,7 +630,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
       <header className="ielts-header">
         <div className="ielts-header-left">
           <div className="ielts-logo">IELTS <span>Mock CD</span></div>
-          <span style={{ fontSize: '0.85rem', color: '#94a3b8', borderLeft: '1px solid #475569', paddingLeft: '1rem' }}>
+          <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', borderLeft: '1px solid #475569', paddingLeft: '1rem' }}>
             {test.title}
           </span>
         </div>
@@ -644,7 +644,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         <div className="ielts-header-tools">
           {/* Font sizer */}
           <div className="font-sizer">
-            <span style={{ fontSize: '0.75rem', color: '#cbd5e1', padding: '0 0.5rem', fontWeight: 'bold' }}>A</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', padding: '0 0.5rem', fontWeight: 'bold' }}>A</span>
             <button 
               className={`font-sizer-btn ${fontSize === 'md' ? 'active' : ''}`}
               onClick={() => setFontSize('md')}
@@ -759,7 +759,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           <div style={styles.listeningContainer}>
             {/* Embedded Audio Control */}
             <div style={styles.audioBar}>
-              <p style={{ fontWeight: '600', color: '#1e293b', marginBottom: '0.5rem' }}>
+              <p style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                 🎧 Please click play to start Listening Section Audio. Real exam play-once applies.
               </p>
               <audio 
@@ -872,7 +872,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
             <div className={`ielts-questions-pane font-${fontSize}`}>
               {(test.reading_data?.passages || []).map((passage, pIdx) => (
                 <div key={pIdx}>
-                  <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid #d1d5db', paddingBottom: '0.25rem', color: '#1f2937' }}>
+                  <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid #d1d5db', paddingBottom: '0.25rem', color: 'var(--text-primary)' }}>
                     Questions for Reading Passage {pIdx + 1}
                   </h4>
                   
@@ -1002,10 +1002,10 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
               </div>
 
               <div style={{ padding: '1rem 0' }}>
-                <h4 style={{ marginBottom: '1rem', color: '#111827' }}>
+                <h4 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>
                   {activeWritingTask === 'task1' ? 'Task 1 instructions:' : 'Task 2 instructions:'}
                 </h4>
-                <p style={{ lineHeight: '1.6', color: '#374151', fontSize: '1.05rem', whiteSpace: 'pre-wrap' }}>
+                <p style={{ lineHeight: '1.6', color: 'var(--text-secondary)', fontSize: '1.05rem', whiteSpace: 'pre-wrap' }}>
                   {activeWritingTask === 'task1'
                     ? (test.writing_data?.task1?.prompt || 'No Task 1 prompt is available for this test.')
                     : (test.writing_data?.task2?.prompt || 'No Task 2 prompt is available for this test.')}
@@ -1022,7 +1022,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
             {/* Right Writing Input Pane */}
             <div className="ielts-questions-pane" style={{ flex: '0.55', display: 'flex', flexDirection: 'column' }}>
-              <h4 style={{ marginBottom: '0.5rem', color: '#1f2937' }}>Candidate Essay Response</h4>
+              <h4 style={{ marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Candidate Essay Response</h4>
               
               {activeWritingTask === 'task1' ? (
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -1076,7 +1076,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
           </button>
           
           {activeQuestionId && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#cbd5e1', cursor: 'pointer', fontSize: '0.85rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.85rem' }}>
               <input 
                 type="checkbox"
                 checked={!!flaggedQuestions[activeQuestionId]}
@@ -1134,7 +1134,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         <div style={styles.modalOverlay}>
           <div style={styles.confirmPanel}>
             <h4>Confirm Test Submission</h4>
-            <p style={{ margin: '1rem 0', color: '#4b5563', lineHeight: '1.5' }}>
+            <p style={{ margin: '1rem 0', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
               Are you sure you want to end and submit your IELTS mock exam?
               Once submitted, your Listening, Reading, and Writing responses will be sent directly to your teacher for review.
               Your final band scores, mistake explanations, and teacher feedback will be published to your dashboard after teacher evaluation.
@@ -1166,7 +1166,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         <div style={styles.modalOverlay}>
           <div style={styles.confirmPanel}>
             <h4>Mock CD-IELTS Navigation Help</h4>
-            <div style={{ margin: '1rem 0', fontSize: '0.9rem', color: '#4b5563', lineHeight: '1.6' }}>
+            <div style={{ margin: '1rem 0', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
               <p>🎯 <strong>Highlighting Text</strong>: Highlight passages or questions by simply clicking and dragging your cursor over the text.</p>
               <p style={{ marginTop: '0.5rem' }}>⏱️ <strong>Timer</strong>: The countdown timer is pinned in the header. Use the "Hide" button to hide the timer. It turns red in the final 5 minutes.</p>
               <p style={{ marginTop: '0.5rem' }}>📌 <strong>Review Dock</strong>: Mark any question for review by checking the "Review Flag" box. A dot indicator will appear on that question bubble in the dock below.</p>
@@ -1209,7 +1209,7 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
         <div style={{ ...styles.startExamContainer, backgroundColor: 'rgba(15, 23, 42, 0.95)', zIndex: 99999 }}>
           <div className="card" style={{ ...styles.startExamCard, border: '2px solid #f59e0b', textAlign: 'center' }}>
             <h2 style={{ color: '#f59e0b', marginBottom: '1.5rem', fontWeight: 'bold' }}>⚠️ Anti-Cheat Warning</h2>
-            <p style={{ color: '#cbd5e1', marginBottom: '1rem' }}>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem' }}>
               Violation Detected: <strong>{lockoutReason}</strong>
             </p>
             <p style={{ color: '#f43f5e', fontWeight: 'bold', marginBottom: '2rem', fontSize: '1.1rem' }}>
@@ -1224,10 +1224,10 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
 
       {/* 4. Terminated overlay */}
       {examTerminated && (
-        <div style={{ ...styles.startExamContainer, backgroundColor: '#0f172a', zIndex: 999999 }}>
+        <div style={{ ...styles.startExamContainer, backgroundcolor: 'var(--text-primary)', zIndex: 999999 }}>
           <div className="card" style={{ ...styles.startExamCard, border: '2px solid #f43f5e', textAlign: 'center' }}>
             <h2 style={{ color: '#f43f5e', marginBottom: '1.5rem', fontWeight: 'bold' }}>🚨 Test Terminated</h2>
-            <p style={{ color: '#cbd5e1', marginBottom: '2rem', lineHeight: '1.6' }}>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', lineHeight: '1.6' }}>
               Your test session has been terminated because you exceeded the limit of 3 tab-switching or focus-loss violations.
             </p>
             <p style={{ color: '#f43f5e', fontWeight: 'bold', fontSize: '1.1rem' }}>
@@ -1250,7 +1250,7 @@ const styles = {
     backgroundColor: '#ffffff',
   },
   audioBar: {
-    backgroundColor: '#e2e8f0',
+    backgroundcolor: 'var(--text-primary)',
     padding: '1.25rem 2rem',
     borderBottom: '1px solid #cbd5e1',
   },
@@ -1267,13 +1267,13 @@ const styles = {
   sectionHeading: {
     fontSize: '1.25rem',
     fontWeight: '700',
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     marginBottom: '0.5rem',
   },
   instructionText: {
     fontSize: '0.95rem',
     fontStyle: 'italic',
-    color: '#475569',
+    color: 'var(--text-secondary)',
     marginBottom: '1.5rem',
   },
   questionsGrid: {
@@ -1282,7 +1282,7 @@ const styles = {
     gap: '1.5rem',
   },
   testQuestionCard: {
-    backgroundColor: '#f8fafc',
+    backgroundcolor: 'var(--text-primary)',
     border: '1px solid #cbd5e1',
     borderRadius: '6px',
     padding: '1.25rem',
@@ -1297,7 +1297,7 @@ const styles = {
     width: '24px',
     height: '24px',
     borderRadius: '4px',
-    backgroundColor: '#1e293b',
+    backgroundcolor: 'var(--text-primary)',
     color: '#ffffff',
     fontSize: '0.8rem',
     fontWeight: '700',
@@ -1311,11 +1311,11 @@ const styles = {
   },
   blankLabel: {
     fontWeight: '600',
-    color: '#334155',
+    color: 'var(--text-primary)',
   },
   mcqText: {
     fontWeight: '600',
-    color: '#1e293b',
+    color: 'var(--text-primary)',
     marginBottom: '0.75rem',
   },
   writingSelectorBar: {

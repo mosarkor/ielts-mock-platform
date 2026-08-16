@@ -1729,7 +1729,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                       {hasWritingTask(sub) && (
                         <div style={styles.miniBadgeBox}>
                           <span style={styles.overallScoreNumMini}>{fmtScore(sub.writing_score)}</span>
-                          <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>Writing Band</span>
+                          <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>Writing Band</span>
                         </div>
                       )}
                     </div>

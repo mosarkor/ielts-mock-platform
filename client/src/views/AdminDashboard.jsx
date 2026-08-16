@@ -589,7 +589,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
 
                   {showBulkImport && (
                     <div style={{ marginTop: '1rem' }}>
-                      <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.75rem', lineHeight: '1.5' }}>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', lineHeight: '1.5' }}>
                         Paste one student per line in the format: <strong>Full Name, Group Name</strong><br/>
                         IDs and passwords will be auto-generated.
                       </p>
@@ -735,7 +735,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                       <label className="form-label">Select Tests to Assign (Categorized)</label>
                       <div style={styles.studentSelectBox}>
                         {tests.length === 0 ? (
-                          <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No mock tests built yet.</p>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No mock tests built yet.</p>
                         ) : (() => {
                           const fullMocks = tests.filter(t => !t.title.toLowerCase().includes('reading') && !t.title.toLowerCase().includes('listening'));
                           const readingMocks = tests.filter(t => t.title.toLowerCase().includes('reading'));
@@ -880,7 +880,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
 
                       <div style={styles.studentSelectBox}>
                         {students.length === 0 ? (
-                          <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>No students registered.</p>
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No students registered.</p>
                         ) : (() => {
                           const filtered = students.filter(s => {
                             const term = assignSearchTerm.toLowerCase();
@@ -889,7 +889,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                                    (s.groupName && s.groupName.toLowerCase().includes(term));
                           });
                           if (filtered.length === 0) {
-                            return <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '0.5rem' }}>No candidates found matching "{assignSearchTerm}"</p>;
+                            return <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '0.5rem' }}>No candidates found matching "{assignSearchTerm}"</p>;
                           }
                           return filtered.map(s => {
                             const isSelected = selectedStudentIds.includes(s.id);
@@ -978,7 +978,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
 
                   <div style={styles.assignmentsListScroll}>
                     {allUsers.length === 0 ? (
-                      <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '1rem 0' }}>No accounts found.</p>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '1rem 0' }}>No accounts found.</p>
                     ) : (() => {
                       const filteredUsers = allUsers.filter(u => {
                         const term = userSearchTerm.toLowerCase();
@@ -994,7 +994,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                       });
 
                       if (filteredUsers.length === 0) {
-                        return <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '1rem 0', textAlign: 'center' }}>No accounts found matching your search.</p>;
+                        return <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '1rem 0', textAlign: 'center' }}>No accounts found matching your search.</p>;
                       }
 
                       return filteredUsers.map(u => (
@@ -1073,7 +1073,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
                   {showTestCreator && (
                     <div style={styles.testCreatorBox}>
                       <h5>📤 HTML Mock Test Compiler</h5>
-                      <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '1rem' }}>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
                         Upload a raw HTML IELTS mock test. The system will automatically sanitize Telegram channels, personal tags, and inject the candidate auto-login and score syncing engines.
                       </p>
                       <div className="form-group">
@@ -1236,7 +1236,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
 
                   <div style={styles.assignmentsListScroll}>
                     {assignments.length === 0 ? (
-                      <p style={{ color: '#94a3b8', fontSize: '0.85rem', padding: '1rem 0' }}>No tests assigned yet.</p>
+                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', padding: '1rem 0' }}>No tests assigned yet.</p>
                     ) : (
                       assignments
                         .filter(asg => {

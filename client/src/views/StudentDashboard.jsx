@@ -381,23 +381,23 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
             <div style={styles.trendRow}>
               <span style={{ fontSize: '1.05rem', fontWeight: '700', color: trendColor }}>{trendText}</span>
             </div>
-            <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0.5rem 0 1.25rem 0', lineHeight: '1.5' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.5rem 0 1.25rem 0', lineHeight: '1.5' }}>
               Your overall IELTS band scores are plotted chronologically to visualize your academic improvement and study progress.
             </p>
             <div style={styles.metricComparisonBox}>
               <div style={styles.metricCol}>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>First Test Band</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>First Test Band</span>
                 <span style={{ fontSize: '1.85rem', fontWeight: '800', color: 'var(--text-secondary)' }}>{first.overall.toFixed(1)}</span>
               </div>
               <div style={{ width: '1px', backgroundColor: 'rgba(255,255,255,0.08)', height: '40px' }}></div>
               <div style={styles.metricCol}>
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Latest Test Band</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Latest Test Band</span>
                 <span style={{ fontSize: '1.85rem', fontWeight: '800', color: '#10b981' }}>{latest.overall.toFixed(1)}</span>
               </div>
             </div>
             
             <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: '600' }}>🎯 Target Band Score:</span>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: '600' }}>🎯 Target Band Score:</span>
               <select 
                 value={targetScore} 
                 onChange={(e) => {
@@ -1046,7 +1046,7 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                   <span style={{ ...styles.metricVal, color: '#ffffff' }}>
                     {getIeltsOverall(selectedReview.listening_score, selectedReview.reading_score, selectedReview.writing_score)}
                   </span>
-                  <span style={{ ...styles.metricLabel, color: '#e2e8f0' }}>Overall Score</span>
+                  <span style={{ ...styles.metricLabel, color: 'var(--text-primary)' }}>Overall Score</span>
                 </div>
               </div>
 
@@ -1287,7 +1287,7 @@ const styles = {
   },
   userId: {
     fontSize: '0.85rem',
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
   },
   logoutBtn: {
     padding: '0.5rem 1rem',
@@ -1321,7 +1321,7 @@ const styles = {
   emptyCard: {
     textAlign: 'center',
     padding: '3rem 2rem',
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
   },
   assignmentCard: {
     display: 'flex',
@@ -1345,7 +1345,7 @@ const styles = {
   },
   dateLabel: {
     fontSize: '0.85rem',
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
   },
   actionBtn: {
     padding: '0.6rem 1.25rem',
@@ -1361,7 +1361,7 @@ const styles = {
     marginBottom: '1rem',
   },
   overallScoreBox: {
-    backgroundColor: '#1e293b',
+    backgroundcolor: 'var(--text-primary)',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: '8px',
     padding: '0.5rem 0.75rem',
@@ -1376,7 +1376,7 @@ const styles = {
   },
   scoreText: {
     fontSize: '0.65rem',
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     textTransform: 'uppercase',
   },
   miniScores: {
@@ -1401,7 +1401,7 @@ const styles = {
     textAlign: 'center',
     padding: '4rem',
     fontSize: '1.2rem',
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
   },
 
   /* Modal Styles */
@@ -1437,7 +1437,7 @@ const styles = {
   closeBtn: {
     background: 'none',
     border: 'none',
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     fontSize: '2rem',
     cursor: 'pointer',
     lineHeight: '1',
@@ -1465,11 +1465,11 @@ const styles = {
     display: 'block',
     fontSize: '1.75rem',
     fontWeight: '700',
-    color: '#cbd5e1',
+    color: 'var(--text-secondary)',
   },
   metricLabel: {
     fontSize: '0.75rem',
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     textTransform: 'uppercase',
   },
   rubricSection: {
@@ -1488,7 +1488,7 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     fontSize: '0.9rem',
-    color: '#cbd5e1',
+    color: 'var(--text-secondary)',
     borderBottom: '1px solid rgba(255,255,255,0.05)',
     paddingBottom: '0.25rem',
   },
@@ -1502,7 +1502,7 @@ const styles = {
   feedbackText: {
     fontSize: '0.95rem',
     lineHeight: '1.5',
-    color: '#e2e8f0',
+    color: 'var(--text-primary)',
   },
   essaysSection: {},
   essayBox: {
@@ -1515,7 +1515,7 @@ const styles = {
     fontSize: '0.9rem',
     lineHeight: '1.6',
     whiteSpace: 'pre-wrap',
-    color: '#cbd5e1',
+    color: 'var(--text-secondary)',
   },
   modalFooter: {
     padding: '1.25rem 1.5rem',
@@ -1567,7 +1567,7 @@ const styles = {
     justifyContent: 'center',
   },
   singleTestNote: {
-    color: '#94a3b8',
+    color: 'var(--text-secondary)',
     fontSize: '0.9rem',
     fontStyle: 'italic',
     textAlign: 'center',
