@@ -377,6 +377,29 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
     setTimeout(() => setCopiedLabel(''), 2000);
   };
 
+
+  // Deleting a student's paper is not undoable, so the confirmation names the
+  // student and says what happens next rather than asking a generic 'are you
+  // sure?'. The server refuses released or already-marked papers regardless.
+  const handleDeletePendingSubmission = async () => {
+    if (!selectedSub) return;
+    const who = selectedSub.student_name || selectedSub.student_id;
+    const ok = window.confirm(
+      'Delete ' + who + '\'s submission for "' + selectedSub.test_title + '"?\n\n' +
+      'Their answers will be permanently removed and the test will be put back on their list to sit again.\n\n' +
+      'This cannot be undone.'
+    );
+    if (!ok) return;
+    try {
+      const res = await fetch('/api/teacher/submissions/' + selectedSub.id + '/delete', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not delete this submission');
+      setSelectedSub(null);
+      fetchSubmissions();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
   const subHasAnyWriting = !!(selectedSub?.writing_answers?.task1 || selectedSub?.writing_answers?.task2)
     || subHasTask1 || subHasTask2;
   const gradeTask1 = subHasTask1 || (subHasAnyWriting && !subHasTask1 && !subHasTask2);
@@ -1026,6 +1049,22 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                   <div style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
                     <h4 style={{ color: 'var(--text-primary)' }}>Student Writing Answers</h4>
                   </div>
+
+                  {/* Only offered while the paper is still pending: the server
+                      refuses released or already-marked submissions anyway, so
+                      showing it then would only produce a confusing error. */}
+                  {!selectedSub?.is_revealed && selectedSub?.writing_score == null && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+                      <button
+                        type="button"
+                        onClick={handleDeletePendingSubmission}
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.7rem', color: '#f43f5e' }}
+                      >
+                        Delete this submission
+                      </button>
+                    </div>
+                  )}
 
                   {gradeTask1 && (
                   <div style={styles.essayBox}>

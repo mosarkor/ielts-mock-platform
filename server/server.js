@@ -673,6 +673,57 @@ app.post('/api/admin/submissions/:id/module-score', async (req, res) => {
   }
 });
 
+// Delete a submission that is still waiting to be marked.
+//
+// Papers arrive spoiled sometimes -- a student starts the wrong test, submits
+// blank, or sits it twice -- and until now the only way to clear one was the
+// assignment reset, which is filed under assignments rather than the marking
+// queue where the teacher actually notices the problem.
+//
+// Narrow on purpose, because this destroys a student's work:
+//   - refuses anything already released, so a result a student has seen cannot
+//     be deleted out from under them
+//   - refuses anything already marked, so a graded paper is not lost to a
+//     mis-click; ungrade it first if that is really the intent
+// Both refusals say which rule applied, so the teacher knows what to do next.
+app.post('/api/teacher/submissions/:id/delete', async (req, res) => {
+  const submissionId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(submissionId)) return res.status(400).json({ error: 'Invalid submission id' });
+
+  try {
+    const sub = await db.get(
+      'SELECT id, student_id, test_id, is_revealed, writing_score FROM submissions WHERE id = ?',
+      [submissionId]
+    );
+    if (!sub) return res.status(404).json({ error: `Submission ${submissionId} not found` });
+
+    if (sub.is_revealed === 1 || sub.is_revealed === true) {
+      return res.status(409).json({
+        error: 'This result has already been released to the student. Hide it first if it really should be deleted.'
+      });
+    }
+    if (sub.writing_score !== null && sub.writing_score !== undefined) {
+      return res.status(409).json({
+        error: 'This paper has already been marked. Clear its grade first if it really should be deleted.'
+      });
+    }
+
+    await db.run('DELETE FROM submissions WHERE id = ?', [submissionId]);
+
+    // Put the test back on the student's list so a spoiled attempt can be re-sat
+    // -- deleting the paper without this leaves them with nothing to do.
+    await db.run(
+      "UPDATE assignments SET status = 'assigned' WHERE student_id = ? AND test_id = ?",
+      [sub.student_id, sub.test_id]
+    );
+
+    console.log(`Submission ${submissionId} deleted by teacher; test ${sub.test_id} re-assigned to ${sub.student_id}.`);
+    res.json({ success: true, deletedId: submissionId, reassignedTo: sub.student_id, testId: sub.test_id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/teacher/grade/:submissionId', async (req, res) => {
   const { submissionId } = req.params;
   const { writingScores, teacherFeedback, gradedBy } = req.body;
