@@ -381,17 +381,20 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   // Deleting a student's paper is not undoable, so the confirmation names the
   // student and says what happens next rather than asking a generic 'are you
   // sure?'. The server refuses released or already-marked papers regardless.
-  const handleDeletePendingSubmission = async () => {
-    if (!selectedSub) return;
-    const who = selectedSub.student_name || selectedSub.student_id;
+  // Takes the submission to delete, so it works from a card in the pending list
+  // as well as from the paper currently open for marking.
+  const handleDeletePendingSubmission = async (submission) => {
+    const target = submission || selectedSub;
+    if (!target) return;
+    const who = target.student_name || target.student_id;
     const ok = window.confirm(
-      'Delete ' + who + '\'s submission for "' + selectedSub.test_title + '"?\n\n' +
+      'Delete ' + who + '\'s submission for "' + target.test_title + '"?\n\n' +
       'Their answers will be permanently removed and the test will be put back on their list to sit again.\n\n' +
       'This cannot be undone.'
     );
     if (!ok) return;
     try {
-      const res = await fetch('/api/teacher/submissions/' + selectedSub.id + '/delete', { method: 'POST' });
+      const res = await fetch('/api/teacher/submissions/' + target.id + '/delete', { method: 'POST' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Could not delete this submission');
       setSelectedSub(null);
@@ -1681,6 +1684,15 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                       style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }}
                     >
                       ✏️ Evaluate Essays
+                    </button>
+                    {/* Straight on the card: spoiled papers are spotted while
+                        scanning this queue, not after opening one to mark it. */}
+                    <button
+                      onClick={() => handleDeletePendingSubmission(sub)}
+                      className="btn btn-secondary"
+                      style={{ marginTop: '0.5rem', width: '100%', justifyContent: 'center', fontSize: '0.75rem', color: '#f43f5e' }}
+                    >
+                      Delete this submission
                     </button>
                   </div>
                 ))
