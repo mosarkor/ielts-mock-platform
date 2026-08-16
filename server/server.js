@@ -866,6 +866,24 @@ app.post('/api/admin/users', async (req, res) => {
 });
 
 // Delete user
+// Rename a user. Names are shown to students on every result and report, and
+// until now the only way to change one was to delete the account and recreate
+// it -- which for a teacher or admin would take their grading history with it.
+app.post('/api/admin/users/:id/name', async (req, res) => {
+  const { id } = req.params;
+  const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+  if (!name) return res.status(400).json({ error: 'name is required' });
+  if (name.length > 120) return res.status(400).json({ error: 'name is too long' });
+  try {
+    const user = await db.get('SELECT id, name, role FROM users WHERE id = ?', [id]);
+    if (!user) return res.status(404).json({ error: `User ${id} not found` });
+    await db.run('UPDATE users SET name = ? WHERE id = ?', [name, id]);
+    res.json({ success: true, id, previous: user.name, name, role: user.role });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.delete('/api/admin/users/:id', async (req, res) => {
   const { id } = req.params;
   try {
