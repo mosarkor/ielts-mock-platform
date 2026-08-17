@@ -3470,11 +3470,18 @@ app.post('/api/admin/tests/:id/delete', async (req, res) => {
       }
     }
 
-    // The served file may also exist on disk from an older upload.
-    try {
-      const onDisk = path.join(__dirname, 'public', 'tests', `mock${testId}.html`);
-      if (fs.existsSync(onDisk)) fs.unlinkSync(onDisk);
-    } catch (e) {}
+    // A disk copy may exist too, but only remove it when this test was created by
+    // an upload -- that copy is a cache of html_content and nothing else needs it.
+    //
+    // When html_content is NULL the file IS the test: mock1-9 ship in the repo as
+    // source, with no database row behind them. Deleting one of those removes a
+    // tracked file, which is what happened in testing before this check existed.
+    if (page?.html_content) {
+      try {
+        const onDisk = path.join(__dirname, 'public', 'tests', `mock${testId}.html`);
+        if (fs.existsSync(onDisk)) fs.unlinkSync(onDisk);
+      } catch (e) {}
+    }
 
     res.json({ success: true, deleted: testId, title: test.title, audioAssetsFreed: freed });
   } catch (error) {
