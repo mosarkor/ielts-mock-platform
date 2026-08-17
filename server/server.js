@@ -3296,6 +3296,100 @@ app.post('/api/admin/upload-test', async (req, res) => {
 // its writing_data. Used to rebuild a combined full-mock's modules from freshly
 // uploaded source files -- e.g. after fixing broken listening_data/reading_data
 // that never had a working iframeUrl -- while leaving its writing task intact.
+// Delete a test row and reclaim its storage.
+//
+// The platform had no way to remove a test, so mistakes (a bad upload, a probe,
+// a duplicate) accumulated as rows nobody could clear -- and a listening test
+// pins a base64 audio asset that can be 15-20 MB, which matters on a database
+// whose transfer quota has already been exhausted once.
+//
+// Refuses any test a student has actually sat: those rows are the record of
+// someone's result, and losing them silently is far worse than a stale title in
+// a dropdown. Unlink or rename such a test instead.
+app.post('/api/admin/tests/:id/delete', async (req, res) => {
+  const testId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
+
+  try {
+    const test = await db.get('SELECT id, title, listening_data, reading_data FROM tests WHERE id = ?', [testId]);
+    if (!test) return res.status(404).json({ error: `Test ${testId} not found` });
+
+    const subs = await db.get('SELECT COUNT(*) AS n FROM submissions WHERE test_id = ?', [testId]);
+    if (Number(subs?.n || 0) > 0) {
+      return res.status(409).json({
+        error: `Test ${testId} ("${test.title}") has ${subs.n} submission(s) and will not be deleted. `
+          + `Those rows are students' results. Rename the test instead if it should be retired.`
+      });
+    }
+
+    // Assignments matter as much as submissions here. A test with no submissions
+    // can still be sitting on dozens of students' dashboards waiting to be sat,
+    // and deleting it takes the paper off their list with no trace of why. Caught
+    // exactly this way in testing: the guard passed on a test that had no
+    // submissions and 55 pending assignments, and removed it silently.
+    //
+    // Overridable, because clearing a genuinely bad upload is the whole point --
+    // but it has to be asked for, and the count is named so the caller knows what
+    // they are agreeing to.
+    const assigned = await db.get('SELECT COUNT(*) AS n FROM assignments WHERE test_id = ?', [testId]);
+    if (Number(assigned?.n || 0) > 0 && req.body?.force !== true) {
+      return res.status(409).json({
+        error: `Test ${testId} ("${test.title}") is assigned to ${assigned.n} student(s) who have not sat it yet. `
+          + `Deleting it removes the paper from their dashboards. Re-send with { "force": true } to go ahead.`,
+        assignments: Number(assigned.n)
+      });
+    }
+
+    // The audio asset this test points at, if any. Only dropped when no other
+    // test still references it -- combined tests deliberately share one asset by
+    // pointing their modules at another test's file.
+    const audioIds = new Set();
+    for (const blob of [test.listening_data, test.reading_data]) {
+      const m = /\/tests-audio\/(\d+)/.exec(String(blob || ''));
+      if (m) audioIds.add(m[1]);
+    }
+    const page = await db.get('SELECT html_content FROM tests WHERE id = ?', [testId]);
+    for (const m of String(page?.html_content || '').matchAll(/\/tests-audio\/(\d+)/g)) audioIds.add(m[1]);
+
+    await db.run('DELETE FROM assignments WHERE test_id = ?', [testId]);
+    await db.run('DELETE FROM tests WHERE id = ?', [testId]);
+
+    const freed = [];
+    for (const audioId of audioIds) {
+      // Matched with the closing quote, because a bare LIKE '%/tests-audio/5%'
+      // also matches /tests-audio/50 and /tests-audio/51. That direction is the
+      // safe one -- it only ever declines to free an asset -- but it meant no
+      // asset was ever reclaimed once ids reached two digits, which defeats the
+      // point of deleting a 15 MB track.
+      const others = await db.get(
+        'SELECT COUNT(*) AS n FROM tests WHERE html_content LIKE ?',
+        [`%/tests-audio/${audioId}"%`]
+      );
+      if (Number(others?.n || 0) === 0) {
+        await db.run('DELETE FROM test_audio_assets WHERE id = ?', [audioId]);
+        // The streaming route serves from an on-disk cache it materialises on
+        // first request, and checks that cache before the database. Dropping only
+        // the row therefore reclaims nothing and the track keeps streaming -- the
+        // asset looks deleted while still being served.
+        for (const suffix of ['.bin', '.bin.type']) {
+          try { await fs.promises.unlink(path.join(audioCacheDir, `${audioId}${suffix}`)); } catch (e) {}
+        }
+        freed.push(Number(audioId));
+      }
+    }
+
+    // The served file may also exist on disk from an older upload.
+    try {
+      const onDisk = path.join(__dirname, 'public', 'tests', `mock${testId}.html`);
+      if (fs.existsSync(onDisk)) fs.unlinkSync(onDisk);
+    } catch (e) {}
+
+    res.json({ success: true, deleted: testId, title: test.title, audioAssetsFreed: freed });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/admin/tests/:id/link-modules', async (req, res) => {
   const targetId = Number.parseInt(req.params.id, 10);
   const listeningFromTestId = Number.parseInt(req.body.listeningFromTestId, 10);
