@@ -1620,7 +1620,13 @@ app.post('/api/admin/upload-test', async (req, res) => {
       });
       `;
       content = content.replace(/\}\)\(\);\s*<\/script>/, `${autoLoginSnippetB}\n})();\n</script>`);
-           const finishWritingTarget = /function finishWriting\(\)\{\s*clearInterval\(state\.wTimerInterval\);\s*hide\(\$\("screen-test"\)\);\s*hide\(\$\("screen-transition"\)\);\s*buildFinalReport\(\);\s*show\(\$\("screen-results"\)\);\s*\}/;
+      // Accepts either quote style and an optional final semicolon. Generations of
+      // this template differ on both, and the double-quote-only version of this
+      // pattern silently matched nothing on a single-quoted file: the replacement
+      // below never ran, so the uploaded test kept its own local results screen,
+      // showed the student their full score, and posted nothing to the platform.
+      // A whole sitting would have been lost with no error anywhere.
+      const finishWritingTarget = /function finishWriting\(\)\s*\{\s*clearInterval\(state\.wTimerInterval\);\s*hide\(\$\(['"]screen-test['"]\)\);\s*hide\(\$\(['"]screen-transition['"]\)\);\s*buildFinalReport\(\);\s*show\(\$\(['"]screen-results['"]\)\);?\s*\}/;
       const finishWritingReplacement = `function finishWriting(){
         clearInterval(state.wTimerInterval);
         hide($("screen-test")); hide($("screen-transition"));
@@ -1705,7 +1711,26 @@ app.post('/api/admin/upload-test', async (req, res) => {
         return;
       }
       `;
+      const beforeFinishWriting = content;
       content = content.replace(finishWritingTarget, finishWritingReplacement);
+
+      // Refuse rather than ship a test that cannot submit.
+      //
+      // This whole branch exists to redirect the template's own local results
+      // screen into a POST to the platform. If the pattern misses, the upload
+      // "succeeds", the paper looks perfect, and the only symptom appears after a
+      // class has sat it: every student saw their own score, and the teacher
+      // received nothing. That is the most expensive possible way to find a typo
+      // in a regex, so it fails loudly here instead.
+      if (content === beforeFinishWriting) {
+        const snippet = (beforeFinishWriting.match(/function finishWriting[\s\S]{0,200}/) || ['(finishWriting not found at all)'])[0];
+        return res.status(422).json({
+          error: 'This file has finishWriting() but not in a shape the platform can rewire, so it would '
+            + 'show students their own scores and submit nothing. Refusing the upload rather than losing a sitting. '
+            + 'The submission rewrite in server.js needs to cover this variant.',
+          foundInstead: snippet.replace(/\s+/g, ' ').slice(0, 200)
+        });
+      }
     } else if (
       content.includes('function checkAnswers(')
       && content.includes('correctAnswers')

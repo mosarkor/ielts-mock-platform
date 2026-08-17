@@ -258,18 +258,84 @@ export function removeWatermarks(html) {
   return { html: cleaned, removedCount };
 }
 
+// Removes a whole element by class name, walking tag depth to find its real
+// closing tag. A regex cannot do this correctly: these blocks contain nested
+// <div>s, and a lazy match stops at the first </div> -- leaving the wrapper's
+// closing tag orphaned and the layout broken from that point down.
+function removeElementByClass(html, className, tag = 'div') {
+  let out = html;
+  let removed = 0;
+  const opener = new RegExp(`<${tag}\\b[^>]*class=["'][^"']*\\b${className}\\b[^"']*["'][^>]*>`, 'i');
+
+  for (;;) {
+    const m = opener.exec(out);
+    if (!m) break;
+    const start = m.index;
+    let i = start + m[0].length;
+    let depth = 1;
+    const open = new RegExp(`<${tag}\\b`, 'gi');
+    const close = new RegExp(`</${tag}\\s*>`, 'gi');
+    while (depth > 0 && i < out.length) {
+      open.lastIndex = i; close.lastIndex = i;
+      const nextOpen = open.exec(out);
+      const nextClose = close.exec(out);
+      if (!nextClose) { i = out.length; break; }
+      if (nextOpen && nextOpen.index < nextClose.index) { depth++; i = nextOpen.index + nextOpen[0].length; }
+      else { depth--; i = nextClose.index + nextClose[0].length; }
+    }
+    out = out.slice(0, start) + out.slice(i);
+    removed++;
+    if (removed > 50) break;   // guard against a malformed document looping
+  }
+  return { html: out, removed };
+}
+
+// The channel promo furniture: a full-width banner reading "For the authentic
+// tests, join" with a pill linking to the source's Telegram, plus the report
+// footer that credits it. Four banners and a footer on this generation.
+//
+// These need removing by class, not by link. The upload path rewrites t.me URLs
+// to "#" before sanitizing runs, which means the anchor-based branding removal
+// can no longer recognise them -- the rewrite makes them *less* detectable, so
+// they sailed through every existing rule and stayed visible to students.
+export function removeChannelPromos(html) {
+  if (!html) return { html, removedCount: 0 };
+  let out = html;
+  let removedCount = 0;
+  for (const cls of ['promo-banner', 'brand-footer', 'gate-footer', 'telegram-pin']) {
+    const r = removeElementByClass(out, cls);
+    out = r.html;
+    removedCount += r.removed;
+  }
+  return { html: out, removedCount };
+}
+
+// "CDI" is this source's own abbreviation of its channel name, and it survives
+// every handle rule because it is not the handle. It only ever appears attached
+// to "Mock", including in the generated PDF's filename.
+export function removeSourceAbbreviations(html) {
+  if (!html) return { html, removedCount: 0 };
+  let removedCount = 0;
+  const cleaned = html.replace(/\bCDI[\s_]+(?=Mock)/g, () => { removedCount++; return ''; });
+  return { html: cleaned, removedCount };
+}
+
 export function sanitizeTestHtml(html) {
   const mojibake = fixMojibake(html);
   const gate = removeAccessGate(mojibake.html);
   const vocab = removeVocabularyHelpers(gate.html);
   const branding = removeSourceBranding(vocab.html);
   const watermarks = removeWatermarks(branding.html);
+  const promos = removeChannelPromos(watermarks.html);
+  const abbrevs = removeSourceAbbreviations(promos.html);
   return {
-    html: watermarks.html,
+    html: abbrevs.html,
     mojibakeFixedCount: mojibake.fixedCount,
     gateRemoved: gate.changed,
     vocabHelpersRemoved: vocab.removedCount,
     brandingRemoved: branding.removedCount,
-    watermarksRemoved: watermarks.removedCount
+    watermarksRemoved: watermarks.removedCount,
+    promosRemoved: promos.removedCount,
+    abbreviationsRemoved: abbrevs.removedCount
   };
 }
