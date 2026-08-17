@@ -889,6 +889,70 @@ app.post('/api/admin/users', async (req, res) => {
 // Rename a user. Names are shown to students on every result and report, and
 // until now the only way to change one was to delete the account and recreate
 // it -- which for a teacher or admin would take their grading history with it.
+// Change the ID someone signs in with.
+//
+// The ID is the users table's primary key and six other columns point at it, so
+// it cannot simply be updated in place. The row is copied under the new ID,
+// every reference is repointed, then the old row is removed -- in that order, so
+// nothing is ever orphaned. Done inside a transaction where the driver supports
+// one, so a failure halfway leaves the account exactly as it was.
+app.post('/api/admin/users/:id/change-id', async (req, res) => {
+  const oldId = String(req.params.id || '').trim();
+  const newId = String(req.body.newId || '').trim();
+
+  if (!newId) return res.status(400).json({ error: 'newId is required' });
+  if (!/^[A-Za-z0-9._-]{2,40}$/.test(newId)) {
+    return res.status(400).json({ error: 'newId may use letters, numbers, dot, underscore or hyphen (2-40 characters)' });
+  }
+  if (newId.toLowerCase() === oldId.toLowerCase()) {
+    return res.status(400).json({ error: 'newId is the same as the current ID' });
+  }
+
+  // Sign-in matches case-insensitively, so two IDs differing only in case would
+  // be indistinguishable at the login screen.
+  const clash = await db.get('SELECT id FROM users WHERE LOWER(TRIM(id)) = ?', [newId.toLowerCase()]);
+  if (clash) return res.status(409).json({ error: `"${clash.id}" already exists` });
+
+  const user = await db.get('SELECT * FROM users WHERE id = ?', [oldId]);
+  if (!user) return res.status(404).json({ error: `User ${oldId} not found` });
+
+  const REFERENCES = [
+    ['tests', 'created_by'],
+    ['assignments', 'student_id'],
+    ['submissions', 'student_id'],
+    ['submissions', 'graded_by'],
+    ['speaking_assignments', 'student_id'],
+    ['speaking_submissions', 'student_id']
+  ];
+
+  let inTransaction = false;
+  try {
+    try { await db.exec('BEGIN'); inTransaction = true; } catch { /* driver without transactions */ }
+
+    await db.run(
+      'INSERT INTO users (id, name, password_hash, role, group_name) VALUES (?, ?, ?, ?, ?)',
+      [newId, user.name, user.password_hash, user.role, user.group_name || null]
+    );
+
+    const moved = {};
+    for (const [table, column] of REFERENCES) {
+      try {
+        const result = await db.run(`UPDATE ${table} SET ${column} = ? WHERE ${column} = ?`, [newId, oldId]);
+        if (result.changes) moved[`${table}.${column}`] = result.changes;
+      } catch { /* table absent on this installation */ }
+    }
+
+    await db.run('DELETE FROM users WHERE id = ?', [oldId]);
+    if (inTransaction) await db.exec('COMMIT');
+
+    console.log(`User ID changed: ${oldId} -> ${newId}`, moved);
+    res.json({ success: true, previousId: oldId, id: newId, name: user.name, role: user.role, movedReferences: moved });
+  } catch (error) {
+    if (inTransaction) { try { await db.exec('ROLLBACK'); } catch { /* nothing to undo */ } }
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/admin/users/:id/name', async (req, res) => {
   const { id } = req.params;
   const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
