@@ -9,6 +9,7 @@ import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { sanitizeTestHtml } from './contentSanitizer.js';
 import { hashPassword, verifyPassword } from './auth.js';
+import { FEEDBACK_SYSTEM_PROMPT, buildFeedbackRequest } from './writingFeedback.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -706,6 +707,78 @@ app.post('/api/admin/submissions/:id/module-score', async (req, res) => {
 //   - refuses anything already marked, so a graded paper is not lost to a
 //     mis-click; ungrade it first if that is really the intent
 // Both refusals say which rule applied, so the teacher knows what to do next.
+// Draft written feedback for one essay.
+//
+// A draft only: it is stored against the submission and is not shown to the
+// student until the teacher approves it. Marking is the teacher's judgement --
+// this saves the typing, not the deciding.
+app.post('/api/teacher/submissions/:id/draft-feedback', async (req, res) => {
+  const submissionId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(submissionId)) return res.status(400).json({ error: 'Invalid submission id' });
+  const taskType = req.body.taskType === 'task1' ? 'task1' : 'task2';
+
+  try {
+    const sub = await db.get(`
+      SELECT s.id, s.student_id, s.writing_answers, u.name AS student_name, u.group_name,
+             t.title AS test_title, t.writing_data
+      FROM submissions s
+      JOIN users u ON s.student_id = u.id
+      JOIN tests t ON s.test_id = t.id
+      WHERE s.id = ?
+    `, [submissionId]);
+    if (!sub) return res.status(404).json({ error: `Submission ${submissionId} not found` });
+
+    const answers = JSON.parse(sub.writing_answers || '{}');
+    const essay = String(answers[taskType] || '').trim();
+    if (!essay) return res.status(400).json({ error: `This submission has no ${taskType} essay` });
+
+    const writing = JSON.parse(sub.writing_data || '{}');
+    const prompt = writing?.[taskType]?.prompt || '';
+
+    const settings = await db.get('SELECT * FROM ai_settings LIMIT 1');
+    if (!settings?.anthropic_api_key) {
+      return res.status(400).json({ error: 'No Anthropic API key configured. Add one in Admin Settings.' });
+    }
+
+    const { content } = buildFeedbackRequest({
+      studentName: sub.student_name, group: sub.group_name, prompt, essay, taskType
+    });
+
+    const anthropic = new Anthropic({ apiKey: settings.anthropic_api_key });
+    const response = await anthropic.messages.create({
+      model: 'claude-opus-5',
+      // Marking against band descriptors is judgement work, so thinking stays on
+      // (the default). max_tokens covers thinking and the feedback together.
+      max_tokens: 16000,
+      system: FEEDBACK_SYSTEM_PROMPT,
+      messages: [{ role: 'user', content }]
+    });
+
+    if (response.stop_reason === 'refusal') {
+      return res.status(502).json({ error: 'The model declined to write this feedback.' });
+    }
+    const textBlock = response.content.find(block => block.type === 'text');
+    const feedback = textBlock ? textBlock.text.trim() : '';
+    if (!feedback) return res.status(502).json({ error: 'The model returned no feedback text.' });
+
+    await db.run(
+      'UPDATE submissions SET writing_feedback_draft = ? WHERE id = ?',
+      [JSON.stringify({ taskType, feedback, model: response.model, draftedAt: new Date().toISOString() }), submissionId]
+    );
+
+    res.json({
+      success: true,
+      submissionId,
+      student: sub.student_name,
+      taskType,
+      feedback,
+      usage: response.usage
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/teacher/submissions/:id/delete', async (req, res) => {
   const submissionId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(submissionId)) return res.status(400).json({ error: 'Invalid submission id' });

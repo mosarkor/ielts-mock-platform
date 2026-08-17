@@ -236,6 +236,8 @@ export async function initDb() {
     // The CREATE TABLE above only runs on a fresh database, so a platform that
     // already has an ai_settings table needs the column added separately.
     await db.exec('ALTER TABLE ai_settings ADD COLUMN anthropic_api_key TEXT').catch(() => {});
+    // Drafted feedback awaiting the teacher's approval -- never shown to a student from here.
+    await db.exec('ALTER TABLE submissions ADD COLUMN writing_feedback_draft TEXT').catch(() => {});
 
     // Speaking module tables
     await db.exec(`
