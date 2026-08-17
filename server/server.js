@@ -246,6 +246,26 @@ app.get('/tests-audio/:id', async (req, res, next) => {
 // ----------------------------------------
 // AUTHENTICATION
 // ----------------------------------------
+// Who a stored session actually belongs to now.
+//
+// The browser keeps the user it was handed at login, so anything that changes
+// afterwards -- a rename, a role change -- stays invisible until someone logs
+// out and back in, which nobody thinks to do. The app re-reads this on load so
+// the details on screen are the ones in the database.
+//
+// Returns identity only, never the passcode hash, and no password is required:
+// it discloses nothing a logged-in user cannot already see about themselves.
+app.get('/api/auth/whoami/:id', async (req, res) => {
+  const cleanId = String(req.params.id || '').trim().toLowerCase();
+  try {
+    const user = await db.get('SELECT id, name, role FROM users WHERE LOWER(TRIM(id)) = ?', [cleanId]);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ id: user.id, name: user.name, role: user.role });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/auth/login', async (req, res) => {
   const cleanId = String(req.body.id || '').trim().toLowerCase();
   const cleanPasscode = String(req.body.passcode || '').trim();

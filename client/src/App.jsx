@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LoginPortal from './views/LoginPortal';
 import StudentDashboard from './views/StudentDashboard';
 import StudentTestRunner from './views/StudentTestRunner';
@@ -42,6 +42,28 @@ export default function App() {
       return null;
     }
   });
+  // The stored session keeps whatever name and role the account had at login.
+  // Renaming an account therefore stayed invisible to anyone already signed in
+  // -- the old name kept showing until they happened to log out. Re-read the
+  // account on load so what is on screen matches the database.
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    fetch('/api/auth/whoami/' + encodeURIComponent(user.id))
+      .then(res => (res.ok ? res.json() : null))
+      .then(fresh => {
+        if (cancelled || !fresh?.id) return;
+        if (fresh.name === user.name && fresh.role === user.role) return;
+        const updated = { ...user, name: fresh.name, role: fresh.role };
+        setUser(updated);
+        writeStorage('user', JSON.stringify(updated));
+      })
+      .catch(() => { /* offline or mid-deploy: keep showing the stored details */ });
+    return () => { cancelled = true; };
+    // Only on sign-in / reload -- not every time the object identity changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
   const [testingTestId, setTestingTestId] = useState(() => {
     const saved = Number.parseInt(readStorage('testingTestId'), 10);
     return Number.isInteger(saved) && saved > 0 ? saved : null;
