@@ -1708,6 +1708,35 @@ app.post('/api/admin/upload-test', async (req, res) => {
         (match) => `${match}\ntry { if (typeof correctAnswers !== 'undefined') window.correctAnswers = correctAnswers; } catch (e) {}`
       );
       usedHarvestBridge = true;
+
+      // The bridge takes over the Check Answers *button*, but the template also
+      // calls checkAnswers() straight from its countdown: on expiry it reveals
+      // every correct answer, the results modal, and unlocks the transcript.
+      // That call is inside the timer closure, so nothing the bridge does at
+      // runtime can intercept it -- window.checkAnswers is a different binding.
+      //
+      // A 30-minute countdown running out during a 30-minute listening paper is
+      // ordinary use, not an edge case, so this is a reliable way for a student
+      // to be handed the answer key mid-exam.
+      //
+      // Rewritten here, in the source text, where scoping does not apply: route
+      // the expiry through the button instead of the function. On the platform
+      // the bridge owns that button, so expiry becomes a silent submit; opened
+      // standalone with no bridge, the fallback keeps the original reveal, which
+      // is the right behaviour for self-study.
+      let timerRevealsFixed = 0;
+      content = content.replace(
+        /if\s*\(\s*!\s*checked\s*\)\s*checkAnswers\s*\(\s*\)\s*;/g,
+        () => {
+          timerRevealsFixed++;
+          return "if(!checked){ var __cb=document.getElementById('checkBtn')||document.getElementById('checkAnswersBtn'); "
+            + "if(__cb){ __cb.click(); } else { checkAnswers(); } }";
+        }
+      );
+      if (timerRevealsFixed) {
+        console.log(`[upload] routed ${timerRevealsFixed} timer-expiry answer reveal(s) through the submit button`);
+      }
+
       // The promotion above only fires on templates that bind checkAnswers in
       // that one exact way. Whole generations don't, and on those the key stays
       // sealed in a closure: the bridge finds no correctAnswers, harvests
@@ -1881,6 +1910,8 @@ app.post('/api/admin/upload-test', async (req, res) => {
             if (document.querySelector('input[name="q' + n + '"]:checked')) return true;
             var slot = document.querySelector('.dnd-slot[data-q="' + n + '"]');
             if (slot && slot.dataset && slot.dataset.value) return true;
+            var ldmSlot = document.querySelector('.ldm-slot[data-question="' + n + '"]');
+            if (ldmSlot && ldmSlot.dataset && ldmSlot.dataset.answer) return true;
             // Shared "choose two letters" groups (q20_21 and friends): any tick
             // in a group this question belongs to counts as answered.
             var groups = document.querySelectorAll('input[type="checkbox"][name^="q"][name*="_"]:checked');
@@ -2101,6 +2132,17 @@ app.post('/api/admin/upload-test', async (req, res) => {
           try {
             var slot = document.querySelector('.dnd-slot[data-q="' + n + '"]');
             if (slot && slot.dataset && slot.dataset.value) return slot.dataset.value;
+          } catch (e) {}
+          // The drag-matching generation ("Choose FOUR answers from the box"):
+          // a different class, a different attribute, and the letter kept under
+          // .answer rather than .value. It is also a <div>, so nothing above can
+          // see it -- no name, no id, no .value -- and no input/change event ever
+          // fires, so __liveAnswers never holds it either. Without this, those
+          // questions harvest as blank: a student who drags all four correctly
+          // still scores zero on them, and nothing in the submission looks wrong.
+          try {
+            var ldm = document.querySelector('.ldm-slot[data-question="' + n + '"]');
+            if (ldm && ldm.dataset && ldm.dataset.answer) return ldm.dataset.answer;
           } catch (e) {}
           try {
             var groupResult = __checkboxGroupCredit(n);

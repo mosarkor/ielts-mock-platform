@@ -210,16 +210,59 @@ export function removeSourceBranding(html) {
   return { html: cleaned, removedCount };
 }
 
+// Newer generations of the template tile the source's handle across every page
+// as a CSS background: an inline SVG data URI holding the text, set on body or a
+// .watermark layer. removeSourceBranding cannot reach it -- that function skips
+// <style> blocks on purpose, because these files keep the channel name inside
+// localStorage keys and element ids where rewriting it breaks the page.
+//
+// So this handles the one case inside <style> that is genuinely visible to a
+// student: a background-image whose SVG payload contains the handle. The URL is
+// dropped rather than the whole rule, which leaves the layer's sizing and
+// opacity intact and simply gives it nothing to paint.
+export function removeWatermarks(html) {
+  if (!html) return { html, removedCount: 0 };
+  let removedCount = 0;
+
+  const cleaned = html.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, block =>
+    block
+      // The payload is quoted, which is the only way to write a data URI that
+      // contains parentheses -- and these do: the text is rotated with
+      // transform='rotate(-22 210 110)'. Matching to the closing quote rather
+      // than the closing paren is therefore required, not merely tidier.
+      .replace(
+        /background-image\s*:\s*url\(\s*(["'])data:image\/svg\+xml[\s\S]*?\1\s*\)\s*;?/gi,
+        match => {
+          // Only the ones actually carrying branding text. An inline SVG
+          // background is also a legitimate way to draw a tick or a chevron,
+          // and those must survive.
+          if (!/CD\s*IELTS|cdieltssources|ieltsx/i.test(match)) return match;
+          removedCount++;
+          return 'background-image: none;';
+        }
+      )
+      // The handle also sits in the section comment above the rule. Invisible to
+      // a student, but it is the label that makes the leftover rule obvious to
+      // anyone reading the file, so it goes with it.
+      .replace(/\/\*[^*]*?(CD\s*IELTS\s*sources|cdieltssources|@CDIELTS)[\s\S]*?\*\//gi,
+        () => '/* ---- Watermark layer (removed) ---- */')
+  );
+
+  return { html: cleaned, removedCount };
+}
+
 export function sanitizeTestHtml(html) {
   const mojibake = fixMojibake(html);
   const gate = removeAccessGate(mojibake.html);
   const vocab = removeVocabularyHelpers(gate.html);
   const branding = removeSourceBranding(vocab.html);
+  const watermarks = removeWatermarks(branding.html);
   return {
-    html: branding.html,
+    html: watermarks.html,
     mojibakeFixedCount: mojibake.fixedCount,
     gateRemoved: gate.changed,
     vocabHelpersRemoved: vocab.removedCount,
-    brandingRemoved: branding.removedCount
+    brandingRemoved: branding.removedCount,
+    watermarksRemoved: watermarks.removedCount
   };
 }
