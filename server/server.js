@@ -10,6 +10,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { sanitizeTestHtml } from './contentSanitizer.js';
 import { hashPassword, verifyPassword } from './auth.js';
 import { FEEDBACK_SYSTEM_PROMPT, buildFeedbackRequest } from './writingFeedback.js';
+import { renderFeedbackSheets } from './feedbackPrint.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -783,6 +784,160 @@ app.post('/api/teacher/submissions/:id/draft-feedback', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Save the teacher's edit of a draft, and optionally mark it approved.
+//
+// Approval is what separates a draft from feedback a student may see. The text
+// stored here is the teacher's, not the model's -- once they have edited it, the
+// edit is the record.
+app.post('/api/teacher/submissions/:id/feedback', async (req, res) => {
+  const submissionId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(submissionId)) return res.status(400).json({ error: 'Invalid submission id' });
+
+  const feedback = typeof req.body.feedback === 'string' ? req.body.feedback.trim() : '';
+  const approved = req.body.approved === true;
+  if (!feedback) return res.status(400).json({ error: 'feedback text is required' });
+
+  try {
+    const existing = await db.get('SELECT writing_feedback_draft FROM submissions WHERE id = ?', [submissionId]);
+    if (!existing) return res.status(404).json({ error: `Submission ${submissionId} not found` });
+
+    let record = {};
+    try { record = JSON.parse(existing.writing_feedback_draft || '{}'); } catch { record = {}; }
+    record.feedback = feedback;
+    record.editedAt = new Date().toISOString();
+    record.approved = approved;
+    if (approved) record.approvedAt = record.editedAt;
+
+    await db.run('UPDATE submissions SET writing_feedback_draft = ? WHERE id = ?', [JSON.stringify(record), submissionId]);
+    res.json({ success: true, submissionId, approved });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Draft feedback for every essay on a test that does not have one yet.
+//
+// Sequential rather than parallel: a class is 20-25 essays, and firing them all
+// at once risks a rate limit that would leave half the class silently unmarked.
+// Skips essays already drafted, so re-running after a failure costs nothing and
+// never overwrites an edit the teacher has made.
+app.post('/api/teacher/tests/:testId/draft-feedback-batch', async (req, res) => {
+  const testId = Number.parseInt(req.params.testId, 10);
+  if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
+  const taskType = req.body.taskType === 'task1' ? 'task1' : 'task2';
+  const ALLOWED_MODELS = ['claude-haiku-4-5', 'claude-sonnet-5', 'claude-opus-5'];
+  const model = ALLOWED_MODELS.includes(req.body.model) ? req.body.model : 'claude-haiku-4-5';
+
+  try {
+    const settings = await db.get('SELECT * FROM ai_settings LIMIT 1');
+    if (!settings?.anthropic_api_key) {
+      return res.status(400).json({ error: 'No Anthropic API key configured. Add one in Admin Settings.' });
+    }
+
+    const test = await db.get('SELECT title, writing_data FROM tests WHERE id = ?', [testId]);
+    if (!test) return res.status(404).json({ error: `Test ${testId} not found` });
+    const prompt = JSON.parse(test.writing_data || '{}')?.[taskType]?.prompt || '';
+
+    const rows = await db.all(`
+      SELECT s.id, s.writing_answers, s.writing_feedback_draft, u.name AS student_name, u.group_name
+      FROM submissions s JOIN users u ON s.student_id = u.id
+      WHERE s.test_id = ? ORDER BY u.name
+    `, [testId]);
+
+    const anthropic = new Anthropic({ apiKey: settings.anthropic_api_key });
+    const results = [];
+
+    for (const row of rows) {
+      const essay = String(JSON.parse(row.writing_answers || '{}')[taskType] || '').trim();
+      if (!essay) { results.push({ id: row.id, student: row.student_name, status: 'no essay' }); continue; }
+      if (row.writing_feedback_draft) { results.push({ id: row.id, student: row.student_name, status: 'already drafted' }); continue; }
+
+      try {
+        const { content } = buildFeedbackRequest({
+          studentName: row.student_name, group: row.group_name, prompt, essay, taskType
+        });
+        const response = await anthropic.messages.create({
+          model, max_tokens: 16000, system: FEEDBACK_SYSTEM_PROMPT,
+          messages: [{ role: 'user', content }]
+        });
+        const block = response.content.find(b => b.type === 'text');
+        if (response.stop_reason === 'refusal' || !block) {
+          results.push({ id: row.id, student: row.student_name, status: 'model returned nothing' });
+          continue;
+        }
+        await db.run('UPDATE submissions SET writing_feedback_draft = ? WHERE id = ?', [
+          JSON.stringify({ taskType, feedback: block.text.trim(), model: response.model, draftedAt: new Date().toISOString() }),
+          row.id
+        ]);
+        results.push({
+          id: row.id, student: row.student_name, status: 'drafted',
+          band: (block.text.match(/\*\*Band Score:\s*([^*]+)\*\*/) || [])[1]?.trim() || null
+        });
+      } catch (err) {
+        // One failure must not abandon the rest of the class.
+        results.push({ id: row.id, student: row.student_name, status: 'failed: ' + err.message.slice(0, 80) });
+      }
+    }
+
+    res.json({
+      success: true, test: test.title, model, taskType,
+      drafted: results.filter(r => r.status === 'drafted').length,
+      skipped: results.filter(r => r.status === 'already drafted').length,
+      failed: results.filter(r => r.status.startsWith('failed') || r.status === 'model returned nothing').length,
+      results
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Print-ready feedback for a whole test, one student per page.
+// ?includeDrafts=true to proof unapproved drafts before releasing them.
+app.get('/api/teacher/tests/:testId/feedback-print', async (req, res) => {
+  const testId = Number.parseInt(req.params.testId, 10);
+  if (!Number.isInteger(testId)) return res.status(400).send('Invalid test id');
+  const includeDrafts = req.query.includeDrafts === 'true';
+
+  try {
+    const test = await db.get('SELECT title FROM tests WHERE id = ?', [testId]);
+    if (!test) return res.status(404).send('Test not found');
+
+    const rows = await db.all(`
+      SELECT s.id, s.writing_answers, s.writing_feedback_draft, s.student_id,
+             u.name AS student_name, u.group_name
+      FROM submissions s JOIN users u ON s.student_id = u.id
+      WHERE s.test_id = ? AND s.writing_feedback_draft IS NOT NULL
+      ORDER BY u.name
+    `, [testId]);
+
+    let taskLabel = 'Writing Task 2';
+    const students = [];
+    for (const row of rows) {
+      let record; try { record = JSON.parse(row.writing_feedback_draft); } catch { continue; }
+      if (!record?.feedback) continue;
+      if (!includeDrafts && !record.approved) continue;
+      if (record.taskType === 'task1') taskLabel = 'Writing Task 1';
+      const essay = String(JSON.parse(row.writing_answers || '{}')[record.taskType || 'task2'] || '');
+      students.push({
+        name: row.student_name, group: row.group_name, studentId: row.student_id,
+        words: essay.trim().split(/\s+/).filter(Boolean).length,
+        feedback: record.feedback
+      });
+    }
+
+    if (!students.length) {
+      return res.status(404).send(includeDrafts
+        ? 'No feedback has been drafted for this test yet.'
+        : 'No approved feedback for this test yet. Add ?includeDrafts=true to proof the drafts.');
+    }
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(renderFeedbackSheets({ testTitle: test.title, taskLabel, students }));
+  } catch (error) {
+    res.status(500).send('Could not build the feedback sheets: ' + error.message);
   }
 });
 
