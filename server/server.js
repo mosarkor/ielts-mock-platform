@@ -1411,11 +1411,40 @@ app.post('/api/admin/upload-test', async (req, res) => {
       const audioMatch = /src="data:(audio\/[a-zA-Z0-9.+-]+);base64,([^"]+)"/.exec(content);
       if (audioMatch) {
         const [fullMatch, mimeType, base64Data] = audioMatch;
+
+        // Reprocessing an existing test replaces its page, so whatever asset the
+        // old page pointed at is about to become unreachable. Noted before the
+        // overwrite and dropped after the new one is safely stored.
+        //
+        // Without this, every reprocess left a full copy of the track behind:
+        // fixing one listening file over ~18 iterations of debugging leaked
+        // ~180 MB, on a database whose transfer quota has already been exhausted
+        // once. The old asset is only freed if no other test still points at it.
+        let supersededAssetId = null;
+        if (Number.isInteger(existingTestId) && existingTestId > 0) {
+          const prior = await db.get('SELECT html_content FROM tests WHERE id = ?', [testId]);
+          supersededAssetId = (/\/tests-audio\/(\d+)/.exec(String(prior?.html_content || '')) || [])[1] || null;
+        }
+
         const assetResult = await db.run(
           'INSERT INTO test_audio_assets (mime_type, data_base64) VALUES (?, ?)',
           [mimeType, base64Data]
         );
         content = content.replace(fullMatch, `src="/tests-audio/${assetResult.lastID}"`);
+
+        if (supersededAssetId && String(supersededAssetId) !== String(assetResult.lastID)) {
+          const others = await db.get(
+            'SELECT COUNT(*) AS n FROM tests WHERE id <> ? AND html_content LIKE ?',
+            [testId, `%/tests-audio/${supersededAssetId}"%`]
+          );
+          if (Number(others?.n || 0) === 0) {
+            await db.run('DELETE FROM test_audio_assets WHERE id = ?', [supersededAssetId]);
+            for (const suffix of ['.bin', '.bin.type']) {
+              try { await fs.promises.unlink(path.join(audioCacheDir, `${supersededAssetId}${suffix}`)); } catch (e) {}
+            }
+            console.log(`[upload] freed superseded audio asset ${supersededAssetId}`);
+          }
+        }
       }
     }
 
@@ -3296,6 +3325,69 @@ app.post('/api/admin/upload-test', async (req, res) => {
 // its writing_data. Used to rebuild a combined full-mock's modules from freshly
 // uploaded source files -- e.g. after fixing broken listening_data/reading_data
 // that never had a working iframeUrl -- while leaving its writing task intact.
+// Find audio assets no test points at any more, and optionally delete them.
+//
+// Every reprocess of a listening test used to leave its whole track behind (now
+// fixed at the source), so these accumulated: 225 MB of 320 MB on first run,
+// most of it one 9.93 MB copy per debugging iteration of a single file.
+//
+// Dry run unless { confirm: true } is passed -- the report is the point, and
+// deleting a track a test still needs would break that paper mid-exam.
+//
+// References are read from BOTH the database and server/public/tests on disk.
+// mock1-9 ship as files with no html_content row, and a database-only check
+// would call their audio orphaned and delete tracks that are actually in use.
+app.post('/api/admin/audio-assets/sweep', async (req, res) => {
+  const confirm = req.body?.confirm === true;
+
+  try {
+    const assets = await db.all('SELECT id, mime_type, LENGTH(data_base64) AS len FROM test_audio_assets ORDER BY id');
+    if (!assets.length) return res.json({ success: true, assets: 0, orphans: [], note: 'no audio assets stored' });
+
+    const referenced = new Set();
+    const rows = await db.all('SELECT html_content FROM tests WHERE html_content IS NOT NULL');
+    for (const row of rows) {
+      for (const m of String(row.html_content).matchAll(/\/tests-audio\/(\d+)/g)) referenced.add(m[1]);
+    }
+    try {
+      const dir = path.join(__dirname, 'public', 'tests');
+      for (const name of await fs.promises.readdir(dir)) {
+        if (!name.endsWith('.html')) continue;
+        const text = await fs.promises.readFile(path.join(dir, name), 'utf8');
+        for (const m of text.matchAll(/\/tests-audio\/(\d+)/g)) referenced.add(m[1]);
+      }
+    } catch (e) {}
+
+    const orphans = assets.filter(a => !referenced.has(String(a.id)));
+    // base64 is 4 characters per 3 bytes.
+    const mb = list => +(list.reduce((sum, a) => sum + Number(a.len || 0) * 0.75, 0) / 1024 / 1024).toFixed(1);
+
+    let deleted = [];
+    if (confirm) {
+      for (const a of orphans) {
+        await db.run('DELETE FROM test_audio_assets WHERE id = ?', [a.id]);
+        for (const suffix of ['.bin', '.bin.type']) {
+          try { await fs.promises.unlink(path.join(audioCacheDir, `${a.id}${suffix}`)); } catch (e) {}
+        }
+        deleted.push(a.id);
+      }
+    }
+
+    res.json({
+      success: true,
+      dryRun: !confirm,
+      assets: assets.length,
+      inUse: { count: assets.length - orphans.length, approxMB: mb(assets.filter(a => referenced.has(String(a.id)))) },
+      orphans: orphans.map(a => ({ id: a.id, approxMB: +(Number(a.len) * 0.75 / 1024 / 1024).toFixed(2) })),
+      reclaimableMB: mb(orphans),
+      deleted,
+      note: confirm ? `deleted ${deleted.length} orphaned asset(s)` : 'dry run -- re-send with { "confirm": true } to delete'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Delete a test row and reclaim its storage.
 //
 // The platform had no way to remove a test, so mistakes (a bad upload, a probe,
