@@ -1681,6 +1681,46 @@ app.post('/api/admin/upload-test', async (req, res) => {
           return 2.5;
         };
 
+        // Per-question detail, which is what the teacher's and student's review
+        // screens render. The submit endpoint has always accepted
+        // listeningDetail/readingDetail; this template family simply never sent
+        // them, so its papers reviewed as bare right/wrong with no correct answer
+        // and no reasoning.
+        //
+        // Explanations are picked up from the file when it defines them, so a
+        // paper without them still submits exactly as before.
+        const __evidenceHtml = function (e) {
+          if (!e) return null;
+          var esc = typeof escapeHtml === 'function' ? escapeHtml : function (s) { return String(s); };
+          var out = '<div class="__evidence">';
+          if (e.where) out += '<p><strong>Where it is answered:</strong> ' + esc(e.where) + '</p>';
+          if (e.quote) out += '<blockquote style="margin:6px 0;padding-left:10px;border-left:3px solid #bbb"><em>' + esc(e.quote) + '</em></blockquote>';
+          if (e.why) out += '<p>' + esc(e.why) + '</p>';
+          return out + '</div>';
+        };
+        const __buildDetail = function (answers, key, section, expl) {
+          var d = {};
+          for (var i = 1; i <= 40; i++) {
+            var ok = false, corr = '';
+            try { ok = !!isAnswerCorrect(answers, key, section, i); } catch (err) {}
+            try { corr = displayCorrectAnswer(key, section, i); } catch (err) {}
+            var given = '';
+            try { given = answerDisplay(answers[i]) || ''; } catch (err) { given = answers[i] || ''; }
+            d[i] = { userAnswer: given, correctAnswer: corr, isCorrect: ok };
+            var html = expl ? __evidenceHtml(expl[i]) : null;
+            if (html) d[i].explanationHtml = html;
+          }
+          return d;
+        };
+        const listeningDetail = __buildDetail(
+          state.lAnswers, listeningAnswerKey, 'listening',
+          typeof LISTENING_EXPLANATIONS !== 'undefined' ? LISTENING_EXPLANATIONS : null
+        );
+        const readingDetail = __buildDetail(
+          state.rAnswers, readingAnswerKey, 'reading',
+          typeof READING_EXPLANATIONS !== 'undefined' ? READING_EXPLANATIONS : null
+        );
+
         fetch('/api/student/submit/' + tId, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1689,6 +1729,8 @@ app.post('/api/admin/upload-test', async (req, res) => {
             listeningAnswers,
             readingAnswers,
             writingAnswers,
+            listeningDetail,
+            readingDetail,
             listeningScore: getIeltsBand(lRes.correctCount),
             readingScore: getIeltsBand(rRes.correctCount)
           })
