@@ -1011,23 +1011,32 @@ async function ensureCustomDataSeeded(db) {
   // ── Auto-assign Mock Test 9 to every real student on every startup ──────────
   // Render's free tier wipes the SQLite file on redeploy, so we must re-seed
   // assignments every time the server boots.
+  //
+  // One statement rather than a query per student. It used to read every student
+  // and then run a separate existence check for each -- 56 round trips on a
+  // 55-student roster, every boot, almost always to discover there was nothing to
+  // do. That matters more than it looks: the free Render instance sleeps after a
+  // few idle minutes, so this fires on the first visit after every quiet spell,
+  // and each round trip holds the database awake. Neon bills compute by the hour.
+  //
+  // Only logs when it actually inserted something; the old message announced
+  // "assigned to 55 students" on every boot regardless.
   try {
     const mock9 = await db.get(`SELECT id FROM tests WHERE id = 9 OR title LIKE '%Mock Test 9%' OR title LIKE '%Mock Test%9%' LIMIT 1`);
     if (mock9) {
-      const realStudents = await db.all(`SELECT id FROM users WHERE role = 'student' AND id LIKE 'G%'`);
-      for (const s of realStudents) {
-        const exists = await db.get(
-          `SELECT 1 FROM assignments WHERE student_id = ? AND test_id = ?`,
-          [s.id, mock9.id]
-        );
-        if (!exists) {
-          await db.run(
-            `INSERT INTO assignments (student_id, test_id, assigned_at, status) VALUES (?, ?, datetime('now'), 'assigned')`,
-            [s.id, mock9.id]
-          );
-        }
+      const result = await db.run(
+        `INSERT INTO assignments (student_id, test_id, assigned_at, status)
+         SELECT u.id, ?, datetime('now'), 'assigned'
+         FROM users u
+         WHERE u.role = 'student' AND u.id LIKE 'G%'
+           AND NOT EXISTS (
+             SELECT 1 FROM assignments a WHERE a.student_id = u.id AND a.test_id = ?
+           )`,
+        [mock9.id, mock9.id]
+      );
+      if (result?.changes > 0) {
+        console.log(`Auto-assigned Mock Test 9 (id=${mock9.id}) to ${result.changes} new student(s).`);
       }
-      console.log(`Auto-assigned Mock Test 9 (id=${mock9.id}) to ${realStudents.length} students.`);
     }
   } catch (e) {
     console.error('Auto-assign Mock Test 9 failed:', e.message);
