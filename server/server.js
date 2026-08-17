@@ -2251,7 +2251,9 @@ app.post('/api/admin/upload-test', async (req, res) => {
           return html;
         }
 
-        function __silentCheckAndReport() {
+        // __finalise distinguishes the student finishing the section (lock it) from
+        // the continuous auto-save (report only, change nothing they can see).
+        function __silentCheckAndReport(__finalise) {
           var answers = {};
           var detail = {};
           var correctCount = 0;
@@ -2333,10 +2335,18 @@ app.post('/api/admin/upload-test', async (req, res) => {
           // Stop any internal timer/audio and lock the answers in, without ever
           // revealing correctness (these variable names are consistent across this
           // template family's listening/reading variants).
-          try { if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval); } catch (e) {}
-          try { if (typeof timerRunning !== 'undefined') timerRunning = false; } catch (e) {}
-          document.querySelectorAll('audio').forEach(function(a) { try { a.pause(); } catch (e) {} });
-          document.querySelectorAll('input, select, textarea').forEach(function(el) { el.disabled = true; });
+          //
+          // Only when the student has actually finished. This same function is the
+          // continuous auto-save, called once at install and again on every input,
+          // change and click -- so locking here made the paper read-only 300ms
+          // after it loaded: every option disabled, the audio paused, the sliders
+          // dead, before a single question could be answered.
+          if (__finalise) {
+            try { if (typeof timerInterval !== 'undefined' && timerInterval) clearInterval(timerInterval); } catch (e) {}
+            try { if (typeof timerRunning !== 'undefined') timerRunning = false; } catch (e) {}
+            document.querySelectorAll('audio').forEach(function(a) { try { a.pause(); } catch (e) {} });
+            document.querySelectorAll('input, select, textarea').forEach(function(el) { el.disabled = true; });
+          }
 
           if (window.parent) {
             window.parent.postMessage({
@@ -2743,7 +2753,7 @@ app.post('/api/admin/upload-test', async (req, res) => {
           function __autoHarvest() {
             if (__debounceTimer) clearTimeout(__debounceTimer);
             __debounceTimer = setTimeout(function() {
-              try { __silentCheckAndReport(); } catch (e) {}
+              try { __silentCheckAndReport(false); } catch (e) {}
             }, 300);
           }
           document.addEventListener('input', __autoHarvest);
@@ -2766,7 +2776,7 @@ app.post('/api/admin/upload-test', async (req, res) => {
           var __bridgeComplete = function() {
             if (freshBtn.dataset.bridgeSubmitted === '1') return;
             freshBtn.dataset.bridgeSubmitted = '1';
-            __silentCheckAndReport();
+            __silentCheckAndReport(true);
             freshBtn.textContent = '✓ Section Completed';
             freshBtn.disabled = true;
             freshBtn.style.opacity = '0.6';
