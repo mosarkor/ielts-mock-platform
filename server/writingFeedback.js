@@ -28,12 +28,15 @@ Follow this exactly. Use markdown.
 ### Your Performance
 
 **Criteria Breakdown:**
-- Task Achievement: N/8
-- Coherence & Cohesion: N/8
-- Lexical Resource: N/8
-- Grammar & Accuracy: N/8
+- Task Achievement: N/9
+- Coherence & Cohesion: N/9
+- Lexical Resource: N/9
+- Grammar & Accuracy: N/9
 
-Scores are out of 8, not 9, and may themselves be ranges (e.g. "6.5-7/8").
+Scores are out of 9, on the standard IELTS scale, in whole or half bands. A
+criterion may itself be a range (e.g. "6.5-7/9"). The overall band range should
+be consistent with the four criteria -- do not award an overall band the
+criteria do not support.
 
 ### What You Did Well
 (For a strong essay title this "What You Did Excellently".)
