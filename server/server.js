@@ -3396,6 +3396,32 @@ app.post('/api/admin/upload-test', async (req, res) => {
       WHERE id = ?
     `, [JSON.stringify(moduleData), content, testId]);
 
+    // A single file that IS both modules has to declare both, or the module that
+    // was not named in the upload is treated as native JSON and scored against
+    // question data that does not exist: total is 0, so the band comes out null
+    // while the answers save perfectly. The paper then shows one band and not the
+    // other, which is exactly what happened to Full mock 16 -- listening banded,
+    // reading blank, reading answers all present in the review.
+    //
+    // Only for files carrying both answer keys, so combined tests assembled by
+    // pointing modules at OTHER tests' files (via link-modules) are untouched.
+    const hasBothKeys = /listeningAnswerKey\s*=/.test(content) && /readingAnswerKey\s*=/.test(content);
+    if (hasBothKeys) {
+      const otherColumn = targetColumn === 'reading_data' ? 'listening_data' : 'reading_data';
+      const existing = await db.get(`SELECT ${otherColumn} AS other FROM tests WHERE id = ?`, [testId]);
+      let alreadyPointed = false;
+      try {
+        const parsed = JSON.parse(existing?.other || '{}');
+        // Respect a module deliberately linked to a different file.
+        alreadyPointed = parsed?.isIframe === true && parsed?.iframeUrl && parsed.iframeUrl !== `/tests/${fileName}`;
+      } catch (e) { alreadyPointed = false; }
+
+      if (!alreadyPointed) {
+        await db.run(`UPDATE tests SET ${otherColumn} = ? WHERE id = ?`, [JSON.stringify(moduleData), testId]);
+        console.log(`[upload] "${title}" carries both answer keys — declared ${otherColumn} as the same file`);
+      }
+    }
+
     if (process.env.DISABLE_TEST_FILE_CACHE !== 'true') {
       try {
         fs.writeFileSync(filePath, content, 'utf8');
