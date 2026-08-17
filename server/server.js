@@ -2716,7 +2716,25 @@ app.post('/api/admin/upload-test', async (req, res) => {
         //
         // Called by name because that is what these templates define. Anything
         // absent is skipped, so this is a no-op on generations without it.
+        // Generations that DO wire it do so from their own DOMContentLoaded, which
+        // is registered earlier in the document than this bridge and therefore
+        // already ran. Calling the binder again then bound a second handler to
+        // every option and slot, and the two fought each other: the first click
+        // handler placed the letter and cleared the armed selection, the second saw
+        // no armed selection and a now-filled slot, read that as "remove this
+        // answer", and wiped it. Clicking a slot appeared to do nothing at all, so
+        // those questions were unanswerable by clicking.
+        //
+        // Rather than guess whether the template already bound (listeners cannot be
+        // inspected), replace the elements with clones first. That strips whatever
+        // was bound to them, so after the call there is exactly one handler set --
+        // correct both for generations that had wired it and those that never did.
         function __runTemplateInitialisers() {
+          try {
+            document.querySelectorAll('.ldm-option, .ldm-slot').forEach(function (el) {
+              if (el.parentNode) el.parentNode.replaceChild(el.cloneNode(true), el);
+            });
+          } catch (e) {}
           ['bindListeningDragMatching', 'syncListeningMatchUI'].forEach(function (name) {
             try {
               if (typeof window[name] === 'function') window[name]();
