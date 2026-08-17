@@ -894,6 +894,58 @@ app.post('/api/teacher/tests/:testId/draft-feedback-batch', async (req, res) => 
   }
 });
 
+// Every essay on a test with its draft status, for the review screen.
+//
+// Returns the essay alongside the feedback: the teacher is judging whether the
+// draft is fair, and that is not a judgement anyone can make without the paper
+// in front of them.
+app.get('/api/teacher/tests/:testId/feedback', async (req, res) => {
+  const testId = Number.parseInt(req.params.testId, 10);
+  if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
+  const taskType = req.query.taskType === 'task1' ? 'task1' : 'task2';
+
+  try {
+    const test = await db.get('SELECT title, writing_data FROM tests WHERE id = ?', [testId]);
+    if (!test) return res.status(404).json({ error: `Test ${testId} not found` });
+
+    const rows = await db.all(`
+      SELECT s.id, s.writing_answers, s.writing_feedback_draft, s.student_id,
+             u.name AS student_name, u.group_name
+      FROM submissions s JOIN users u ON s.student_id = u.id
+      WHERE s.test_id = ? ORDER BY u.name
+    `, [testId]);
+
+    const students = rows.map(row => {
+      const essay = String(JSON.parse(row.writing_answers || '{}')[taskType] || '').trim();
+      let record = null;
+      try { record = JSON.parse(row.writing_feedback_draft || 'null'); } catch { record = null; }
+      const feedback = record?.feedback || '';
+      return {
+        submissionId: row.id,
+        student: row.student_name,
+        studentId: row.student_id,
+        group: row.group_name,
+        words: essay ? essay.split(/\s+/).filter(Boolean).length : 0,
+        hasEssay: Boolean(essay),
+        essay,
+        feedback,
+        band: (feedback.match(/\*\*Band Score:\s*([^*]+)\*\*/) || [])[1]?.trim() || null,
+        approved: record?.approved === true,
+        edited: Boolean(record?.editedAt),
+        model: record?.model || null
+      };
+    });
+
+    res.json({
+      success: true, testId, test: test.title, taskType,
+      prompt: JSON.parse(test.writing_data || '{}')?.[taskType]?.prompt || '',
+      students
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Print-ready feedback for a whole test, one student per page.
 // ?includeDrafts=true to proof unapproved drafts before releasing them.
 app.get('/api/teacher/tests/:testId/feedback-print', async (req, res) => {

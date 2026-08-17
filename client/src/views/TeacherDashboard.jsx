@@ -34,8 +34,20 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
 
   // Speaking
   const [speakingSubmissions, setSpeakingSubmissions] = useState([]);
-  const [activeSection, setActiveSection] = useState('writing'); // 'writing' | 'speaking'
+  const [activeSection, setActiveSection] = useState('writing'); // 'writing' | 'speaking' | 'feedback'
   const [expandedSpeaking, setExpandedSpeaking] = useState(null);
+
+  // Essay feedback: draft with the model, edit, approve, then print.
+  const [fbTestId, setFbTestId] = useState('');
+  const [fbTaskType, setFbTaskType] = useState('task2');
+  const [fbModel, setFbModel] = useState('claude-haiku-4-5');
+  const [fbList, setFbList] = useState(null);
+  const [fbLoading, setFbLoading] = useState(false);
+  const [fbBatchRunning, setFbBatchRunning] = useState(false);
+  const [fbNotice, setFbNotice] = useState('');
+  const [fbExpanded, setFbExpanded] = useState(null);   // submissionId being edited
+  const [fbDraftText, setFbDraftText] = useState('');
+  const [fbBusyId, setFbBusyId] = useState(null);       // per-row spinner
 
   // Speaking Edit Modal State
   const [editingSpeakingSub, setEditingSpeakingSub] = useState(null);
@@ -403,6 +415,97 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
       alert(err.message);
     }
   };
+  // ---- Essay feedback -------------------------------------------------------
+  const loadFeedbackList = async (testId = fbTestId, taskType = fbTaskType) => {
+    if (!testId) { setFbList(null); return; }
+    setFbLoading(true);
+    setFbNotice('');
+    try {
+      const res = await fetch('/api/teacher/tests/' + testId + '/feedback?taskType=' + taskType);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not load feedback');
+      setFbList(data);
+    } catch (err) {
+      setFbNotice(err.message);
+      setFbList(null);
+    } finally {
+      setFbLoading(false);
+    }
+  };
+
+  const handleDraftOne = async (row) => {
+    setFbBusyId(row.submissionId);
+    setFbNotice('');
+    try {
+      const res = await fetch('/api/teacher/submissions/' + row.submissionId + '/draft-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskType: fbTaskType, model: fbModel })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not draft feedback');
+      await loadFeedbackList();
+    } catch (err) {
+      setFbNotice(err.message);
+    } finally {
+      setFbBusyId(null);
+    }
+  };
+
+  // The batch is sequential on the server and a class takes several minutes, so
+  // the button stays disabled with a warning rather than looking idle.
+  const handleDraftBatch = async () => {
+    if (!fbTestId || !fbList) return;
+    const todo = fbList.students.filter(s => s.hasEssay && !s.feedback).length;
+    if (!todo) { setFbNotice('Every essay on this paper already has a draft.'); return; }
+    const ok = window.confirm(
+      'Draft feedback for ' + todo + ' essay' + (todo === 1 ? '' : 's') + ' on "' + fbList.test + '"?\n\n' +
+      'This takes roughly ' + Math.max(1, Math.round(todo * 12 / 60)) + ' minute(s) and calls the API once per essay.\n' +
+      'Essays that already have a draft are left alone.'
+    );
+    if (!ok) return;
+
+    setFbBatchRunning(true);
+    setFbNotice('Drafting ' + todo + ' essays — leave this tab open.');
+    try {
+      const res = await fetch('/api/teacher/tests/' + fbTestId + '/draft-feedback-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskType: fbTaskType, model: fbModel })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Batch failed');
+      setFbNotice('Drafted ' + data.drafted + ' · skipped ' + data.skipped + (data.failed ? ' · failed ' + data.failed : ''));
+      await loadFeedbackList();
+    } catch (err) {
+      setFbNotice(err.message);
+    } finally {
+      setFbBatchRunning(false);
+    }
+  };
+
+  const handleSaveFeedback = async (row, approve) => {
+    const text = fbDraftText.trim();
+    if (!text) { setFbNotice('Feedback cannot be empty.'); return; }
+    setFbBusyId(row.submissionId);
+    try {
+      const res = await fetch('/api/teacher/submissions/' + row.submissionId + '/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedback: text, approved: approve })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not save');
+      setFbNotice(approve ? 'Approved ' + row.student + '.' : 'Saved ' + row.student + '.');
+      setFbExpanded(null);
+      await loadFeedbackList();
+    } catch (err) {
+      setFbNotice(err.message);
+    } finally {
+      setFbBusyId(null);
+    }
+  };
+
   const subHasAnyWriting = !!(selectedSub?.writing_answers?.task1 || selectedSub?.writing_answers?.task2)
     || subHasTask1 || subHasTask2;
   const gradeTask1 = subHasTask1 || (subHasAnyWriting && !subHasTask1 && !subHasTask2);
@@ -1334,7 +1437,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
           <>
             {/* Section Tabs */}
             <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              {[['writing', '✏️ Writing Submissions'], ['speaking', '🎙️ Speaking Submissions']].map(([key, label]) => (
+              {[['writing', '✏️ Writing Submissions'], ['speaking', '🎙️ Speaking Submissions'], ['feedback', '📝 Essay Feedback']].map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setActiveSection(key)}
@@ -1364,6 +1467,204 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                 </button>
               ))}
             </div>
+
+            {/* Essay Feedback Panel */}
+            {activeSection === 'feedback' && (() => {
+              // Papers the teacher can act on, newest first, deduped by test.
+              const papers = [];
+              const seen = new Set();
+              [...submissions].reverse().forEach(s => {
+                if (s.test_id && !seen.has(s.test_id)) { seen.add(s.test_id); papers.push({ id: s.test_id, title: s.test_title }); }
+              });
+              const rows = fbList?.students || [];
+              const withEssay = rows.filter(r => r.hasEssay);
+              const drafted = withEssay.filter(r => r.feedback);
+              const approved = withEssay.filter(r => r.approved);
+              const chip = (bg, fg, text) => (
+                <span style={{ backgroundColor: bg, color: fg, fontSize: '0.72rem', padding: '0.15rem 0.5rem', borderRadius: '4px', fontWeight: '700', whiteSpace: 'nowrap' }}>{text}</span>
+              );
+
+              return (
+                <div>
+                  <div className="card" style={{ marginBottom: '1.25rem' }}>
+                    <h4 style={{ color: 'var(--text-primary)', marginTop: 0, marginBottom: '0.35rem', fontSize: '1.05rem', fontWeight: 'bold' }}>
+                      📝 Draft, edit and print essay feedback
+                    </h4>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: 0, marginBottom: '1rem' }}>
+                      The model writes a first draft in your feedback style. Nothing reaches a student until you approve it.
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: '1 1 260px' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Test paper</span>
+                        <select
+                          value={fbTestId}
+                          onChange={(e) => { setFbTestId(e.target.value); setFbExpanded(null); loadFeedbackList(e.target.value, fbTaskType); }}
+                          style={{ ...styles.dropdownInput, width: '100%' }}
+                        >
+                          <option value="">Choose a paper…</option>
+                          {papers.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                        </select>
+                      </label>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: '0 1 150px' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Task</span>
+                        <select
+                          value={fbTaskType}
+                          onChange={(e) => { setFbTaskType(e.target.value); setFbExpanded(null); loadFeedbackList(fbTestId, e.target.value); }}
+                          style={{ ...styles.dropdownInput, width: '100%' }}
+                        >
+                          <option value="task2">Task 2</option>
+                          <option value="task1">Task 1</option>
+                        </select>
+                      </label>
+                      <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: '0 1 190px' }}>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Model</span>
+                        <select value={fbModel} onChange={(e) => setFbModel(e.target.value)} style={{ ...styles.dropdownInput, width: '100%' }}>
+                          <option value="claude-haiku-4-5">Haiku — fast, cheap</option>
+                          <option value="claude-sonnet-5">Sonnet — balanced</option>
+                          <option value="claude-opus-5">Opus — deepest</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    {fbList && (
+                      <>
+                        <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          <span><strong style={{ color: 'var(--text-primary)' }}>{withEssay.length}</strong> essays</span>
+                          <span><strong style={{ color: 'var(--text-primary)' }}>{drafted.length}</strong> drafted</span>
+                          <span><strong style={{ color: '#10b981' }}>{approved.length}</strong> approved</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                          <button
+                            onClick={handleDraftBatch}
+                            className="btn btn-primary"
+                            disabled={fbBatchRunning || fbLoading}
+                            style={{ opacity: fbBatchRunning ? 0.6 : 1 }}
+                          >
+                            {fbBatchRunning ? '⏳ Drafting the class…' : '✨ Draft the whole class'}
+                          </button>
+                          <button
+                            onClick={() => window.open('/api/teacher/tests/' + fbTestId + '/feedback-print?includeDrafts=true', '_blank')}
+                            className="btn btn-secondary"
+                            disabled={!drafted.length}
+                          >
+                            🖨️ Proof all as PDF
+                          </button>
+                          <button
+                            onClick={() => window.open('/api/teacher/tests/' + fbTestId + '/feedback-print', '_blank')}
+                            className="btn btn-success"
+                            disabled={!approved.length}
+                            title="Only the feedback you have approved"
+                          >
+                            📄 Approved sheets as PDF
+                          </button>
+                          <button onClick={() => loadFeedbackList()} className="btn btn-secondary" disabled={fbLoading}>↻ Refresh</button>
+                        </div>
+                      </>
+                    )}
+
+                    {fbNotice && (
+                      <div style={{ marginTop: '0.9rem', padding: '0.6rem 0.85rem', borderRadius: '8px', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', fontSize: '0.85rem' }}>
+                        {fbNotice}
+                      </div>
+                    )}
+                  </div>
+
+                  {fbLoading && <div className="card" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>Loading…</div>}
+
+                  {!fbLoading && !fbList && (
+                    <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📝</div>
+                      <p>Choose a test paper above to see its essays.</p>
+                    </div>
+                  )}
+
+                  {!fbLoading && fbList && rows.map(row => {
+                    const isOpen = fbExpanded === row.submissionId;
+                    const busy = fbBusyId === row.submissionId;
+                    return (
+                      <div className="card" key={row.submissionId} style={{ marginBottom: '0.85rem', borderLeft: `4px solid ${row.approved ? '#10b981' : row.feedback ? '#6366f1' : 'var(--glass-border)'}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                          <div style={{ flex: 1, minWidth: '200px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '0.98rem' }}>{row.student}</strong>
+                              {row.band && chip('rgba(99,102,241,0.15)', '#6366f1', 'Band ' + row.band)}
+                              {row.approved
+                                ? chip('rgba(16,185,129,0.15)', '#10b981', '✅ Approved')
+                                : row.feedback ? chip('rgba(245,158,11,0.15)', '#f59e0b', '⏳ Draft') : null}
+                              {row.edited && !row.approved && chip('rgba(99,102,241,0.10)', 'var(--text-secondary)', 'edited')}
+                            </div>
+                            <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.2rem' }}>
+                              {row.group ? row.group + ' · ' : ''}{row.hasEssay ? row.words + ' words' : 'no essay submitted'}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            {row.hasEssay && !row.feedback && (
+                              <button onClick={() => handleDraftOne(row)} className="btn btn-primary" disabled={busy} style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
+                                {busy ? '⏳' : '✨ Draft'}
+                              </button>
+                            )}
+                            {row.feedback && (
+                              <button
+                                onClick={() => { setFbExpanded(isOpen ? null : row.submissionId); setFbDraftText(row.feedback); }}
+                                className="btn btn-secondary"
+                                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
+                              >
+                                {isOpen ? 'Close' : (row.approved ? '👁️ Review' : '✏️ Edit & approve')}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {isOpen && (
+                          <div style={{ marginTop: '1rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1rem' }}>
+                            {row.essay && (
+                              <details style={{ marginBottom: '0.85rem' }}>
+                                <summary style={{ cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>
+                                  Show the student's essay
+                                </summary>
+                                <div style={{ marginTop: '0.6rem', padding: '0.85rem', backgroundColor: 'var(--bg-tertiary)', borderRadius: '8px', color: 'var(--text-primary)', fontSize: '0.88rem', lineHeight: 1.6, whiteSpace: 'pre-wrap', maxHeight: '260px', overflowY: 'auto' }}>
+                                  {row.essay}
+                                </div>
+                              </details>
+                            )}
+                            <textarea
+                              value={fbDraftText}
+                              onChange={(e) => setFbDraftText(e.target.value)}
+                              rows={20}
+                              spellCheck={false}
+                              style={{
+                                width: '100%', padding: '0.85rem', borderRadius: '8px',
+                                border: '1px solid var(--glass-border)', backgroundColor: 'var(--bg-secondary)',
+                                color: 'var(--text-primary)', fontSize: '0.88rem', lineHeight: 1.6,
+                                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', resize: 'vertical'
+                              }}
+                            />
+                            <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                              <button onClick={() => handleSaveFeedback(row, true)} className="btn btn-success" disabled={busy}>
+                                {busy ? '⏳' : '✅ Save & approve'}
+                              </button>
+                              <button onClick={() => handleSaveFeedback(row, false)} className="btn btn-secondary" disabled={busy}>
+                                💾 Save as draft
+                              </button>
+                              <button
+                                onClick={() => { navigator.clipboard.writeText(fbDraftText); setFbNotice('Copied ' + row.student + '’s feedback.'); }}
+                                className="btn btn-secondary"
+                              >
+                                📋 Copy
+                              </button>
+                              {row.model && (
+                                <span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginLeft: 'auto' }}>drafted by {row.model}</span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {/* Speaking Submissions Panel */}
             {activeSection === 'speaking' && (
