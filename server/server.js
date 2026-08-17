@@ -744,12 +744,12 @@ app.post('/api/teacher/submissions/:id/draft-feedback', async (req, res) => {
       studentName: sub.student_name, group: sub.group_name, prompt, essay, taskType
     });
 
-    // Marking model is selectable. Opus is the default because judging an essay
-    // against band descriptors is exactly the kind of work the cheaper models
-    // are weakest at -- but the choice is the teacher's, and a cheaper model
-    // that holds their calibration is a legitimate trade.
-    const ALLOWED_MODELS = ['claude-opus-5', 'claude-sonnet-5', 'claude-haiku-4-5'];
-    const model = ALLOWED_MODELS.includes(req.body.model) ? req.body.model : 'claude-opus-5';
+    // Haiku by the teacher's choice: on their own graded essays it matched their
+    // band as often as Opus, at about a tenth of the cost. Its feedback is
+    // roughly a third the length, which is the trade they accepted. Opus and
+    // Sonnet remain selectable per request for essays worth the extra depth.
+    const ALLOWED_MODELS = ['claude-haiku-4-5', 'claude-sonnet-5', 'claude-opus-5'];
+    const model = ALLOWED_MODELS.includes(req.body.model) ? req.body.model : 'claude-haiku-4-5';
 
     const anthropic = new Anthropic({ apiKey: settings.anthropic_api_key });
     const response = await anthropic.messages.create({
