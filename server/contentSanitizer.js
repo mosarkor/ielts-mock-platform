@@ -236,7 +236,14 @@ export function removeWatermarks(html) {
           // Only the ones actually carrying branding text. An inline SVG
           // background is also a legitimate way to draw a tick or a chevron,
           // and those must survive.
-          if (!/CD\s*IELTS|cdieltssources|ieltsx/i.test(match)) return match;
+          const branded = /CD\s*IELTS|cdieltssources|ieltsx/i.test(match);
+          // By the time this runs in the upload pipeline the handle has usually
+          // already been stripped, leaving <text ...></text> -- a rule that
+          // paints nothing but is still a watermark layer sized and tiled across
+          // every page. An empty <text> in a background SVG has no other purpose,
+          // so treat it as the same leftover rather than leaving dead CSS behind.
+          const emptyText = /<text\b[^>]*>\s*<\/text>/i.test(match);
+          if (!branded && !emptyText) return match;
           removedCount++;
           return 'background-image: none;';
         }
