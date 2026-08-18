@@ -485,12 +485,32 @@ app.post('/api/student/submit/:testId', async (req, res) => {
 
     // Standalone HTML tests calculate against answer keys embedded in their document.
     // Native tests are always scored from the server-side question data.
-    const listeningScore = isListeningIframe
-      ? validBand(req.body.listeningScore)
-      : scoreQuestions(listeningData.sections, listeningAnswers);
-    const readingScore = isReadingIframe
-      ? validBand(req.body.readingScore)
-      : scoreQuestions(readingData.passages, readingAnswers);
+    //
+    // Third case, which used to fall through the gap: a self-contained paper that
+    // covers several modules from ONE file. Only the module named at upload is
+    // declared an iframe, so the others were scored against native question data
+    // that does not exist -- total 0, band null -- even though the page had posted
+    // a perfectly good band for them. Full mock 16 stored a listening band and a
+    // null reading band for exactly this reason, with all 40 reading answers saved.
+    //
+    // The fix belongs here rather than in the test's module declarations: adding a
+    // declaration makes the runner render another iframe of the same paper, which
+    // breaks the exam itself. Scoring is the only thing that needs to change.
+    //
+    // Native scoring still wins wherever real question data exists, so nothing a
+    // server can verify is ever replaced by a number the client supplied.
+    const scoreModule = (declaredIframe, groups, answers, reportedBand) => {
+      if (declaredIframe) return validBand(reportedBand);
+      const native = scoreQuestions(groups, answers);
+      if (native !== null) return native;
+      // No question data to score against. Trust the paper's own band if it sent
+      // one; otherwise stay null, which is what "this module never existed for
+      // this test" means everywhere else in this endpoint.
+      return validBand(reportedBand);
+    };
+
+    const listeningScore = scoreModule(isListeningIframe, listeningData.sections, listeningAnswers, req.body.listeningScore);
+    const readingScore = scoreModule(isReadingIframe, readingData.passages, readingAnswers, req.body.readingScore);
 
     // Every submission -- full mock or standalone listening/reading -- stays
     // hidden from the student until the teacher explicitly releases it via
@@ -3396,31 +3416,20 @@ app.post('/api/admin/upload-test', async (req, res) => {
       WHERE id = ?
     `, [JSON.stringify(moduleData), content, testId]);
 
-    // A single file that IS both modules has to declare both, or the module that
-    // was not named in the upload is treated as native JSON and scored against
-    // question data that does not exist: total is 0, so the band comes out null
-    // while the answers save perfectly. The paper then shows one band and not the
-    // other, which is exactly what happened to Full mock 16 -- listening banded,
-    // reading blank, reading answers all present in the review.
+    // NOTE: do not declare the other module here.
     //
-    // Only for files carrying both answer keys, so combined tests assembled by
-    // pointing modules at OTHER tests' files (via link-modules) are untouched.
-    const hasBothKeys = /listeningAnswerKey\s*=/.test(content) && /readingAnswerKey\s*=/.test(content);
-    if (hasBothKeys) {
-      const otherColumn = targetColumn === 'reading_data' ? 'listening_data' : 'reading_data';
-      const existing = await db.get(`SELECT ${otherColumn} AS other FROM tests WHERE id = ?`, [testId]);
-      let alreadyPointed = false;
-      try {
-        const parsed = JSON.parse(existing?.other || '{}');
-        // Respect a module deliberately linked to a different file.
-        alreadyPointed = parsed?.isIframe === true && parsed?.iframeUrl && parsed.iframeUrl !== `/tests/${fileName}`;
-      } catch (e) { alreadyPointed = false; }
-
-      if (!alreadyPointed) {
-        await db.run(`UPDATE tests SET ${otherColumn} = ? WHERE id = ?`, [JSON.stringify(moduleData), testId]);
-        console.log(`[upload] "${title}" carries both answer keys — declared ${otherColumn} as the same file`);
-      }
-    }
+    // A previous version of this file did, reasoning that a single file holding
+    // both answer keys "is" both modules. That is true of the paper but false of
+    // the platform: StudentTestRunner renders one iframe per declared module, so
+    // declaring both loaded this self-contained paper TWICE, side by side. A
+    // student sat Listening in the first copy; pressing next advanced that copy
+    // to its own Reading stage, while the Reading tab held a second copy still
+    // showing Listening. The two never share state, and this template only posts
+    // at the very end, so the whole sitting was lost.
+    //
+    // A module missing its declaration costs a band (fixed where scores are
+    // computed, in /api/student/submit). Declaring one that should not exist
+    // costs the exam. Never trade the second for the first.
 
     if (process.env.DISABLE_TEST_FILE_CACHE !== 'true') {
       try {
