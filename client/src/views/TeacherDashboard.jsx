@@ -1012,7 +1012,20 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   // component. Standalone Listening/Reading-only tests never do, so they're
   // ready to release the moment they're submitted -- they shouldn't sit
   // stuck in "Pending" waiting for an essay that will never exist.
-  const hasWritingTask = (sub) => !!(sub.test_writing_data?.task1?.prompt || sub.test_writing_data?.task2?.prompt);
+  // Asking the TEST whether it has a writing task is not enough. A self-contained
+  // paper carries its Writing section inside its own file, so the test row has no
+  // writing_data at all -- and it must not be given any, because the runner would
+  // then render a second, native essay box beside the one inside the paper.
+  //
+  // The submission itself is the reliable signal: essays in it need marking, no
+  // matter how the test declares its modules. Without this, Full mock 16 papers
+  // were filed as "ready to release" with both essays sitting in them ungraded.
+  const hasWritingTask = (sub) => !!(
+    sub.test_writing_data?.task1?.prompt
+    || sub.test_writing_data?.task2?.prompt
+    || String(sub.writing_answers?.task1 || '').trim()
+    || String(sub.writing_answers?.task2 || '').trim()
+  );
   const isReadyToRelease = (sub) => sub.writing_score !== null || !hasWritingTask(sub);
 
   // Dynamic filter logic
