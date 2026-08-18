@@ -334,6 +334,41 @@ export default function StudentTestRunner({ testId, user, onFinished }) {
     const listening = harvestedRef.current.listening || moduleResults.listening;
     const reading = harvestedRef.current.reading || moduleResults.reading;
 
+    // The harvest above only works for modules this app knows how to drive. Some
+    // papers are a single self-contained file that runs every section itself and
+    // posts its own results at the end -- it exposes neither __ieltsBridgeComplete
+    // nor a "Check Answers" button, so nothing is harvested and nothing arrives.
+    //
+    // Submitting anyway posts an empty paper: 0/40, no bands, no essays. Worse, the
+    // server then treats the student's real submission as a duplicate and refuses
+    // it, so pressing this button destroys the whole sitting. That happened to a
+    // student on Full mock 16 and cost him a complete paper.
+    //
+    // So when a module was expected to report and did not, and this app has no
+    // answers of its own for it, stop and say what to do instead. Refusing to
+    // submit loses nothing -- the answers are still live in the module.
+    const unreported = [];
+    const countAnswered = (obj) => Object.values(obj || {}).filter(v => String(v ?? '').trim()).length;
+    if (listeningIsIframe && !listening && countAnswered(listeningAnswers) === 0) unreported.push('Listening');
+    if (readingIsIframe && !reading && countAnswered(readingAnswers) === 0) unreported.push('Reading');
+
+    if (unreported.length) {
+      clearTimeout(timeout);
+      submissionInFlightRef.current = false;
+      setSubmitting(false);
+      // Deliberately an alert, NOT setError: `if (error)` returns a full-screen
+      // message instead of the exam, which unmounts the iframe and takes every
+      // answer in it with it. Warning the student must never cost them more than
+      // saying nothing would.
+      window.alert(
+        `Your ${unreported.join(' and ')} answers have not been handed in yet, so nothing was submitted.\n\n`
+        + `Your work is safe and still on screen.\n\n`
+        + `This paper sends itself: carry on inside the test window until you finish the last section, `
+        + `and it will be submitted automatically. You do not need this button.`
+      );
+      return;
+    }
+
     try {
       const res = await fetch(`/api/student/submit/${testId}`, {
         method: 'POST',
