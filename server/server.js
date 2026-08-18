@@ -1468,6 +1468,34 @@ app.post('/api/admin/upload-test', async (req, res) => {
       }
     }
 
+    // Some papers end the whole section the moment their window loses focus:
+    //
+    //   startWritingStage(){ state.blurAutoSubmitEnabled = true; state.autoHandled = false; ... }
+    //   window.addEventListener('blur', autoSubmitIfActive)          -> handleSubmitClick()
+    //   document.addEventListener('visibilitychange', ...)           -> same
+    //
+    // Written for a paper opened in its own tab, where losing focus plausibly
+    // means the candidate went looking for answers. On this platform the paper
+    // runs inside an iframe, so blur fires for entirely innocent things: clicking
+    // the platform's own UI outside the frame, a notification, alt-tab,
+    // minimising, the screen locking. The first one ends the section.
+    //
+    // Students reported the window closing on its own mid-essay, and it explains
+    // a paper scoring 6/40 on Listening beside 40/40 on Reading -- Reading is the
+    // one stage this template already leaves the flag off for.
+    //
+    // Turned off everywhere, matching what the template itself does for Reading.
+    // Exam integrity is the platform's job: it tracks focus violations already,
+    // and it counts them rather than destroying the sitting over one.
+    let blurSubmitsDisabled = 0;
+    content = content.replace(
+      /state\.blurAutoSubmitEnabled\s*=\s*true/g,
+      () => { blurSubmitsDisabled++; return 'state.blurAutoSubmitEnabled=false'; }
+    );
+    if (blurSubmitsDisabled) {
+      console.log(`[upload] disabled ${blurSubmitsDisabled} focus-loss auto-submit(s)`);
+    }
+
     // Inject CSS override
     const cssOverride = `
     <style>
