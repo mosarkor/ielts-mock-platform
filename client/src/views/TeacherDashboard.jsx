@@ -1020,12 +1020,30 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   // The submission itself is the reliable signal: essays in it need marking, no
   // matter how the test declares its modules. Without this, Full mock 16 papers
   // were filed as "ready to release" with both essays sitting in them ungraded.
-  const hasWritingTask = (sub) => !!(
-    sub.test_writing_data?.task1?.prompt
-    || sub.test_writing_data?.task2?.prompt
-    || String(sub.writing_answers?.task1 || '').trim()
-    || String(sub.writing_answers?.task2 || '').trim()
-  );
+  const hasWritingTask = (sub) => {
+    // The test saying so is always authoritative.
+    if (sub.test_writing_data?.task1?.prompt || sub.test_writing_data?.task2?.prompt) return true;
+
+    const essays = String(sub.writing_answers?.task1 || '').trim()
+      || String(sub.writing_answers?.task2 || '').trim();
+    if (!essays) return false;
+
+    // A self-contained full mock carries its Writing section inside its own file,
+    // so the test row declares no writing_data and the essays are the only signal
+    // that marking is due.
+    //
+    // But single-skill papers pick up essay text too: some Listening-only files
+    // ship their own writing box, and students have typed full essays into it.
+    // Treating those as "pending writing review" put Listening papers in the
+    // marking queue asking for an essay band nobody expected to give.
+    //
+    // A paper carrying BOTH Listening and Reading answers is a full mock, where an
+    // essay belongs. One module answered on its own is a single-skill test, and
+    // its stray essay does not make it a writing paper. The essay is still stored
+    // and visible when the submission is opened -- it just does not demand a band.
+    const answered = (obj) => Object.values(obj || {}).filter(v => String(v ?? '').trim()).length;
+    return answered(sub.listening_answers) > 0 && answered(sub.reading_answers) > 0;
+  };
   const isReadyToRelease = (sub) => sub.writing_score !== null || !hasWritingTask(sub);
 
   // Dynamic filter logic
