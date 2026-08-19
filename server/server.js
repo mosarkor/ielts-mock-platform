@@ -715,6 +715,116 @@ app.post('/api/admin/submissions/:id/module-score', async (req, res) => {
   }
 });
 
+// Pull one student's work for a paper into a single submission.
+//
+// Faults this week left several students' Full mock 16 spread across two rows:
+// one attempt captured Listening and Reading and lost the essays, a later one
+// carried the essays and nothing else. Neither row is the paper, and a teacher
+// cannot grade half of one.
+//
+// Copies whole modules, chosen per module rather than per attempt -- one student
+// had his best Listening in one row and his best Reading in the other, so taking
+// "the better attempt" wholesale would have cost him a band.
+//
+// Deliberately conservative:
+//   - dry run unless { confirm: true }, and it reports exactly what would change
+//   - every source must be the same student and the same test as the target
+//   - a module is only copied when the source actually has answers for it, so a
+//     merge can never blank something the target already holds
+//   - nothing is deleted; the source rows stay until a teacher removes them
+app.post('/api/admin/submissions/merge', async (req, res) => {
+  const targetId = Number.parseInt(req.body.targetId, 10);
+  if (!Number.isInteger(targetId)) return res.status(400).json({ error: 'targetId is required' });
+  const confirm = req.body.confirm === true;
+
+  const wanted = {
+    listening: Number.parseInt(req.body.listeningFrom, 10),
+    reading: Number.parseInt(req.body.readingFrom, 10),
+    writing: Number.parseInt(req.body.writingFrom, 10)
+  };
+
+  const answered = (json) => {
+    try {
+      const o = JSON.parse(json || '{}');
+      return Object.values(o || {}).filter(v => String(v ?? '').trim()).length;
+    } catch (e) { return 0; }
+  };
+  const essayLength = (json) => {
+    try {
+      const o = JSON.parse(json || '{}');
+      return String(o.task1 || '').trim().length + String(o.task2 || '').trim().length;
+    } catch (e) { return 0; }
+  };
+
+  try {
+    const target = await db.get('SELECT * FROM submissions WHERE id = ?', [targetId]);
+    if (!target) return res.status(404).json({ error: `Submission ${targetId} not found` });
+
+    const sets = [], params = [], applied = [], skipped = [];
+
+    for (const [moduleName, sourceId] of Object.entries(wanted)) {
+      if (!Number.isInteger(sourceId)) continue;
+      if (sourceId === targetId) { skipped.push(`${moduleName}: source is the target`); continue; }
+
+      const src = await db.get('SELECT * FROM submissions WHERE id = ?', [sourceId]);
+      if (!src) return res.status(404).json({ error: `Source submission ${sourceId} not found` });
+      if (String(src.student_id) !== String(target.student_id)) {
+        return res.status(409).json({
+          error: `Submission ${sourceId} belongs to ${src.student_id}, not ${target.student_id}. Refusing to move one student's work onto another's paper.`
+        });
+      }
+      if (Number(src.test_id) !== Number(target.test_id)) {
+        return res.status(409).json({ error: `Submission ${sourceId} is for test ${src.test_id}, not ${target.test_id}` });
+      }
+
+      if (moduleName === 'writing') {
+        if (essayLength(src.writing_answers) === 0) { skipped.push('writing: source has no essays'); continue; }
+        sets.push('writing_answers = ?'); params.push(src.writing_answers);
+        applied.push(`writing from ${sourceId} (${essayLength(src.writing_answers)} chars)`);
+      } else {
+        const col = `${moduleName}_answers`;
+        if (answered(src[col]) === 0) { skipped.push(`${moduleName}: source has no answers`); continue; }
+        sets.push(`${col} = ?`); params.push(src[col]);
+        sets.push(`${moduleName}_detail = ?`); params.push(src[`${moduleName}_detail`]);
+        sets.push(`${moduleName}_score = ?`); params.push(src[`${moduleName}_score`]);
+        applied.push(`${moduleName} from ${sourceId} (${answered(src[col])}/40, band ${src[`${moduleName}_score`] ?? '-'})`);
+      }
+    }
+
+    const summarise = (row) => ({
+      listening: `${answered(row.listening_answers)}/40 band ${row.listening_score ?? '-'}`,
+      reading: `${answered(row.reading_answers)}/40 band ${row.reading_score ?? '-'}`,
+      writing: `${essayLength(row.writing_answers)} chars`
+    });
+
+    if (!sets.length) {
+      return res.json({ success: true, dryRun: !confirm, targetId, applied: [], skipped, before: summarise(target), note: 'nothing to copy' });
+    }
+
+    if (!confirm) {
+      return res.json({
+        success: true, dryRun: true, targetId,
+        student: target.student_id, testId: target.test_id,
+        before: summarise(target), wouldApply: applied, skipped,
+        note: 'dry run — re-send with { "confirm": true } to write this'
+      });
+    }
+
+    params.push(targetId);
+    await db.run(`UPDATE submissions SET ${sets.join(', ')} WHERE id = ?`, params);
+    const after = await db.get('SELECT * FROM submissions WHERE id = ?', [targetId]);
+    console.log(`[merge] submission ${targetId} (${target.student_id}) <- ${applied.join('; ')}`);
+
+    res.json({
+      success: true, dryRun: false, targetId,
+      student: target.student_id, testId: target.test_id,
+      before: summarise(target), after: summarise(after), applied, skipped
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Delete a submission that is still waiting to be marked.
 //
 // Papers arrive spoiled sometimes -- a student starts the wrong test, submits
