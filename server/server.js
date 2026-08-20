@@ -2398,6 +2398,25 @@ app.post('/api/admin/upload-test', async (req, res) => {
             var ldm = document.querySelector('.ldm-slot[data-question="' + n + '"]');
             if (ldm && ldm.dataset && ldm.dataset.answer) return ldm.dataset.answer;
           } catch (e) {}
+          // The matching-grid generation: a table of statements against a list of
+          // names or categories, where the student clicks a cell rather than using
+          // any kind of input. The chosen cell is flagged data-selected="true" and
+          // carries the letter in data-value.
+          //
+          // Nothing above can see it -- there is no input, no name, no id and no
+          // value -- so these harvested blank. Students reported picking answers on
+          // Reading prediction 4 and the paper recording nothing for questions
+          // 32-39: eight marks, lost silently, on a paper that looked answered.
+          //
+          // As with the drag slots, the bridge already knew this selector, but only
+          // to classify a question's TYPE, never to read one.
+          try {
+            var cell = document.querySelector('.clickable-cell[data-question="' + n + '"][data-selected="true"]');
+            if (cell) {
+              var cv = cell.getAttribute('data-value');
+              if (cv) return cv;
+            }
+          } catch (e) {}
           try {
             var groupResult = __checkboxGroupCredit(n);
             if (groupResult) return groupResult.userAnswer;
