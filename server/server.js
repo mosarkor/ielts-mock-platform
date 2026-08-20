@@ -715,6 +715,118 @@ app.post('/api/admin/submissions/:id/module-score', async (req, res) => {
   }
 });
 
+// Re-mark every submission on a test against that test's CURRENT answer key.
+//
+// Marking is computed once, when a paper is submitted, and stored. So correcting
+// a key afterwards fixes the paper for whoever sits it next and does nothing for
+// everyone who already sat it -- their bands and their per-question review still
+// reflect the old key. On Listening prediction 3, seventeen of eighteen students
+// wrote the same answer to Q10 against a key that said something else.
+//
+// Dry run unless { confirm: true }. Reports every band that would move and why.
+app.post('/api/admin/tests/:id/remark', async (req, res) => {
+  const testId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
+  const moduleType = req.body.moduleType === 'reading' ? 'reading' : 'listening';
+  const confirm = req.body.confirm === true;
+
+  const norm = v => String(v ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const BAND = [[39,9],[37,8.5],[35,8],[32,7.5],[30,7],[26,6.5],[23,6],[18,5.5],[16,5],[13,4.5],[10,4],[6,3.5],[4,3],[0,2.5]];
+  const bandOf = c => { for (const [min, b] of BAND) if (c >= min) return b; return 2.5; };
+
+  try {
+    const test = await db.get('SELECT id, title, html_content FROM tests WHERE id = ?', [testId]);
+    if (!test) return res.status(404).json({ error: `Test ${testId} not found` });
+    if (!test.html_content) return res.status(400).json({ error: 'This test has no stored page to read a key from' });
+
+    // Pull the key out of the page by walking braces; a lazy regex stops inside
+    // the first array-valued entry.
+    const at = test.html_content.search(/correctAnswers\s*=\s*\{/);
+    if (at === -1) return res.status(400).json({ error: 'No correctAnswers key found in this test' });
+    const open = test.html_content.indexOf('{', at);
+    let depth = 0, end = -1, quote = null;
+    for (let i = open; i < test.html_content.length; i++) {
+      const c = test.html_content[i];
+      if (quote) { if (c === '\\') i++; else if (c === quote) quote = null; continue; }
+      if (c === '"' || c === "'") { quote = c; continue; }
+      if (c === '{') depth++;
+      else if (c === '}') { depth--; if (!depth) { end = i; break; } }
+    }
+    let key;
+    try { key = new Function('return ' + test.html_content.slice(open, end + 1))(); }
+    catch (e) { return res.status(400).json({ error: 'Could not parse the answer key: ' + e.message }); }
+
+    const answersCol = `${moduleType}_answers`;
+    const detailCol = `${moduleType}_detail`;
+    const scoreCol = `${moduleType}_score`;
+    const rows = await db.all(
+      `SELECT s.id, s.student_id, s.${answersCol} AS answers, s.${detailCol} AS detail, s.${scoreCol} AS band,
+              u.name AS student_name
+       FROM submissions s JOIN users u ON s.student_id = u.id
+       WHERE s.test_id = ? ORDER BY u.name`, [testId]
+    );
+
+    const changes = [];
+    for (const row of rows) {
+      let answers = {};
+      try { answers = JSON.parse(row.answers || '{}'); } catch (e) { answers = {}; }
+      // A paper with nothing in this module is not part of this exercise.
+      const answered = Object.values(answers).filter(v => String(v ?? '').trim()).length;
+      if (!answered) continue;
+
+      let detail = {};
+      try { detail = JSON.parse(row.detail || '{}'); } catch (e) { detail = {}; }
+
+      let correct = 0;
+      const flipped = [];
+      const nextDetail = {};
+      for (let n = 1; n <= 40; n++) {
+        const accepted = (Array.isArray(key[n]) ? key[n] : [key[n]]).filter(a => a !== undefined);
+        const given = answers[n];
+        const isCorrect = accepted.some(a => norm(a) === norm(given)) && String(given ?? '').trim() !== '';
+        if (isCorrect) correct++;
+        const before = detail[n] ? detail[n].isCorrect : undefined;
+        if (before !== undefined && before !== isCorrect) flipped.push({ q: n, from: before, to: isCorrect, answer: given });
+        nextDetail[n] = {
+          ...(detail[n] || {}),
+          userAnswer: given ?? '',
+          correctAnswer: accepted.join(' / '),
+          isCorrect
+        };
+      }
+
+      const band = bandOf(correct);
+      if (band !== row.band || flipped.length) {
+        changes.push({
+          submissionId: row.id, student: row.student_name,
+          correct, bandFrom: row.band, bandTo: band, flipped
+        });
+        if (confirm) {
+          await db.run(
+            `UPDATE submissions SET ${detailCol} = ?, ${scoreCol} = ? WHERE id = ?`,
+            [JSON.stringify(nextDetail), band, row.id]
+          );
+        }
+      }
+    }
+
+    if (confirm) console.log(`[remark] test ${testId} "${test.title}" ${moduleType}: updated ${changes.length} submission(s)`);
+
+    res.json({
+      success: true, dryRun: !confirm, testId, test: test.title, moduleType,
+      submissionsConsidered: rows.length,
+      changed: changes.length,
+      changes: changes.map(c => ({
+        ...c,
+        flipped: c.flipped.map(f => `Q${f.q} ${f.from ? 'correct' : 'wrong'} -> ${f.to ? 'correct' : 'wrong'} ("${f.answer}")`)
+      })),
+      note: confirm ? 'written' : 'dry run — re-send with { "confirm": true }'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Pull one student's work for a paper into a single submission.
 //
 // Faults this week left several students' Full mock 16 spread across two rows:
