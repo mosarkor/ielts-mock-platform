@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course feedback — anonymous</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --stock: #EDEFE8; --card: #F6F7F2; --ink: #1A2432; --ink-soft: #4E5A66;
+    --ink-faint: #7C8790; --rule: #C9CEC3; --rule-soft: #DCE0D6;
+    --mark: #C4362C; --pass: #2E6F5E;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --stock: #12171C; --card: #1A2027; --ink: #E6E9E4; --ink-soft: #A9B2AC;
+      --ink-faint: #7A847E; --rule: #2C353D; --rule-soft: #222A31;
+      --mark: #E8695C; --pass: #63BFA2;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--stock); color: var(--ink);
+    font-family: "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 48px 22px 90px; }
+
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 24px; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace; font-size: 12px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--mark); margin: 0 0 14px;
+  }
+  h1 {
+    font-family: "Newsreader", Georgia, serif; font-weight: 600;
+    font-size: clamp(2rem, 6vw, 3rem); line-height: 1.05; margin: 0 0 12px;
+    letter-spacing: -.02em; text-wrap: balance;
+  }
+  header p { margin: 0; color: var(--ink-soft); max-width: 58ch; }
+
+  .promise {
+    margin: 26px 0 0; padding: 18px 20px; background: var(--card);
+    border: 1px solid var(--rule-soft); border-left: 3px solid var(--pass);
+  }
+  .promise h2 {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--pass); margin: 0 0 10px;
+  }
+  .promise ul { margin: 0; padding-left: 18px; color: var(--ink-soft); font-size: 15.5px; }
+  .promise li { margin: 5px 0; }
+
+  .q { margin-top: 38px; padding-top: 26px; border-top: 1px solid var(--rule-soft); }
+  .q:first-of-type { border-top: 0; }
+  .q-no {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; font-weight: 600;
+    letter-spacing: .12em; color: var(--mark); display: block; margin-bottom: 8px;
+  }
+  .q label.main {
+    display: block; font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(1.15rem, 2.6vw, 1.35rem); font-weight: 600;
+    line-height: 1.35; margin-bottom: 6px; letter-spacing: -.01em;
+  }
+  .hint { color: var(--ink-faint); font-size: 14.5px; margin: 0 0 14px; }
+
+  textarea, select {
+    width: 100%; font-family: inherit; font-size: 16px; color: var(--ink);
+    background: var(--card); border: 1px solid var(--rule); border-radius: 0;
+    padding: 12px 14px; line-height: 1.55;
+  }
+  textarea { min-height: 108px; resize: vertical; }
+  textarea:focus, select:focus, input:focus { outline: 2px solid var(--pass); outline-offset: 1px; }
+
+  .scale { display: flex; flex-wrap: wrap; gap: 6px; }
+  .scale input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .scale label {
+    font-family: "IBM Plex Mono", monospace; font-size: 15px; font-weight: 600;
+    min-width: 46px; text-align: center; padding: 11px 6px; cursor: pointer;
+    background: var(--card); border: 1px solid var(--rule); color: var(--ink-soft);
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .scale label:hover { border-color: var(--pass); }
+  .scale input:checked + label { background: var(--pass); border-color: var(--pass); color: #fff; }
+  .scale input:focus-visible + label { outline: 2px solid var(--pass); outline-offset: 2px; }
+  .scale-ends {
+    display: flex; justify-content: space-between; margin-top: 8px;
+    font-size: 13px; color: var(--ink-faint);
+  }
+
+  .choices { display: flex; flex-wrap: wrap; gap: 8px; }
+  .choices input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .choices label {
+    padding: 10px 16px; cursor: pointer; background: var(--card);
+    border: 1px solid var(--rule); font-size: 15.5px; color: var(--ink-soft);
+  }
+  .choices input:checked + label { background: var(--pass); border-color: var(--pass); color: #fff; }
+  .choices input:focus-visible + label { outline: 2px solid var(--pass); outline-offset: 2px; }
+
+  .actions { margin-top: 44px; padding-top: 26px; border-top: 2px solid var(--ink); }
+  button {
+    font-family: "Source Sans 3", sans-serif; font-size: 16.5px; font-weight: 600;
+    padding: 14px 30px; border: 0; background: var(--ink); color: var(--stock);
+    cursor: pointer;
+  }
+  button:hover { background: var(--pass); }
+  button:disabled { opacity: .55; cursor: default; }
+  .status { margin-top: 14px; font-size: 15px; min-height: 22px; }
+  .status.err { color: var(--mark); }
+
+  .done { text-align: center; padding: 70px 20px; }
+  .done h2 { font-family: "Newsreader", Georgia, serif; font-size: 2rem; font-weight: 600; margin: 0 0 12px; }
+  .done p { color: var(--ink-soft); max-width: 46ch; margin: 0 auto; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="form-view">
+    <header>
+      <p class="eyebrow">End of course &middot; anonymous</p>
+      <h1>Tell us how it really went</h1>
+      <p>Ten questions about the course. Answer as many as you like — every one can be left blank. Please be honest; that is the only thing that makes this worth reading.</p>
+    </header>
+
+    <div class="promise">
+      <h2>This is genuinely anonymous</h2>
+      <ul>
+        <li>You are not logged in, and this page never asks who you are.</li>
+        <li>Your name, student ID and IP address are not recorded.</li>
+        <li>Only the date is saved — not the time — so nothing can be matched to who was online.</li>
+        <li>Responses are shuffled before your teacher reads them.</li>
+      </ul>
+    </div>
+
+    <form id="fb">
+      <div class="q">
+        <span class="q-no">01</span>
+        <label class="main" for="q1">When this course started, how ready did you feel for the real exam?</label>
+        <p class="hint">Think back honestly to your first week.</p>
+        <div class="scale" role="group" aria-labelledby="q1">
+          <input type="radio" name="q1" id="q1-1" value="1"><label for="q1-1">1</label>
+          <input type="radio" name="q1" id="q1-2" value="2"><label for="q1-2">2</label>
+          <input type="radio" name="q1" id="q1-3" value="3"><label for="q1-3">3</label>
+          <input type="radio" name="q1" id="q1-4" value="4"><label for="q1-4">4</label>
+          <input type="radio" name="q1" id="q1-5" value="5"><label for="q1-5">5</label>
+          <input type="radio" name="q1" id="q1-6" value="6"><label for="q1-6">6</label>
+          <input type="radio" name="q1" id="q1-7" value="7"><label for="q1-7">7</label>
+          <input type="radio" name="q1" id="q1-8" value="8"><label for="q1-8">8</label>
+          <input type="radio" name="q1" id="q1-9" value="9"><label for="q1-9">9</label>
+          <input type="radio" name="q1" id="q1-10" value="10"><label for="q1-10">10</label>
+        </div>
+        <div class="scale-ends"><span>Not ready at all</span><span>Completely ready</span></div>
+      </div>
+
+      <div class="q">
+        <span class="q-no">02</span>
+        <label class="main" for="q2">And how ready do you feel now?</label>
+        <p class="hint">Same scale. The gap between these two is the most useful number on this page.</p>
+        <div class="scale" role="group" aria-labelledby="q2">
+          <input type="radio" name="q2" id="q2-1" value="1"><label for="q2-1">1</label>
+          <input type="radio" name="q2" id="q2-2" value="2"><label for="q2-2">2</label>
+          <input type="radio" name="q2" id="q2-3" value="3"><label for="q2-3">3</label>
+          <input type="radio" name="q2" id="q2-4" value="4"><label for="q2-4">4</label>
+          <input type="radio" name="q2" id="q2-5" value="5"><label for="q2-5">5</label>
+          <input type="radio" name="q2" id="q2-6" value="6"><label for="q2-6">6</label>
+          <input type="radio" name="q2" id="q2-7" value="7"><label for="q2-7">7</label>
+          <input type="radio" name="q2" id="q2-8" value="8"><label for="q2-8">8</label>
+          <input type="radio" name="q2" id="q2-9" value="9"><label for="q2-9">9</label>
+          <input type="radio" name="q2" id="q2-10" value="10"><label for="q2-10">10</label>
+        </div>
+        <div class="scale-ends"><span>Not ready at all</span><span>Completely ready</span></div>
+      </div>
+
+      <div class="q">
+        <span class="q-no">03</span>
+        <label class="main">Which skill improved the most for you?</label>
+        <div class="choices" role="group">
+          <input type="radio" name="q3" id="q3-l" value="Listening"><label for="q3-l">Listening</label>
+          <input type="radio" name="q3" id="q3-r" value="Reading"><label for="q3-r">Reading</label>
+          <input type="radio" name="q3" id="q3-w" value="Writing"><label for="q3-w">Writing</label>
+          <input type="radio" name="q3" id="q3-s" value="Speaking"><label for="q3-s">Speaking</label>
+        </div>
+      </div>
+
+      <div class="q">
+        <span class="q-no">04</span>
+        <label class="main">Which one still worries you most?</label>
+        <div class="choices" role="group">
+          <input type="radio" name="q4" id="q4-l" value="Listening"><label for="q4-l">Listening</label>
+          <input type="radio" name="q4" id="q4-r" value="Reading"><label for="q4-r">Reading</label>
+          <input type="radio" name="q4" id="q4-w" value="Writing"><label for="q4-w">Writing</label>
+          <input type="radio" name="q4" id="q4-s" value="Speaking"><label for="q4-s">Speaking</label>
+        </div>
+      </div>
+
+      <div class="q">
+        <span class="q-no">05</span>
+        <label class="main" for="q5">Was there a moment when something finally clicked?</label>
+        <p class="hint">A rule, a technique, a habit — the thing you wish you had understood in week one.</p>
+        <textarea id="q5" name="q5" placeholder="It clicked when…"></textarea>
+      </div>
+
+      <div class="q">
+        <span class="q-no">06</span>
+        <label class="main" for="q6">What was genuinely the hardest part of this course?</label>
+        <p class="hint">The English itself, the exam technique, the timing, the pressure — or something else entirely.</p>
+        <textarea id="q6" name="q6" placeholder="The hardest part was…"></textarea>
+      </div>
+
+      <div class="q">
+        <span class="q-no">07</span>
+        <label class="main" for="q7">What were you doing by the end that you weren't doing at the start?</label>
+        <p class="hint">Anything you changed — how you read, how you take notes, how you plan an essay.</p>
+        <textarea id="q7" name="q7" placeholder="By the end I…"></textarea>
+      </div>
+
+      <div class="q">
+        <span class="q-no">08</span>
+        <label class="main" for="q8">What should stay exactly as it is next time — and what should change?</label>
+        <p class="hint">Be direct. &ldquo;Everything was great&rdquo; is kind but useless.</p>
+        <textarea id="q8" name="q8" placeholder="Keep… / Change…"></textarea>
+      </div>
+
+      <div class="q">
+        <span class="q-no">09</span>
+        <label class="main" for="q9">The platform: what actually helped, and what got in your way?</label>
+        <p class="hint">Including the parts that broke. Especially those.</p>
+        <textarea id="q9" name="q9" placeholder="It helped when… / It got in the way when…"></textarea>
+      </div>
+
+      <div class="q">
+        <span class="q-no">10</span>
+        <label class="main" for="q10">Is there anything you wanted to say during the course but never did?</label>
+        <p class="hint">This is the question this form exists for. Nobody will know it was you.</p>
+        <textarea id="q10" name="q10" placeholder="Honestly…"></textarea>
+      </div>
+
+      <div class="actions">
+        <button type="submit" id="send">Submit anonymously</button>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+  </div>
+
+  <div id="done-view" class="done hidden">
+    <h2>Thank you</h2>
+    <p>Your feedback was submitted without your name attached. It will be read alongside everyone else's, in a shuffled order.</p>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var form = document.getElementById('fb');
+    var status = document.getElementById('status');
+    var button = document.getElementById('send');
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      var data = new FormData(form);
+      var answers = {};
+      data.forEach(function (value, key) {
+        var v = String(value).trim();
+        if (v) answers[key] = v;
+      });
+
+      if (!Object.keys(answers).length) {
+        status.textContent = 'Nothing has been filled in yet.';
+        status.className = 'status err';
+        return;
+      }
+
+      button.disabled = true;
+      status.className = 'status';
+      status.textContent = 'Sending…';
+
+      fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answers: answers })
+      }).then(function (res) {
+        return res.json().then(function (body) { return { ok: res.ok, body: body }; });
+      }).then(function (r) {
+        if (!r.ok) throw new Error(r.body.error || 'It could not be sent.');
+        document.getElementById('form-view').classList.add('hidden');
+        document.getElementById('done-view').classList.remove('hidden');
+        window.scrollTo(0, 0);
+      }).catch(function (err) {
+        button.disabled = false;
+        status.className = 'status err';
+        status.textContent = err.message + ' Your answers are still on screen — try again in a moment.';
+      });
+    });
+  })();
+</script>
+</body>
+</html>

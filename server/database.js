@@ -196,6 +196,22 @@ export async function initDb() {
       )
     `);
 
+    // Anonymous course feedback.
+    //
+    // Deliberately holds nothing that could identify who wrote it: no student id,
+    // no name, no IP, no foreign key to users. Only the answers and the DATE --
+    // not the time -- because a precise timestamp on a small class is itself an
+    // identifier: "the one submitted at 14:52" is answerable by anyone who knows
+    // who was in the room. Responses are served in random order for the same
+    // reason, so insertion order cannot be matched against a register.
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS course_feedback (
+        id SERIAL PRIMARY KEY,
+        answers TEXT NOT NULL,
+        submitted_on DATE DEFAULT CURRENT_DATE
+      )
+    `);
+
     await db.exec(`
       CREATE TABLE IF NOT EXISTS assignments (
         id SERIAL PRIMARY KEY,
@@ -461,6 +477,16 @@ export async function initDb() {
       mime_type TEXT NOT NULL,
       data_base64 TEXT NOT NULL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // See the Postgres branch: holds the answers and the date only, never anything
+  // that could identify the writer.
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS course_feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      answers TEXT NOT NULL,
+      submitted_on TEXT DEFAULT (date('now'))
     )
   `);
 

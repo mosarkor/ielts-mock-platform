@@ -715,6 +715,69 @@ app.post('/api/admin/submissions/:id/module-score', async (req, res) => {
   }
 });
 
+// ── Anonymous course feedback ────────────────────────────────────────────────
+//
+// Deliberately unauthenticated. Requiring a login to leave anonymous feedback is
+// a contradiction students can see through, and one they are right not to trust:
+// the moment a session is attached, the response can be traced. So this endpoint
+// takes no identity, checks none, and stores none.
+//
+// What is NOT recorded, on purpose: student id, name, IP address, user agent,
+// and the time of day. Only the answers and the calendar date. A precise
+// timestamp on a class of sixty is an identifier by itself.
+app.post('/api/feedback', async (req, res) => {
+  const answers = req.body?.answers;
+  if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
+    return res.status(400).json({ error: 'answers object is required' });
+  }
+
+  // Bound what a single response can carry, so the form cannot be used to write
+  // arbitrary amounts into the database.
+  const cleaned = {};
+  let fields = 0;
+  for (const [k, v] of Object.entries(answers)) {
+    if (fields >= 20) break;
+    const key = String(k).slice(0, 40);
+    const val = typeof v === 'number' ? v : String(v ?? '').slice(0, 4000);
+    if (String(val).trim() === '') continue;
+    cleaned[key] = val;
+    fields++;
+  }
+  if (!fields) return res.status(400).json({ error: 'Nothing was filled in' });
+
+  try {
+    await db.run('INSERT INTO course_feedback (answers) VALUES (?)', [JSON.stringify(cleaned)]);
+    // No id is returned: a receipt number is one more thing that could tie a
+    // person to a row.
+    res.json({ success: true, message: 'Thank you — your feedback was submitted anonymously.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Teacher's view of the responses.
+//
+// Shuffled before sending. Insertion order is a weak identifier -- the first
+// response is usually whoever was handed the link first -- and shuffling costs
+// nothing. The date is coarse enough to be safe and useful.
+app.get('/api/teacher/feedback', async (req, res) => {
+  try {
+    const rows = await db.all('SELECT id, answers, submitted_on FROM course_feedback');
+    const parsed = rows.map(r => {
+      let answers = {};
+      try { answers = JSON.parse(r.answers || '{}'); } catch (e) { answers = {}; }
+      return { answers, submittedOn: r.submitted_on };
+    });
+    for (let i = parsed.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [parsed[i], parsed[j]] = [parsed[j], parsed[i]];
+    }
+    res.json({ success: true, count: parsed.length, responses: parsed });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Re-mark every submission on a test against that test's CURRENT answer key.
 //
 // Marking is computed once, when a paper is submitted, and stored. So correcting
