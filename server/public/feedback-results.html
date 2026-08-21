@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Course feedback — responses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --stock: #EDEFE8; --card: #F6F7F2; --ink: #1A2432; --ink-soft: #4E5A66;
+    --ink-faint: #7C8790; --rule: #C9CEC3; --rule-soft: #DCE0D6;
+    --mark: #C4362C; --pass: #2E6F5E;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --stock: #12171C; --card: #1A2027; --ink: #E6E9E4; --ink-soft: #A9B2AC;
+      --ink-faint: #7A847E; --rule: #2C353D; --rule-soft: #222A31;
+      --mark: #E8695C; --pass: #63BFA2;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--stock); color: var(--ink);
+    font-family: "Source Sans 3", system-ui, -apple-system, sans-serif;
+    font-size: 16.5px; line-height: 1.6;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 44px 22px 80px; }
+
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 22px; margin-bottom: 30px; }
+  .eyebrow {
+    font-family: "IBM Plex Mono", monospace; font-size: 11.5px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--mark); margin: 0 0 12px;
+  }
+  h1 {
+    font-family: "Newsreader", Georgia, serif; font-weight: 600;
+    font-size: clamp(1.9rem, 5vw, 2.7rem); margin: 0 0 8px; letter-spacing: -.02em;
+  }
+  header p { margin: 0; color: var(--ink-soft); }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--rule-soft); border: 1px solid var(--rule-soft); margin-bottom: 34px; }
+  .stat { background: var(--card); padding: 18px; }
+  .stat .n {
+    font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums;
+    font-size: 1.9rem; font-weight: 600; line-height: 1; display: block; margin-bottom: 5px;
+  }
+  .stat .l { font-size: 14px; color: var(--ink-soft); }
+  .stat .n.up { color: var(--pass); }
+
+  h2 {
+    font-family: "Newsreader", Georgia, serif; font-size: 1.35rem; font-weight: 600;
+    margin: 34px 0 4px; letter-spacing: -.01em;
+  }
+  .qtext { color: var(--ink-soft); font-size: 15px; margin: 0 0 14px; }
+
+  .bars { background: var(--card); border: 1px solid var(--rule-soft); padding: 18px 20px; }
+  .bar { display: grid; grid-template-columns: 92px 1fr 46px; align-items: center; gap: 12px; margin: 7px 0; }
+  .bar .k { font-size: 14.5px; color: var(--ink-soft); }
+  .bar .t { background: var(--rule-soft); height: 15px; position: relative; }
+  .bar .t i { display: block; height: 100%; background: var(--pass); }
+  .bar .v {
+    font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums;
+    font-size: 13.5px; text-align: right; color: var(--ink-soft);
+  }
+
+  .answers { display: flex; flex-direction: column; gap: 1px; background: var(--rule-soft); border: 1px solid var(--rule-soft); }
+  .a { background: var(--card); padding: 15px 18px; }
+  .a p { margin: 0; white-space: pre-wrap; }
+  .a .none { color: var(--ink-faint); font-style: italic; }
+
+  .empty { background: var(--card); border: 1px solid var(--rule-soft); padding: 40px; text-align: center; color: var(--ink-soft); }
+  .note {
+    margin-top: 40px; padding: 16px 18px; background: var(--card);
+    border: 1px solid var(--rule-soft); border-left: 3px solid var(--mark);
+    font-size: 14.5px; color: var(--ink-soft);
+  }
+  button.refresh {
+    font-family: "Source Sans 3", sans-serif; font-size: 15px; font-weight: 600;
+    padding: 10px 20px; border: 1px solid var(--rule); background: var(--card);
+    color: var(--ink); cursor: pointer; margin-top: 26px;
+  }
+  button.refresh:hover { border-color: var(--pass); color: var(--pass); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Teacher view &middot; anonymous responses</p>
+    <h1>Course feedback</h1>
+    <p id="sub">Loading…</p>
+  </header>
+  <div id="out"></div>
+</div>
+
+<script>
+(function () {
+  var OPEN = {
+    q5: 'Was there a moment when something finally clicked?',
+    q6: 'What was genuinely the hardest part of this course?',
+    q7: "What were you doing by the end that you weren't doing at the start?",
+    q8: 'What should stay exactly as it is — and what should change?',
+    q9: 'The platform: what helped, and what got in your way?',
+    q10: 'Anything you wanted to say during the course but never did?'
+  };
+  var esc = function (s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  };
+  var avg = function (arr) {
+    if (!arr.length) return null;
+    return Math.round(arr.reduce(function (a, b) { return a + b; }, 0) / arr.length * 10) / 10;
+  };
+
+  function counts(responses, key) {
+    var c = {};
+    responses.forEach(function (r) {
+      var v = r.answers && r.answers[key];
+      if (v) c[v] = (c[v] || 0) + 1;
+    });
+    return c;
+  }
+
+  function barBlock(title, question, c, order) {
+    var keys = order || Object.keys(c).sort();
+    var total = keys.reduce(function (s, k) { return s + (c[k] || 0); }, 0);
+    if (!total) return '';
+    var rows = keys.map(function (k) {
+      var n = c[k] || 0;
+      var pct = total ? Math.round(n / total * 100) : 0;
+      return '<div class="bar"><span class="k">' + esc(k) + '</span>'
+        + '<span class="t"><i style="width:' + pct + '%"></i></span>'
+        + '<span class="v">' + n + '</span></div>';
+    }).join('');
+    return '<h2>' + esc(title) + '</h2><p class="qtext">' + esc(question) + '</p><div class="bars">' + rows + '</div>';
+  }
+
+  function render(data) {
+    var rs = data.responses || [];
+    document.getElementById('sub').textContent =
+      rs.length + (rs.length === 1 ? ' response' : ' responses') + ', shown in a shuffled order.';
+
+    if (!rs.length) {
+      document.getElementById('out').innerHTML =
+        '<div class="empty">No responses yet. Share the link and they will appear here.</div>';
+      return;
+    }
+
+    var before = rs.map(function (r) { return Number(r.answers.q1); }).filter(function (n) { return n >= 1 && n <= 10; });
+    var after  = rs.map(function (r) { return Number(r.answers.q2); }).filter(function (n) { return n >= 1 && n <= 10; });
+    var b = avg(before), a = avg(after);
+    var shift = (b !== null && a !== null) ? Math.round((a - b) * 10) / 10 : null;
+
+    var html = '<div class="summary">'
+      + '<div class="stat"><span class="n">' + rs.length + '</span><span class="l">responses</span></div>'
+      + '<div class="stat"><span class="n">' + (b === null ? '—' : b) + '</span><span class="l">felt ready at the start</span></div>'
+      + '<div class="stat"><span class="n">' + (a === null ? '—' : a) + '</span><span class="l">feel ready now</span></div>'
+      + '<div class="stat"><span class="n up">' + (shift === null ? '—' : (shift > 0 ? '+' + shift : shift)) + '</span><span class="l">average shift</span></div>'
+      + '</div>';
+
+    var skills = ['Listening', 'Reading', 'Writing', 'Speaking'];
+    html += barBlock('Improved most', 'Which skill improved the most for you?', counts(rs, 'q3'), skills);
+    html += barBlock('Still worries them', 'Which one still worries you most?', counts(rs, 'q4'), skills);
+
+    Object.keys(OPEN).forEach(function (key) {
+      var written = rs.map(function (r) { return r.answers[key]; }).filter(function (v) { return v && String(v).trim(); });
+      html += '<h2>' + esc(OPEN[key]) + '</h2>';
+      html += '<p class="qtext">' + written.length + ' of ' + rs.length + ' answered</p>';
+      if (!written.length) {
+        html += '<div class="answers"><div class="a"><p class="none">Nobody answered this one.</p></div></div>';
+      } else {
+        html += '<div class="answers">' + written.map(function (t) {
+          return '<div class="a"><p>' + esc(t) + '</p></div>';
+        }).join('') + '</div>';
+      }
+    });
+
+    html += '<div class="note">Answers are grouped by question, not by person, and arrive in a shuffled order. '
+      + 'Nothing identifying is stored &mdash; no name, no student ID, no IP address, and no time of day.</div>';
+    html += '<button class="refresh" onclick="location.reload()">Check for new responses</button>';
+
+    document.getElementById('out').innerHTML = html;
+  }
+
+  fetch('/api/teacher/feedback')
+    .then(function (r) { return r.json(); })
+    .then(render)
+    .catch(function (e) {
+      document.getElementById('sub').textContent = 'Could not load the responses.';
+      document.getElementById('out').innerHTML =
+        '<div class="empty">' + esc(e.message) + '<br>Try reloading in a moment.</div>';
+    });
+})();
+</script>
+</body>
+</html>
