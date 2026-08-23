@@ -1941,7 +1941,14 @@ app.post('/api/admin/users/:id/change-id', requireRole('admin'), async (req, res
     ['submissions', 'student_id'],
     ['submissions', 'graded_by'],
     ['speaking_assignments', 'student_id'],
-    ['speaking_submissions', 'student_id']
+    ['speaking_submissions', 'student_id'],
+    // Added for multi-school support: a student's owner_teacher_id must
+    // follow if the owning teacher's own id changes, or their whole school
+    // silently detaches from them. sessions.user_id must follow too, or the
+    // DELETE below fails its foreign key exactly like deleting a user with
+    // an active session does.
+    ['users', 'owner_teacher_id'],
+    ['sessions', 'user_id']
   ];
 
   let inTransaction = false;
@@ -1993,6 +2000,10 @@ app.delete('/api/admin/users/:id', requireRole('admin'), async (req, res) => {
     if (id === 'admin') {
       return res.status(400).json({ error: 'Cannot delete primary administrator account' });
     }
+    // A logged-in user's session row references them, so deleting the user
+    // while their session still exists fails the foreign key. Sessions are
+    // disposable -- clear theirs first, same as a logout.
+    await db.run('DELETE FROM sessions WHERE user_id = ?', [id]);
     await db.run('DELETE FROM users WHERE id = ?', [id]);
     res.json({ success: true });
   } catch (error) {
