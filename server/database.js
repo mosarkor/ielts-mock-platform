@@ -174,9 +174,25 @@ export async function initDb() {
     // it sent -- fine for one teacher and one class, not fine once a second
     // school's data is in the same database. The cookie this backs is the
     // only thing that actually proves who is calling.
+    //
+    // First shipped as `token TEXT PRIMARY KEY` with no `id` column -- broke
+    // login outright, because every INSERT on Postgres here gets a
+    // `RETURNING id` appended generically (see PostgresDatabaseWrapper.run,
+    // it's how lastID works everywhere else) and there was no such column.
+    // One-time repair: sessions are disposable, a login always makes a new
+    // one, so the fix for an already-deployed broken table is just to drop
+    // and recreate it rather than migrate rows that carry no lasting value.
+    try {
+      const cols = await db.all(`SELECT column_name FROM information_schema.columns WHERE table_name = 'sessions'`);
+      if (cols.length && !cols.some(c => c.column_name === 'id')) {
+        await db.exec('DROP TABLE sessions');
+      }
+    } catch (e) {}
+
     await db.exec(`
       CREATE TABLE IF NOT EXISTS sessions (
-        token TEXT PRIMARY KEY,
+        id SERIAL PRIMARY KEY,
+        token TEXT NOT NULL UNIQUE,
         user_id TEXT NOT NULL REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
@@ -477,7 +493,8 @@ export async function initDb() {
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS sessions (
-      token TEXT PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      token TEXT NOT NULL UNIQUE,
       user_id TEXT NOT NULL REFERENCES users(id),
       created_at TEXT DEFAULT (datetime('now'))
     )
