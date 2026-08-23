@@ -512,11 +512,32 @@ app.post('/api/student/submit/:testId', async (req, res) => {
     const listeningScore = scoreModule(isListeningIframe, listeningData.sections, listeningAnswers, req.body.listeningScore);
     const readingScore = scoreModule(isReadingIframe, readingData.passages, readingAnswers, req.body.readingScore);
 
-    // Every submission -- full mock or standalone listening/reading -- stays
-    // hidden from the student until the teacher explicitly releases it via
-    // /api/teacher/reveal. (Previously, tests whose title contained the word
-    // "listening" or "reading" bypassed this and auto-revealed instantly.)
-    const defaultIsRevealed = 0;
+    // Standalone Listening/Reading practice -- no Writing task -- reveals to the
+    // student the moment it's scored. Nothing here needs a human judgment call,
+    // and the graduating cohort's own feedback named the old always-wait gate as
+    // the platform's single most common frustration. A Writing task (full mocks,
+    // dedicated Writing papers) still waits for the teacher via
+    // /api/teacher/reveal, since that score genuinely needs a person to look at
+    // it first.
+    //
+    // Going instant reopens the exact risk the gate existed to close: a wrong
+    // answer key reaching the whole class. So this still runs the same "the
+    // class agrees on the same wrong answer" check used by bulk release before
+    // auto-revealing (see computeAnswerKeyFlags below). It can't protect the
+    // first few students on a brand-new key -- there isn't enough data yet to
+    // see a pattern -- but once a question crosses that threshold, this test
+    // stops auto-revealing and falls back to the manual queue instead of
+    // reaching the rest of the class with the same wrong score.
+    const writingData = parseJson(test.writing_data, {});
+    const hasWritingTask = submissionHasWritingTask(
+      { listening_answers: listeningAnswers, reading_answers: readingAnswers, writing_answers: writingAnswers },
+      writingData
+    );
+    let defaultIsRevealed = 0;
+    if (!hasWritingTask) {
+      const existingFlags = await computeAnswerKeyFlags(Number(testId));
+      defaultIsRevealed = existingFlags.length === 0 ? 1 : 0;
+    }
 
     await db.run(`
       INSERT INTO submissions (
