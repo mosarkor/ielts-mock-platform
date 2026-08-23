@@ -1421,6 +1421,125 @@ app.post('/api/teacher/reveal/:submissionId', async (req, res) => {
   }
 });
 
+// Flags a test's answer key as suspect before its scores go out in bulk. The
+// signal is the one that actually caught a bad key this term: a question where
+// most students who got it "wrong" wrote the exact SAME wrong answer. Genuine
+// mistakes scatter across many different wrong answers; a broken key produces
+// one specific answer that keeps recurring, because the class was right and the
+// key was wrong. Only counts answered questions -- leaving one blank is not
+// evidence about the key.
+async function computeAnswerKeyFlags(testId) {
+  const rows = await db.all(
+    'SELECT listening_detail, reading_detail FROM submissions WHERE test_id = ? AND (listening_detail IS NOT NULL OR reading_detail IS NOT NULL)',
+    [testId]
+  );
+  const norm = v => String(v ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const MIN_SAMPLE = 4;
+  const WRONG_RATE_THRESHOLD = 0.5;
+  const AGREEMENT_THRESHOLD = 0.6;
+  const flags = [];
+
+  for (const moduleName of ['listening', 'reading']) {
+    const col = `${moduleName}_detail`;
+    const stats = {}; // qNum -> { total, wrong, wrongCounts: {answer: count} }
+    for (const row of rows) {
+      let detail;
+      try { detail = JSON.parse(row[col] || 'null'); } catch { detail = null; }
+      if (!detail) continue;
+      for (const [qNum, d] of Object.entries(detail)) {
+        const given = norm(d?.userAnswer);
+        if (!given) continue;
+        const s = stats[qNum] || (stats[qNum] = { total: 0, wrong: 0, wrongCounts: {} });
+        s.total++;
+        if (!d.isCorrect) {
+          s.wrong++;
+          s.wrongCounts[given] = (s.wrongCounts[given] || 0) + 1;
+        }
+      }
+    }
+    for (const [qNum, s] of Object.entries(stats)) {
+      if (s.total < MIN_SAMPLE || s.wrong / s.total < WRONG_RATE_THRESHOLD) continue;
+      const [topAnswer, topCount] = Object.entries(s.wrongCounts).sort((a, b) => b[1] - a[1])[0];
+      const topShare = topCount / s.wrong;
+      if (topShare >= AGREEMENT_THRESHOLD) {
+        flags.push({
+          module: moduleName,
+          question: Number(qNum),
+          sampleSize: s.total,
+          wrongCount: s.wrong,
+          wrongRate: Math.round((s.wrong / s.total) * 100) / 100,
+          topWrongAnswer: topAnswer,
+          topWrongShare: Math.round(topShare * 100) / 100
+        });
+      }
+    }
+  }
+  return flags.sort((a, b) => a.module === b.module ? a.question - b.question : a.module.localeCompare(b.module));
+}
+
+// Whether a submission carries a real Writing task that needs a human band --
+// same rule the Teacher Dashboard uses to decide "ready to release", kept in
+// sync here so bulk release can't disagree with what the UI shows.
+function submissionHasWritingTask(sub, testWritingData) {
+  if (testWritingData?.task1?.prompt || testWritingData?.task2?.prompt) return true;
+  const essays = String(sub.writing_answers?.task1 || '').trim() || String(sub.writing_answers?.task2 || '').trim();
+  if (!essays) return false;
+  const answered = (obj) => Object.values(obj || {}).filter(v => String(v ?? '').trim()).length;
+  return answered(sub.listening_answers) > 0 && answered(sub.reading_answers) > 0;
+}
+
+// Tells the teacher whether a test's scores are safe to release in one click:
+// clean if no question shows the "everyone agrees on the same wrong answer"
+// fingerprint of a broken key.
+app.get('/api/teacher/release-check/:testId', async (req, res) => {
+  const testId = Number.parseInt(req.params.testId, 10);
+  try {
+    const test = await db.get('SELECT title FROM tests WHERE id = ?', [testId]);
+    if (!test) return res.status(404).json({ error: 'Test not found' });
+    const flags = await computeAnswerKeyFlags(testId);
+    res.json({ success: true, testId, testTitle: test.title, flags, clean: flags.length === 0 });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Releases every ready-to-release, not-yet-released submission on one test at
+// once. Refuses outright if the key looks suspect -- bulk release must not be
+// the fast way to hand a whole class a wrong score.
+app.post('/api/teacher/reveal-batch', async (req, res) => {
+  const testId = Number.parseInt(req.body.testId, 10);
+  if (!Number.isInteger(testId)) return res.status(400).json({ error: 'testId is required' });
+  try {
+    const flags = await computeAnswerKeyFlags(testId);
+    if (flags.length) {
+      return res.status(409).json({ error: 'This test has flagged questions and was not released. Check the answer key before releasing manually.', flags });
+    }
+
+    const rows = await db.all(
+      `SELECT s.id, s.writing_score, s.listening_answers, s.reading_answers, s.writing_answers, t.writing_data
+       FROM submissions s JOIN tests t ON s.test_id = t.id
+       WHERE s.test_id = ? AND s.is_revealed != 1`,
+      [testId]
+    );
+    const ready = rows.filter(r => {
+      const sub = {
+        writing_answers: JSON.parse(r.writing_answers || '{}'),
+        listening_answers: JSON.parse(r.listening_answers || '{}'),
+        reading_answers: JSON.parse(r.reading_answers || '{}')
+      };
+      let writingData; try { writingData = JSON.parse(r.writing_data || '{}'); } catch { writingData = {}; }
+      return r.writing_score !== null || !submissionHasWritingTask(sub, writingData);
+    });
+
+    if (!ready.length) return res.json({ success: true, released: 0 });
+    const ids = ready.map(r => r.id);
+    await db.run(`UPDATE submissions SET is_revealed = 1 WHERE id IN (${ids.map(() => '?').join(',')})`, ids);
+    res.json({ success: true, released: ids.length });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ----------------------------------------
 // ADMIN APIS
 // ----------------------------------------

@@ -26,6 +26,9 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   const [feedbackText, setFeedbackText] = useState('');
   const [releaseImmediately, setReleaseImmediately] = useState(true);
 
+  // Bulk release: testId -> { loading, clean, flags, error, released }
+  const [releaseCheck, setReleaseCheck] = useState({});
+
   // Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -810,6 +813,42 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
     }
   };
 
+  // Checks a test's answer key for the "everyone agrees on the same wrong
+  // answer" fingerprint before releasing every ready submission on it at once.
+  // A flagged test stops here so it can be checked by hand instead of reaching
+  // the whole class; a clean one goes out in one click.
+  const handleBulkRelease = async (testId, testTitle) => {
+    setReleaseCheck(prev => ({ ...prev, [testId]: { loading: true } }));
+    try {
+      const checkRes = await fetch(`/api/teacher/release-check/${testId}`);
+      const check = await checkRes.json();
+      if (!checkRes.ok) throw new Error(check.error || 'Could not check this test');
+
+      if (!check.clean) {
+        setReleaseCheck(prev => ({ ...prev, [testId]: { loading: false, clean: false, flags: check.flags } }));
+        return;
+      }
+
+      if (!window.confirm(`"${testTitle}" looks clean -- no question shows a suspect answer pattern. Release all ready scores now?`)) {
+        setReleaseCheck(prev => ({ ...prev, [testId]: { loading: false, clean: true, flags: [] } }));
+        return;
+      }
+
+      const relRes = await fetch('/api/teacher/reveal-batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ testId })
+      });
+      const relData = await relRes.json();
+      if (!relRes.ok) throw new Error(relData.error || 'Release failed');
+
+      setReleaseCheck(prev => ({ ...prev, [testId]: { loading: false, clean: true, flags: [], released: relData.released } }));
+      fetchSubmissions();
+    } catch (err) {
+      setReleaseCheck(prev => ({ ...prev, [testId]: { loading: false, error: err.message } }));
+    }
+  };
+
   const calculateAverageClassBand = () => {
     const graded = filteredSubmissions.filter(s => s.writing_score !== null);
     if (graded.length === 0) return 'N/A';
@@ -1067,6 +1106,20 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
 
   const pendingSubmissions = filteredSubmissions.filter(s => !isReadyToRelease(s));
   const gradedSubmissions = filteredSubmissions.filter(s => isReadyToRelease(s));
+
+  // One entry per test that has at least one ready-but-unreleased submission,
+  // so a whole class's worth of clean Listening/Reading results can go out in
+  // one check instead of clicking "Release Scores" once per student.
+  const bulkReleaseTargets = (() => {
+    const byTest = {};
+    gradedSubmissions.forEach(sub => {
+      if (sub.is_revealed === 1) return;
+      const key = sub.test_id;
+      if (!byTest[key]) byTest[key] = { testId: sub.test_id, testTitle: sub.test_title, count: 0 };
+      byTest[key].count++;
+    });
+    return Object.values(byTest).sort((a, b) => b.count - a.count);
+  })();
 
   return (
     <div style={styles.dashboardLayout}>
@@ -2037,6 +2090,60 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
 
             {/* Right Col: Graded & Released */}
             <div>
+              {bulkReleaseTargets.length > 0 && (
+                <div className="card" style={{ marginBottom: '1.25rem', border: '1px solid var(--glass-border)' }}>
+                  <h4 style={{ margin: '0 0 0.6rem', fontSize: '0.95rem' }}>⚡ Release a whole test at once</h4>
+                  <p style={{ margin: '0 0 0.75rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                    Checks every question for the "class agrees on the same wrong answer" pattern that means a bad key, not a bad class.
+                    Releases everyone at once only if nothing is flagged.
+                  </p>
+                  {bulkReleaseTargets.map(t => {
+                    const rc = releaseCheck[t.testId];
+                    return (
+                      <div key={t.testId} style={{ padding: '0.6rem 0', borderTop: '1px solid var(--glass-border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '0.85rem' }}>
+                            <strong>{t.testTitle}</strong> — {t.count} ready, not yet released
+                          </span>
+                          <button
+                            onClick={() => handleBulkRelease(t.testId, t.testTitle)}
+                            className="btn btn-secondary"
+                            disabled={rc?.loading}
+                            style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
+                          >
+                            {rc?.loading ? 'Checking…' : 'Check & Release All'}
+                          </button>
+                        </div>
+                        {rc?.error && (
+                          <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', color: '#f43f5e' }}>{rc.error}</p>
+                        )}
+                        {rc && rc.released != null && (
+                          <p style={{ margin: '0.5rem 0 0', fontSize: '0.78rem', color: '#10b981' }}>
+                            🟢 Released {rc.released} submission{rc.released === 1 ? '' : 's'}.
+                          </p>
+                        )}
+                        {rc && rc.clean === false && rc.flags?.length > 0 && (
+                          <div style={{ marginTop: '0.5rem', padding: '0.5rem 0.6rem', backgroundColor: 'rgba(244, 63, 94, 0.06)', borderLeft: '3px solid #f43f5e', fontSize: '0.78rem' }}>
+                            <strong style={{ color: '#f43f5e' }}>Not released — check the answer key first:</strong>
+                            <ul style={{ margin: '0.35rem 0 0', paddingLeft: '1.1rem' }}>
+                              {rc.flags.map(f => (
+                                <li key={`${f.module}-${f.question}`}>
+                                  {f.module === 'listening' ? '🎧' : '📖'} Q{f.question}: {Math.round(f.wrongRate * 100)}% got it wrong,
+                                  {' '}{Math.round(f.topWrongShare * 100)}% of those wrote the same thing — "{f.topWrongAnswer}" ({f.wrongCount} of {f.sampleSize} students)
+                                </li>
+                              ))}
+                            </ul>
+                            <span style={{ display: 'block', marginTop: '0.35rem', color: 'var(--text-secondary)' }}>
+                              Individual submissions below can still be released one at a time with "Release Scores".
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               <h3 style={{ ...styles.columnTitle, color: '#10b981' }}>📊 Graded & Released Portfolio ({gradedSubmissions.length})</h3>
               {gradedSubmissions.length === 0 ? (
                 <div className="card" style={styles.emptyCard}>
