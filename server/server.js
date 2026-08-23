@@ -1873,7 +1873,11 @@ app.get('/api/admin/users', requireRole('teacher', 'admin'), async (req, res) =>
   try {
     const scoped = req.authUser.role === 'admin' ? '' : "WHERE role = 'student' AND owner_teacher_id = ?";
     const params = req.authUser.role === 'admin' ? [] : [req.authUser.id];
-    const users = await db.all(`SELECT id, name, role, group_name as groupName, owner_teacher_id as ownerTeacherId FROM users ${scoped}`, params);
+    // Postgres folds unquoted identifiers to lowercase, including aliases --
+    // group_name as groupName silently comes back as `groupname` there (SQLite
+    // doesn't do this, which is why it wasn't caught locally). Quoted to keep
+    // the exact casing the client reads.
+    const users = await db.all(`SELECT id, name, role, group_name as "groupName", owner_teacher_id as "ownerTeacherId" FROM users ${scoped}`, params);
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
