@@ -30,6 +30,28 @@ function removeStorage(key) {
   }
 }
 
+// Every API call now needs a real session cookie, not just a locally-stored
+// profile -- so a browser left open from before this shipped (or a cookie
+// that's expired/been revoked) starts getting 401s from every endpoint it
+// touches. Patched once, globally, rather than threading a check through the
+// ~50 call sites that use fetch() directly: any 401, while the app still
+// believes someone is logged in, means that belief is stale. Drop it and
+// reload straight to the login screen instead of leaving broken dashboards
+// with silent, confusing failures on screen.
+if (typeof window !== 'undefined' && !window.__ieltsAuthFetchPatched) {
+  window.__ieltsAuthFetchPatched = true;
+  const rawFetch = window.fetch.bind(window);
+  window.fetch = async (...args) => {
+    const response = await rawFetch(...args);
+    if (response.status === 401 && localStorage.getItem('user')) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('testingTestId');
+      window.location.href = '/';
+    }
+    return response;
+  };
+}
+
 export default function App() {
   const [user, setUser] = useState(() => {
     const saved = readStorage('user');
@@ -104,6 +126,7 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     setUser(null);
     setActiveRole(null);
     removeStorage('user');

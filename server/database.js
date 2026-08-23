@@ -163,6 +163,24 @@ export async function initDb() {
 
     // Dynamically alter table for existing installations
     await db.exec('ALTER TABLE users ADD COLUMN group_name TEXT').catch(() => {});
+    // Which teacher's school a student belongs to -- null for teacher/admin
+    // rows (a teacher IS their own tenant root, no separate schools table).
+    // Every teacher-facing query scopes by this; admin queries do not, so the
+    // admin account keeps its existing cross-school view.
+    await db.exec('ALTER TABLE users ADD COLUMN owner_teacher_id TEXT REFERENCES users(id)').catch(() => {});
+
+    // Real, server-verified login sessions. Previously the client just held
+    // {id, name, role} in localStorage and every request trusted whatever id
+    // it sent -- fine for one teacher and one class, not fine once a second
+    // school's data is in the same database. The cookie this backs is the
+    // only thing that actually proves who is calling.
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
     await db.exec(`
       CREATE TABLE IF NOT EXISTS tests (
@@ -455,6 +473,15 @@ export async function initDb() {
 
   // Dynamically alter table for existing installations
   await db.exec('ALTER TABLE users ADD COLUMN group_name TEXT').catch(() => {});
+  await db.exec('ALTER TABLE users ADD COLUMN owner_teacher_id TEXT REFERENCES users(id)').catch(() => {});
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      created_at TEXT DEFAULT (datetime('now'))
+    )
+  `);
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS tests (
@@ -740,6 +767,17 @@ async function ensureCustomDataSeeded(db) {
     if (!teacherExists) {
       await db.run(`INSERT INTO users (id, name, password_hash, role) VALUES ('teacher', 'Teacher', 'teacher123', 'teacher')`);
     }
+  } catch (e) {}
+
+  // Every student who existed before multi-school support becomes school 1,
+  // owned by the original 'teacher' account -- so the current class sees no
+  // change at all. A student created after this point without an explicit
+  // owner (e.g. by an admin tool not yet updated) also falls back here rather
+  // than being ownerless and invisible to every teacher.
+  try {
+    await db.run(
+      `UPDATE users SET owner_teacher_id = 'teacher' WHERE role = 'student' AND owner_teacher_id IS NULL`
+    );
   } catch (e) {}
 
   // Migrate Mock Tests 1-9 to the native JSON schema if they still point at the

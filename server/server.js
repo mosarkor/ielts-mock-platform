@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import { initDb } from './database.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -8,7 +9,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import { sanitizeTestHtml } from './contentSanitizer.js';
-import { hashPassword, verifyPassword } from './auth.js';
+import { hashPassword, verifyPassword, generateSessionToken } from './auth.js';
 import { FEEDBACK_SYSTEM_PROMPT, buildFeedbackRequest } from './writingFeedback.js';
 import {
   extractReadingContent, passageForQuestion, scanAuthoredEvidence,
@@ -26,7 +27,80 @@ const port = Number.isInteger(configuredPort) && configuredPort >= 0 ? configure
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
+const SESSION_COOKIE = 'ielts_session';
+
+// Loads req.authUser from the session cookie if present -- does not itself
+// require one. Placed before every route so requireAuth/requireRole below
+// can just read req.authUser instead of re-querying per route.
+app.use(async (req, res, next) => {
+  const token = req.cookies?.[SESSION_COOKIE];
+  if (!token) return next();
+  try {
+    const row = await db.get(
+      `SELECT u.id, u.name, u.role, u.owner_teacher_id
+       FROM sessions s JOIN users u ON s.user_id = u.id
+       WHERE s.token = ?`,
+      [token]
+    );
+    if (row) req.authUser = row;
+  } catch (e) {}
+  next();
+});
+
+// Rejects with 401 unless a valid session is attached. Use before any route
+// that must know who is actually calling, not merely what the request claims.
+function requireAuth(req, res, next) {
+  if (!req.authUser) return res.status(401).json({ error: 'Not logged in' });
+  next();
+}
+
+// requireAuth plus a role check. Admin is never implicitly included -- pass
+// it explicitly where the admin should also be allowed through.
+function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.authUser) return res.status(401).json({ error: 'Not logged in' });
+    if (!roles.includes(req.authUser.role)) return res.status(403).json({ error: 'Not permitted for this account' });
+    next();
+  };
+}
+
+// True once req.authUser is confirmed allowed to act on the given student id:
+// the student themself, that student's own teacher, or an admin. Centralizes
+// the ownership check every /api/teacher/* and /api/student/* route that
+// touches one student's data needs to make.
+async function canAccessStudent(authUser, studentId) {
+  if (!authUser) return false;
+  if (authUser.role === 'admin') return true;
+  if (authUser.role === 'student') return authUser.id === studentId;
+  if (authUser.role === 'teacher') {
+    const student = await db.get('SELECT owner_teacher_id FROM users WHERE id = ?', [studentId]);
+    return !!student && student.owner_teacher_id === authUser.id;
+  }
+  return false;
+}
+
+// Same check, starting from a submission id instead of a student id --
+// covers every /api/teacher/* route that grades, reveals, deletes or drafts
+// feedback for one specific submission.
+async function canAccessSubmission(authUser, submissionId) {
+  if (!authUser) return false;
+  if (authUser.role === 'admin') return true;
+  const row = await db.get('SELECT student_id FROM submissions WHERE id = ?', [submissionId]);
+  if (!row) return false;
+  return canAccessStudent(authUser, row.student_id);
+}
+
+// Same, for the separate speaking_submissions table.
+async function canAccessSpeakingSubmission(authUser, submissionId) {
+  if (!authUser) return false;
+  if (authUser.role === 'admin') return true;
+  const row = await db.get('SELECT student_id FROM speaking_submissions WHERE id = ?', [submissionId]);
+  if (!row) return false;
+  return canAccessStudent(authUser, row.student_id);
+}
 
 // Initialize Database connection.
 //
@@ -282,8 +356,11 @@ app.get('/tests-audio/:id', async (req, res, next) => {
 //
 // Returns identity only, never the passcode hash, and no password is required:
 // it discloses nothing a logged-in user cannot already see about themselves.
-app.get('/api/auth/whoami/:id', async (req, res) => {
+app.get('/api/auth/whoami/:id', requireAuth, async (req, res) => {
   const cleanId = String(req.params.id || '').trim().toLowerCase();
+  if (req.authUser.role !== 'admin' && req.authUser.id.toLowerCase() !== cleanId) {
+    return res.status(403).json({ error: 'Not permitted for this account' });
+  }
   try {
     const user = await db.get('SELECT id, name, role FROM users WHERE LOWER(TRIM(id)) = ?', [cleanId]);
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -311,15 +388,40 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid passcode. Please check your credentials.' });
     }
 
+    const token = generateSessionToken();
+    await db.run('INSERT INTO sessions (token, user_id) VALUES (?, ?)', [token, user.id]);
+    res.cookie(SESSION_COOKIE, token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
     return res.json({ id: user.id, name: user.name, role: user.role });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
+// Logs out the CURRENT session only (this device/browser), not every device
+// the account is signed into elsewhere -- deleting by token, not by user_id.
+app.post('/api/auth/logout', async (req, res) => {
+  try {
+    const token = req.cookies?.[SESSION_COOKIE];
+    if (token) await db.run('DELETE FROM sessions WHERE token = ?', [token]);
+    res.clearCookie(SESSION_COOKIE);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Change Password API
-app.post('/api/user/change-password', async (req, res) => {
+app.post('/api/user/change-password', requireAuth, async (req, res) => {
   const { userId, currentPassword, newPassword } = req.body;
+  if (req.authUser.role !== 'admin' && req.authUser.id !== userId) {
+    return res.status(403).json({ error: 'Not permitted for this account' });
+  }
   try {
     const user = await db.get('SELECT * FROM users WHERE id = ?', [userId]);
     if (!user) {
@@ -340,8 +442,9 @@ app.post('/api/user/change-password', async (req, res) => {
 // ----------------------------------------
 
 // Get Student Dashboard Info
-app.get('/api/student/dashboard/:studentId', async (req, res) => {
+app.get('/api/student/dashboard/:studentId', requireAuth, async (req, res) => {
   const { studentId } = req.params;
+  if (!(await canAccessStudent(req.authUser, studentId))) return res.status(403).json({ error: 'Not permitted for this student' });
 
   try {
     // Get assigned tests that are either 'assigned' or 'started'
@@ -381,7 +484,7 @@ app.get('/api/student/dashboard/:studentId', async (req, res) => {
 });
 
 // Get detailed test data (questions only, omit answer keys if needed, but for simplicity we send full content)
-app.get('/api/student/test/:testId', async (req, res) => {
+app.get('/api/student/test/:testId', requireAuth, async (req, res) => {
   const { testId } = req.params;
   try {
     const test = await db.get('SELECT * FROM tests WHERE id = ?', [testId]);
@@ -403,9 +506,10 @@ app.get('/api/student/test/:testId', async (req, res) => {
 });
 
 // Submit Test Answers
-app.post('/api/student/submit/:testId', async (req, res) => {
+app.post('/api/student/submit/:testId', requireAuth, async (req, res) => {
   const { testId } = req.params;
   const studentId = typeof req.body.studentId === 'string' ? req.body.studentId.trim() : '';
+  if (!(await canAccessStudent(req.authUser, studentId))) return res.status(403).json({ error: 'Not permitted for this student' });
   const listeningAnswers = req.body.listeningAnswers && typeof req.body.listeningAnswers === 'object' ? req.body.listeningAnswers : {};
   const readingAnswers = req.body.readingAnswers && typeof req.body.readingAnswers === 'object' ? req.body.readingAnswers : {};
   const writingAnswers = req.body.writingAnswers && typeof req.body.writingAnswers === 'object' ? req.body.writingAnswers : {};
@@ -427,7 +531,7 @@ app.post('/api/student/submit/:testId', async (req, res) => {
   submissionLocks.add(lockKey);
 
   try {
-    const student = await db.get("SELECT id FROM users WHERE id = ? AND role = 'student'", [studentId]);
+    const student = await db.get("SELECT id, owner_teacher_id FROM users WHERE id = ? AND role = 'student'", [studentId]);
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
     const test = await db.get('SELECT * FROM tests WHERE id = ?', [testId]);
@@ -561,7 +665,7 @@ app.post('/api/student/submit/:testId', async (req, res) => {
     );
     let defaultIsRevealed = 0;
     if (!hasWritingTask) {
-      const existingFlags = await computeAnswerKeyFlags(Number(testId));
+      const existingFlags = await computeAnswerKeyFlags(Number(testId), student.owner_teacher_id);
       defaultIsRevealed = existingFlags.length === 0 ? 1 : 0;
     }
 
@@ -602,8 +706,9 @@ app.post('/api/student/submit/:testId', async (req, res) => {
   }
 });
 
-app.get('/api/student/submission-status/:studentId/:testId', async (req, res) => {
+app.get('/api/student/submission-status/:studentId/:testId', requireAuth, async (req, res) => {
   const { studentId, testId } = req.params;
+  if (!(await canAccessStudent(req.authUser, studentId))) return res.status(403).json({ error: 'Not permitted for this student' });
   try {
     const assignment = await db.get(`
       SELECT status FROM assignments
@@ -626,8 +731,9 @@ app.get('/api/student/submission-status/:studentId/:testId', async (req, res) =>
 });
 
 // Update Assignment status (e.g. starting a test)
-app.post('/api/student/assignment/start', async (req, res) => {
+app.post('/api/student/assignment/start', requireAuth, async (req, res) => {
   const { studentId, testId } = req.body;
+  if (!(await canAccessStudent(req.authUser, studentId))) return res.status(403).json({ error: 'Not permitted for this student' });
   try {
     const assignment = await db.get(`
       SELECT id, status FROM assignments
@@ -655,7 +761,8 @@ app.post('/api/student/assignment/start', async (req, res) => {
 // One submission in full, including the per-question detail the list above
 // leaves out. Fetched only when a teacher opens a paper, so the weight is paid
 // once for one student rather than for every student on every dashboard load.
-app.get('/api/teacher/submission/:id', async (req, res) => {
+app.get('/api/teacher/submission/:id', requireRole('teacher', 'admin'), async (req, res) => {
+  if (!(await canAccessSubmission(req.authUser, req.params.id))) return res.status(403).json({ error: 'Not permitted for this submission' });
   try {
     const sub = await db.get(`
       SELECT s.*, u.name as student_name, u.group_name as student_group, t.title as test_title, t.writing_data
@@ -682,15 +789,18 @@ app.get('/api/teacher/submission/:id', async (req, res) => {
   }
 });
 
-app.get('/api/teacher/submissions', async (req, res) => {
+app.get('/api/teacher/submissions', requireRole('teacher', 'admin'), async (req, res) => {
   try {
+    const scoped = req.authUser.role === 'admin' ? '' : 'WHERE u.owner_teacher_id = ?';
+    const params = req.authUser.role === 'admin' ? [] : [req.authUser.id];
     const submissions = await db.all(`
       SELECT s.*, u.name as student_name, u.group_name as student_group, t.title as test_title, t.listening_data, t.reading_data, t.writing_data
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN tests t ON s.test_id = t.id
+      ${scoped}
       ORDER BY s.submitted_at DESC
-    `);
+    `, params);
     // Deliberately omits the per-question detail. It is the bulk of this
     // response -- 0.62 MB of 0.96 MB across 65 submissions, thousands of
     // explanationHtml blocks -- and it grows with every paper sat, while the
@@ -730,7 +840,7 @@ app.get('/api/teacher/submissions', async (req, res) => {
 // Deliberately narrow -- it sets a band that a human has already worked out,
 // and does not recompute anything. Values must be a real IELTS band, so a typo
 // cannot store a number the rest of the platform will not understand.
-app.post('/api/admin/submissions/:id/module-score', async (req, res) => {
+app.post('/api/admin/submissions/:id/module-score', requireRole('admin'), async (req, res) => {
   const submissionId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(submissionId)) return res.status(400).json({ error: 'Invalid submission id' });
 
@@ -807,7 +917,7 @@ app.post('/api/feedback', async (req, res) => {
 // Shuffled before sending. Insertion order is a weak identifier -- the first
 // response is usually whoever was handed the link first -- and shuffling costs
 // nothing. The date is coarse enough to be safe and useful.
-app.get('/api/teacher/feedback', async (req, res) => {
+app.get('/api/teacher/feedback', requireRole('teacher', 'admin'), async (req, res) => {
   try {
     const rows = await db.all('SELECT id, answers, submitted_on FROM course_feedback');
     const parsed = rows.map(r => {
@@ -834,7 +944,7 @@ app.get('/api/teacher/feedback', async (req, res) => {
 // wrote the same answer to Q10 against a key that said something else.
 //
 // Dry run unless { confirm: true }. Reports every band that would move and why.
-app.post('/api/admin/tests/:id/remark', async (req, res) => {
+app.post('/api/admin/tests/:id/remark', requireRole('admin'), async (req, res) => {
   const testId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
   const moduleType = req.body.moduleType === 'reading' ? 'reading' : 'listening';
@@ -954,7 +1064,7 @@ app.post('/api/admin/tests/:id/remark', async (req, res) => {
 //   - a module is only copied when the source actually has answers for it, so a
 //     merge can never blank something the target already holds
 //   - nothing is deleted; the source rows stay until a teacher removes them
-app.post('/api/admin/submissions/merge', async (req, res) => {
+app.post('/api/admin/submissions/merge', requireRole('admin'), async (req, res) => {
   const targetId = Number.parseInt(req.body.targetId, 10);
   if (!Number.isInteger(targetId)) return res.status(400).json({ error: 'targetId is required' });
   const confirm = req.body.confirm === true;
@@ -1065,9 +1175,10 @@ app.post('/api/admin/submissions/merge', async (req, res) => {
 // A draft only: it is stored against the submission and is not shown to the
 // student until the teacher approves it. Marking is the teacher's judgement --
 // this saves the typing, not the deciding.
-app.post('/api/teacher/submissions/:id/draft-feedback', async (req, res) => {
+app.post('/api/teacher/submissions/:id/draft-feedback', requireRole('teacher', 'admin'), async (req, res) => {
   const submissionId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(submissionId)) return res.status(400).json({ error: 'Invalid submission id' });
+  if (!(await canAccessSubmission(req.authUser, submissionId))) return res.status(403).json({ error: 'Not permitted for this submission' });
   const taskType = req.body.taskType === 'task1' ? 'task1' : 'task2';
 
   try {
@@ -1144,9 +1255,10 @@ app.post('/api/teacher/submissions/:id/draft-feedback', async (req, res) => {
 // Approval is what separates a draft from feedback a student may see. The text
 // stored here is the teacher's, not the model's -- once they have edited it, the
 // edit is the record.
-app.post('/api/teacher/submissions/:id/feedback', async (req, res) => {
+app.post('/api/teacher/submissions/:id/feedback', requireRole('teacher', 'admin'), async (req, res) => {
   const submissionId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(submissionId)) return res.status(400).json({ error: 'Invalid submission id' });
+  if (!(await canAccessSubmission(req.authUser, submissionId))) return res.status(403).json({ error: 'Not permitted for this submission' });
 
   const feedback = typeof req.body.feedback === 'string' ? req.body.feedback.trim() : '';
   const approved = req.body.approved === true;
@@ -1176,7 +1288,7 @@ app.post('/api/teacher/submissions/:id/feedback', async (req, res) => {
 // at once risks a rate limit that would leave half the class silently unmarked.
 // Skips essays already drafted, so re-running after a failure costs nothing and
 // never overwrites an edit the teacher has made.
-app.post('/api/teacher/tests/:testId/draft-feedback-batch', async (req, res) => {
+app.post('/api/teacher/tests/:testId/draft-feedback-batch', requireRole('teacher', 'admin'), async (req, res) => {
   const testId = Number.parseInt(req.params.testId, 10);
   if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
   const taskType = req.body.taskType === 'task1' ? 'task1' : 'task2';
@@ -1193,11 +1305,13 @@ app.post('/api/teacher/tests/:testId/draft-feedback-batch', async (req, res) => 
     if (!test) return res.status(404).json({ error: `Test ${testId} not found` });
     const prompt = JSON.parse(test.writing_data || '{}')?.[taskType]?.prompt || '';
 
+    const scoped = req.authUser.role === 'admin' ? '' : 'AND u.owner_teacher_id = ?';
+    const params = req.authUser.role === 'admin' ? [testId] : [testId, req.authUser.id];
     const rows = await db.all(`
       SELECT s.id, s.writing_answers, s.writing_feedback_draft, u.name AS student_name, u.group_name
       FROM submissions s JOIN users u ON s.student_id = u.id
-      WHERE s.test_id = ? ORDER BY u.name
-    `, [testId]);
+      WHERE s.test_id = ? ${scoped} ORDER BY u.name
+    `, params);
 
     const anthropic = new Anthropic({ apiKey: settings.anthropic_api_key });
     const results = [];
@@ -1251,7 +1365,7 @@ app.post('/api/teacher/tests/:testId/draft-feedback-batch', async (req, res) => 
 // Returns the essay alongside the feedback: the teacher is judging whether the
 // draft is fair, and that is not a judgement anyone can make without the paper
 // in front of them.
-app.get('/api/teacher/tests/:testId/feedback', async (req, res) => {
+app.get('/api/teacher/tests/:testId/feedback', requireRole('teacher', 'admin'), async (req, res) => {
   const testId = Number.parseInt(req.params.testId, 10);
   if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
   const taskType = req.query.taskType === 'task1' ? 'task1' : 'task2';
@@ -1260,12 +1374,14 @@ app.get('/api/teacher/tests/:testId/feedback', async (req, res) => {
     const test = await db.get('SELECT title, writing_data FROM tests WHERE id = ?', [testId]);
     if (!test) return res.status(404).json({ error: `Test ${testId} not found` });
 
+    const scoped = req.authUser.role === 'admin' ? '' : 'AND u.owner_teacher_id = ?';
+    const params = req.authUser.role === 'admin' ? [testId] : [testId, req.authUser.id];
     const rows = await db.all(`
       SELECT s.id, s.writing_answers, s.writing_feedback_draft, s.student_id,
              u.name AS student_name, u.group_name
       FROM submissions s JOIN users u ON s.student_id = u.id
-      WHERE s.test_id = ? ORDER BY u.name
-    `, [testId]);
+      WHERE s.test_id = ? ${scoped} ORDER BY u.name
+    `, params);
 
     const students = rows.map(row => {
       const essay = String(JSON.parse(row.writing_answers || '{}')[taskType] || '').trim();
@@ -1316,7 +1432,7 @@ app.get('/api/teacher/tests/:testId/feedback', async (req, res) => {
 // Dry-run by default; pass confirm:true to store the result on
 // tests.explanations. Already-generated questions are skipped unless
 // regenerate:true, so re-running after a partial failure costs nothing extra.
-app.post('/api/admin/tests/:id/generate-explanations', async (req, res) => {
+app.post('/api/admin/tests/:id/generate-explanations', requireRole('admin'), async (req, res) => {
   const testId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
   const confirm = req.body.confirm === true;
@@ -1427,7 +1543,7 @@ app.post('/api/admin/tests/:id/generate-explanations', async (req, res) => {
 
 // Print-ready feedback for a whole test, one student per page.
 // ?includeDrafts=true to proof unapproved drafts before releasing them.
-app.get('/api/teacher/tests/:testId/feedback-print', async (req, res) => {
+app.get('/api/teacher/tests/:testId/feedback-print', requireRole('teacher', 'admin'), async (req, res) => {
   const testId = Number.parseInt(req.params.testId, 10);
   if (!Number.isInteger(testId)) return res.status(400).send('Invalid test id');
   const includeDrafts = req.query.includeDrafts === 'true';
@@ -1436,13 +1552,15 @@ app.get('/api/teacher/tests/:testId/feedback-print', async (req, res) => {
     const test = await db.get('SELECT title FROM tests WHERE id = ?', [testId]);
     if (!test) return res.status(404).send('Test not found');
 
+    const scoped = req.authUser.role === 'admin' ? '' : 'AND u.owner_teacher_id = ?';
+    const params = req.authUser.role === 'admin' ? [testId] : [testId, req.authUser.id];
     const rows = await db.all(`
       SELECT s.id, s.writing_answers, s.writing_feedback_draft, s.student_id,
              u.name AS student_name, u.group_name
       FROM submissions s JOIN users u ON s.student_id = u.id
-      WHERE s.test_id = ? AND s.writing_feedback_draft IS NOT NULL
+      WHERE s.test_id = ? AND s.writing_feedback_draft IS NOT NULL ${scoped}
       ORDER BY u.name
-    `, [testId]);
+    `, params);
 
     let taskLabel = 'Writing Task 2';
     const students = [];
@@ -1472,9 +1590,10 @@ app.get('/api/teacher/tests/:testId/feedback-print', async (req, res) => {
   }
 });
 
-app.post('/api/teacher/submissions/:id/delete', async (req, res) => {
+app.post('/api/teacher/submissions/:id/delete', requireRole('teacher', 'admin'), async (req, res) => {
   const submissionId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(submissionId)) return res.status(400).json({ error: 'Invalid submission id' });
+  if (!(await canAccessSubmission(req.authUser, submissionId))) return res.status(403).json({ error: 'Not permitted for this submission' });
 
   try {
     const sub = await db.get(
@@ -1510,8 +1629,9 @@ app.post('/api/teacher/submissions/:id/delete', async (req, res) => {
   }
 });
 
-app.post('/api/teacher/grade/:submissionId', async (req, res) => {
+app.post('/api/teacher/grade/:submissionId', requireRole('teacher', 'admin'), async (req, res) => {
   const { submissionId } = req.params;
+  if (!(await canAccessSubmission(req.authUser, submissionId))) return res.status(403).json({ error: 'Not permitted for this submission' });
   const { writingScores, teacherFeedback, gradedBy } = req.body;
 
   const calculateOverallWritingBand = (scores) => {
@@ -1584,8 +1704,9 @@ app.post('/api/teacher/grade/:submissionId', async (req, res) => {
 });
 
 // Reveal score
-app.post('/api/teacher/reveal/:submissionId', async (req, res) => {
+app.post('/api/teacher/reveal/:submissionId', requireRole('teacher', 'admin'), async (req, res) => {
   const { submissionId } = req.params;
+  if (!(await canAccessSubmission(req.authUser, submissionId))) return res.status(403).json({ error: 'Not permitted for this submission' });
   const { isRevealed } = req.body; // 1 or 0
   try {
     await db.run('UPDATE submissions SET is_revealed = ? WHERE id = ?', [isRevealed ? 1 : 0, submissionId]);
@@ -1602,10 +1723,14 @@ app.post('/api/teacher/reveal/:submissionId', async (req, res) => {
 // one specific answer that keeps recurring, because the class was right and the
 // key was wrong. Only counts answered questions -- leaving one blank is not
 // evidence about the key.
-async function computeAnswerKeyFlags(testId) {
+async function computeAnswerKeyFlags(testId, ownerTeacherId) {
+  const scoped = ownerTeacherId ? 'AND u.owner_teacher_id = ?' : '';
+  const params = ownerTeacherId ? [testId, ownerTeacherId] : [testId];
   const rows = await db.all(
-    'SELECT listening_detail, reading_detail FROM submissions WHERE test_id = ? AND (listening_detail IS NOT NULL OR reading_detail IS NOT NULL)',
-    [testId]
+    `SELECT s.listening_detail, s.reading_detail FROM submissions s
+     JOIN users u ON s.student_id = u.id
+     WHERE s.test_id = ? AND (s.listening_detail IS NOT NULL OR s.reading_detail IS NOT NULL) ${scoped}`,
+    params
   );
   const norm = v => String(v ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
   const MIN_SAMPLE = 4;
@@ -1665,12 +1790,13 @@ function submissionHasWritingTask(sub, testWritingData) {
 // Tells the teacher whether a test's scores are safe to release in one click:
 // clean if no question shows the "everyone agrees on the same wrong answer"
 // fingerprint of a broken key.
-app.get('/api/teacher/release-check/:testId', async (req, res) => {
+app.get('/api/teacher/release-check/:testId', requireRole('teacher', 'admin'), async (req, res) => {
   const testId = Number.parseInt(req.params.testId, 10);
   try {
     const test = await db.get('SELECT title FROM tests WHERE id = ?', [testId]);
     if (!test) return res.status(404).json({ error: 'Test not found' });
-    const flags = await computeAnswerKeyFlags(testId);
+    const ownerScope = req.authUser.role === 'admin' ? undefined : req.authUser.id;
+    const flags = await computeAnswerKeyFlags(testId, ownerScope);
     res.json({ success: true, testId, testTitle: test.title, flags, clean: flags.length === 0 });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1680,20 +1806,23 @@ app.get('/api/teacher/release-check/:testId', async (req, res) => {
 // Releases every ready-to-release, not-yet-released submission on one test at
 // once. Refuses outright if the key looks suspect -- bulk release must not be
 // the fast way to hand a whole class a wrong score.
-app.post('/api/teacher/reveal-batch', async (req, res) => {
+app.post('/api/teacher/reveal-batch', requireRole('teacher', 'admin'), async (req, res) => {
   const testId = Number.parseInt(req.body.testId, 10);
   if (!Number.isInteger(testId)) return res.status(400).json({ error: 'testId is required' });
   try {
-    const flags = await computeAnswerKeyFlags(testId);
+    const ownerScope = req.authUser.role === 'admin' ? undefined : req.authUser.id;
+    const flags = await computeAnswerKeyFlags(testId, ownerScope);
     if (flags.length) {
       return res.status(409).json({ error: 'This test has flagged questions and was not released. Check the answer key before releasing manually.', flags });
     }
 
+    const scoped = req.authUser.role === 'admin' ? '' : 'AND u.owner_teacher_id = ?';
+    const params = req.authUser.role === 'admin' ? [testId] : [testId, req.authUser.id];
     const rows = await db.all(
       `SELECT s.id, s.writing_score, s.listening_answers, s.reading_answers, s.writing_answers, t.writing_data
-       FROM submissions s JOIN tests t ON s.test_id = t.id
-       WHERE s.test_id = ? AND s.is_revealed != 1`,
-      [testId]
+       FROM submissions s JOIN tests t ON s.test_id = t.id JOIN users u ON s.student_id = u.id
+       WHERE s.test_id = ? AND s.is_revealed != 1 ${scoped}`,
+      params
     );
     const ready = rows.filter(r => {
       const sub = {
@@ -1719,7 +1848,7 @@ app.post('/api/teacher/reveal-batch', async (req, res) => {
 // ----------------------------------------
 
 // Admin Overview Metrics
-app.get('/api/admin/overview', async (req, res) => {
+app.get('/api/admin/overview', requireRole('admin'), async (req, res) => {
   try {
     const studentCount = await db.get("SELECT COUNT(*) as count FROM users WHERE role = 'student'");
     const testCount = await db.get("SELECT COUNT(*) as count FROM tests");
@@ -1738,9 +1867,9 @@ app.get('/api/admin/overview', async (req, res) => {
 });
 
 // Get all users
-app.get('/api/admin/users', async (req, res) => {
+app.get('/api/admin/users', requireRole('admin'), async (req, res) => {
   try {
-    const users = await db.all('SELECT id, name, role, group_name as groupName FROM users');
+    const users = await db.all('SELECT id, name, role, group_name as groupName, owner_teacher_id as ownerTeacherId FROM users');
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1748,7 +1877,7 @@ app.get('/api/admin/users', async (req, res) => {
 });
 
 // Reset user password
-app.post('/api/admin/users/reset-password', async (req, res) => {
+app.post('/api/admin/users/reset-password', requireRole('admin'), async (req, res) => {
   const { userId, newPassword } = req.body;
   try {
     await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [await hashPassword(newPassword), userId]);
@@ -1759,11 +1888,16 @@ app.post('/api/admin/users/reset-password', async (req, res) => {
 });
 
 // Add user
-app.post('/api/admin/users', async (req, res) => {
-  const { id, name, role, password, groupName } = req.body;
+app.post('/api/admin/users', requireRole('admin'), async (req, res) => {
+  const { id, name, role, password, groupName, ownerTeacherId } = req.body;
   try {
     const hashedPassword = await hashPassword(password || 'student123');
-    await db.run('INSERT INTO users (id, name, password_hash, role, group_name) VALUES (?, ?, ?, ?, ?)', [id, name, hashedPassword, role, groupName || null]);
+    // A student left without an owner is invisible to every teacher's
+    // dashboard, so unassigned students default to the original account
+    // rather than silently falling through the cracks. Teacher/admin rows
+    // stay unowned -- they're tenant roots, not tenants.
+    const owner = role === 'student' ? (ownerTeacherId || 'teacher') : null;
+    await db.run('INSERT INTO users (id, name, password_hash, role, group_name, owner_teacher_id) VALUES (?, ?, ?, ?, ?, ?)', [id, name, hashedPassword, role, groupName || null, owner]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'User ID already exists or invalid data' });
@@ -1781,7 +1915,7 @@ app.post('/api/admin/users', async (req, res) => {
 // every reference is repointed, then the old row is removed -- in that order, so
 // nothing is ever orphaned. Done inside a transaction where the driver supports
 // one, so a failure halfway leaves the account exactly as it was.
-app.post('/api/admin/users/:id/change-id', async (req, res) => {
+app.post('/api/admin/users/:id/change-id', requireRole('admin'), async (req, res) => {
   const oldId = String(req.params.id || '').trim();
   const newId = String(req.body.newId || '').trim();
 
@@ -1838,7 +1972,7 @@ app.post('/api/admin/users/:id/change-id', async (req, res) => {
   }
 });
 
-app.post('/api/admin/users/:id/name', async (req, res) => {
+app.post('/api/admin/users/:id/name', requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
   if (!name) return res.status(400).json({ error: 'name is required' });
@@ -1853,7 +1987,7 @@ app.post('/api/admin/users/:id/name', async (req, res) => {
   }
 });
 
-app.delete('/api/admin/users/:id', async (req, res) => {
+app.delete('/api/admin/users/:id', requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   try {
     if (id === 'admin') {
@@ -1867,7 +2001,7 @@ app.delete('/api/admin/users/:id', async (req, res) => {
 });
 
 // Get tests list
-app.get('/api/admin/tests', async (req, res) => {
+app.get('/api/admin/tests', requireRole('admin'), async (req, res) => {
   try {
     const tests = await db.all('SELECT id, title, created_by FROM tests');
     res.json(tests);
@@ -1915,7 +2049,7 @@ app.all('/api/admin/sync-mock10', async (req, res) => {
 });
 
 // Create Test
-app.post('/api/admin/tests', async (req, res) => {
+app.post('/api/admin/tests', requireRole('admin'), async (req, res) => {
   const { title, listeningData, readingData, writingData, createdBy } = req.body;
   try {
     await db.run(`
@@ -1929,7 +2063,7 @@ app.post('/api/admin/tests', async (req, res) => {
 });
 
 // Dynamic Admin HTML test uploader with Telegram sanitization and auto-login injection
-app.post('/api/admin/upload-test', async (req, res) => {
+app.post('/api/admin/upload-test', requireRole('admin'), async (req, res) => {
   const { title, htmlContent } = req.body;
   const moduleType = req.body.moduleType === 'reading' ? 'reading' : 'listening';
   // Optional: reprocess an already-uploaded test's HTML in place (e.g. after fixing
@@ -4092,7 +4226,7 @@ app.post('/api/admin/upload-test', async (req, res) => {
 // References are read from BOTH the database and server/public/tests on disk.
 // mock1-9 ship as files with no html_content row, and a database-only check
 // would call their audio orphaned and delete tracks that are actually in use.
-app.post('/api/admin/audio-assets/sweep', async (req, res) => {
+app.post('/api/admin/audio-assets/sweep', requireRole('admin'), async (req, res) => {
   const confirm = req.body?.confirm === true;
 
   try {
@@ -4153,7 +4287,7 @@ app.post('/api/admin/audio-assets/sweep', async (req, res) => {
 // Refuses any test a student has actually sat: those rows are the record of
 // someone's result, and losing them silently is far worse than a stale title in
 // a dropdown. Unlink or rename such a test instead.
-app.post('/api/admin/tests/:id/delete', async (req, res) => {
+app.post('/api/admin/tests/:id/delete', requireRole('admin'), async (req, res) => {
   const testId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
 
@@ -4244,7 +4378,7 @@ app.post('/api/admin/tests/:id/delete', async (req, res) => {
   }
 });
 
-app.post('/api/admin/tests/:id/link-modules', async (req, res) => {
+app.post('/api/admin/tests/:id/link-modules', requireRole('admin'), async (req, res) => {
   const targetId = Number.parseInt(req.params.id, 10);
   const listeningFromTestId = Number.parseInt(req.body.listeningFromTestId, 10);
   const readingFromTestId = Number.parseInt(req.body.readingFromTestId, 10);
@@ -4278,7 +4412,7 @@ app.post('/api/admin/tests/:id/link-modules', async (req, res) => {
 // before being rebuilt into iframe modules -- because that snapshot file was
 // never updated after the rebuild. Fixing one module's content should never
 // risk regressing another's.
-app.post('/api/admin/tests/:id/writing-data', async (req, res) => {
+app.post('/api/admin/tests/:id/writing-data', requireRole('admin'), async (req, res) => {
   const targetId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(targetId)) return res.status(400).json({ error: 'Invalid test id' });
   const { writingData } = req.body;
@@ -4320,7 +4454,7 @@ app.post('/api/admin/tests/:id/writing-data', async (req, res) => {
 // this: each question's picked set, its key, and the old verdict -- so marks are
 // recomputed from what the student actually submitted, never invented.
 // Supports ?dryRun=true, and is idempotent (re-running changes nothing further).
-app.post('/api/admin/regrade-checkbox-pairs', async (req, res) => {
+app.post('/api/admin/regrade-checkbox-pairs', requireRole('admin'), async (req, res) => {
   const dryRun = req.query.dryRun === 'true';
   // Same table the injected bridge uses (and identical to the templates' own
   // calculateBandScore), so bands only move because marks moved.
@@ -4431,7 +4565,7 @@ app.post('/api/admin/regrade-checkbox-pairs', async (req, res) => {
   }
 });
 
-app.post('/api/admin/fix-phantom-module-scores', async (req, res) => {
+app.post('/api/admin/fix-phantom-module-scores', requireRole('admin'), async (req, res) => {
   const dryRun = req.query.dryRun === 'true';
   try {
     const submissions = await db.all(`
@@ -4480,7 +4614,7 @@ app.post('/api/admin/fix-phantom-module-scores', async (req, res) => {
 // Toggle a test's navigation style: sequential-locked (Listening then Reading
 // then Writing, one-way, no going back -- matching the real computer-delivered
 // exam) vs the platform's normal free tab-switching between modules.
-app.post('/api/admin/tests/:id/settings', async (req, res) => {
+app.post('/api/admin/tests/:id/settings', requireRole('admin'), async (req, res) => {
   const targetId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(targetId)) return res.status(400).json({ error: 'Invalid test id' });
   try {
@@ -4504,7 +4638,7 @@ app.post('/api/admin/tests/:id/settings', async (req, res) => {
 });
 
 // Get Assignments list
-app.get('/api/admin/assignments', async (req, res) => {
+app.get('/api/admin/assignments', requireRole('admin'), async (req, res) => {
   try {
     const assignments = await db.all(`
       SELECT a.id, a.status, a.assigned_at, u.name as student_name, u.id as student_id, t.title as test_title, t.id as test_id
@@ -4520,7 +4654,7 @@ app.get('/api/admin/assignments', async (req, res) => {
 });
 
 // Assign Test
-app.post('/api/admin/assign', async (req, res) => {
+app.post('/api/admin/assign', requireRole('admin'), async (req, res) => {
   const { studentIds, testId, testIds } = req.body; // studentIds and testIds are arrays
   const targetTestIds = Array.isArray(testIds) ? testIds : (testId ? [testId] : []);
   try {
@@ -4542,18 +4676,19 @@ app.post('/api/admin/assign', async (req, res) => {
 });
 
 // Bulk Import Students
-app.post('/api/admin/users/bulk-import', async (req, res) => {
-  const { students } = req.body; // Array of { id, name, password, groupName }
+app.post('/api/admin/users/bulk-import', requireRole('admin'), async (req, res) => {
+  const { students, ownerTeacherId } = req.body; // Array of { id, name, password, groupName }
   if (!Array.isArray(students) || students.length === 0) {
     return res.status(400).json({ error: 'No students provided' });
   }
+  const owner = ownerTeacherId || 'teacher';
   const results = [];
   for (const s of students) {
     try {
       const hashedPassword = await hashPassword(s.password);
       await db.run(
-        'INSERT INTO users (id, name, password_hash, role, group_name) VALUES (?, ?, ?, ?, ?)',
-        [s.id, s.name, hashedPassword, 'student', s.groupName || null]
+        'INSERT INTO users (id, name, password_hash, role, group_name, owner_teacher_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [s.id, s.name, hashedPassword, 'student', s.groupName || null, owner]
       );
       // s.password (plaintext) is only echoed back in this response so the
       // admin can distribute it now; it is never stored or shown again.
@@ -4566,7 +4701,7 @@ app.post('/api/admin/users/bulk-import', async (req, res) => {
 });
 
 // Delete Assignment
-app.delete('/api/admin/assignments/:id', async (req, res) => {
+app.delete('/api/admin/assignments/:id', requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   try {
     await db.run('DELETE FROM assignments WHERE id = ?', [id]);
@@ -4577,7 +4712,7 @@ app.delete('/api/admin/assignments/:id', async (req, res) => {
 });
 
 // Reset Assignment (set back to assigned so student can retake)
-app.post('/api/admin/assignments/:id/reset', async (req, res) => {
+app.post('/api/admin/assignments/:id/reset', requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   try {
     const asg = await db.get('SELECT * FROM assignments WHERE id = ?', [id]);
@@ -4598,7 +4733,7 @@ app.post('/api/admin/assignments/:id/reset', async (req, res) => {
 });
 
 // Clear Pending/Uncompleted Assignments (PRESERVES student submissions & graded work)
-app.post('/api/admin/assignments/clear-pending', async (req, res) => {
+app.post('/api/admin/assignments/clear-pending', requireRole('admin'), async (req, res) => {
   try {
     await db.run("DELETE FROM assignments WHERE status != 'completed'");
     await db.run("DELETE FROM speaking_assignments WHERE status != 'completed'");
@@ -4622,7 +4757,7 @@ app.all('/api/admin/assignments/clear-all', async (req, res) => {
 });
 
 // Re-assign default tests to all active students
-app.post('/api/admin/reassign-default-tests', async (req, res) => {
+app.post('/api/admin/reassign-default-tests', requireRole('admin'), async (req, res) => {
   try {
     const students = await db.all("SELECT id FROM users WHERE role = 'student'");
     const tests = await db.all("SELECT id FROM tests");
@@ -4649,7 +4784,7 @@ app.post('/api/admin/reassign-default-tests', async (req, res) => {
 });
 
 // Reseed Demo Submissions & Sample Essays
-app.post('/api/admin/reseed-demo-submissions', async (req, res) => {
+app.post('/api/admin/reseed-demo-submissions', requireRole('admin'), async (req, res) => {
   try {
     const firstTest = await db.get('SELECT id FROM tests ORDER BY id ASC LIMIT 1');
     if (!firstTest) return res.status(400).json({ error: 'No mock tests found in database.' });
@@ -4929,7 +5064,7 @@ function parseAiJsonResponse(text) {
 }
 
 // Admin Settings — Get
-app.get('/api/admin/settings', async (req, res) => {
+app.get('/api/admin/settings', requireRole('admin'), async (req, res) => {
   try {
     const settings = await db.get('SELECT * FROM ai_settings LIMIT 1');
     // Don't expose full keys — mask them
@@ -4953,7 +5088,7 @@ app.get('/api/admin/settings', async (req, res) => {
 });
 
 // Admin Settings — Update
-app.post('/api/admin/settings', async (req, res) => {
+app.post('/api/admin/settings', requireRole('admin'), async (req, res) => {
   const { provider, gemini_api_key, openai_api_key, anthropic_api_key } = req.body;
   try {
     const existing = await db.get('SELECT id FROM ai_settings LIMIT 1');
@@ -4987,7 +5122,7 @@ app.post('/api/admin/settings', async (req, res) => {
 });
 
 // Speaking Prompts — List
-app.get('/api/admin/speaking/prompts', async (req, res) => {
+app.get('/api/admin/speaking/prompts', requireRole('admin'), async (req, res) => {
   try {
     const prompts = await db.all('SELECT * FROM speaking_prompts ORDER BY created_at DESC');
     res.json(prompts);
@@ -4997,7 +5132,7 @@ app.get('/api/admin/speaking/prompts', async (req, res) => {
 });
 
 // Speaking Prompts — Create
-app.post('/api/admin/speaking/prompts', async (req, res) => {
+app.post('/api/admin/speaking/prompts', requireRole('admin'), async (req, res) => {
   const { title, part1Questions, part2CueCard, part3Questions } = req.body;
   if (!title || !part1Questions || !part2CueCard || !part3Questions) {
     return res.status(400).json({ error: 'All prompt fields are required' });
@@ -5014,7 +5149,7 @@ app.post('/api/admin/speaking/prompts', async (req, res) => {
 });
 
 // Speaking Prompts — Delete
-app.delete('/api/admin/speaking/prompts/:id', async (req, res) => {
+app.delete('/api/admin/speaking/prompts/:id', requireRole('admin'), async (req, res) => {
   try {
     await db.run('DELETE FROM speaking_prompts WHERE id = ?', [req.params.id]);
     res.json({ success: true });
@@ -5024,7 +5159,7 @@ app.delete('/api/admin/speaking/prompts/:id', async (req, res) => {
 });
 
 // Speaking Assign — Assign prompt to students
-app.post('/api/admin/speaking/assign', async (req, res) => {
+app.post('/api/admin/speaking/assign', requireRole('admin'), async (req, res) => {
   const { studentIds, promptId } = req.body;
   if (!Array.isArray(studentIds) || !promptId) {
     return res.status(400).json({ error: 'studentIds array and promptId required' });
@@ -5043,7 +5178,8 @@ app.post('/api/admin/speaking/assign', async (req, res) => {
 });
 
 // Student — Get speaking assignments
-app.get('/api/speaking/assignments/:studentId', async (req, res) => {
+app.get('/api/speaking/assignments/:studentId', requireAuth, async (req, res) => {
+  if (!(await canAccessStudent(req.authUser, req.params.studentId))) return res.status(403).json({ error: 'Not permitted for this student' });
   try {
     const assignments = await db.all(`
       SELECT sa.id, sa.status, sa.assigned_at,
@@ -5060,7 +5196,8 @@ app.get('/api/speaking/assignments/:studentId', async (req, res) => {
 });
 
 // Student — Get their own speaking results
-app.get('/api/speaking/results/:studentId', async (req, res) => {
+app.get('/api/speaking/results/:studentId', requireAuth, async (req, res) => {
+  if (!(await canAccessStudent(req.authUser, req.params.studentId))) return res.status(403).json({ error: 'Not permitted for this student' });
   try {
     const results = await db.all(`
       SELECT ss.*, sp.title as prompt_title
@@ -5076,11 +5213,12 @@ app.get('/api/speaking/results/:studentId', async (req, res) => {
 });
 
 // Student — Submit speaking test (transcripts only — audio recorded in browser)
-app.post('/api/speaking/submit', async (req, res) => {
+app.post('/api/speaking/submit', requireAuth, async (req, res) => {
   const { studentId, promptId, assignmentId, part1Transcript, part2Transcript, part3Transcript } = req.body;
   if (!studentId || !promptId) {
     return res.status(400).json({ error: 'studentId and promptId required' });
   }
+  if (!(await canAccessStudent(req.authUser, studentId))) return res.status(403).json({ error: 'Not permitted for this student' });
   try {
     // Get AI settings
     const aiSettings = await db.get('SELECT * FROM ai_settings LIMIT 1');
@@ -5166,12 +5304,13 @@ function bufferFromBase64Audio(base64) {
 // a teacher can grade it manually via the existing Grade/Edit flow. Previously
 // a single failed AI call anywhere in this chain (rate limit, malformed JSON,
 // network blip) meant the whole submission -- audio and all -- was lost.
-app.post('/api/speaking/submit-audio', async (req, res) => {
+app.post('/api/speaking/submit-audio', requireAuth, async (req, res) => {
   const { studentId, promptId, assignmentId, part1AudioBase64, part2AudioBase64, part3AudioBase64, part1Transcript, part2Transcript, part3Transcript } = req.body;
 
   if (!studentId || !promptId) {
     return res.status(400).json({ error: 'studentId and promptId required' });
   }
+  if (!(await canAccessStudent(req.authUser, studentId))) return res.status(403).json({ error: 'Not permitted for this student' });
 
   try {
     const aiSettings = await db.get('SELECT * FROM ai_settings LIMIT 1');
@@ -5243,15 +5382,18 @@ app.post('/api/speaking/submit-audio', async (req, res) => {
 });
 
 // Teacher — List all speaking submissions (pending reveal)
-app.get('/api/teacher/speaking', async (req, res) => {
+app.get('/api/teacher/speaking', requireRole('teacher', 'admin'), async (req, res) => {
   try {
+    const scoped = req.authUser.role === 'admin' ? '' : 'WHERE u.owner_teacher_id = ?';
+    const params = req.authUser.role === 'admin' ? [] : [req.authUser.id];
     const submissions = await db.all(`
       SELECT ss.*, u.name as student_name, sp.title as prompt_title
       FROM speaking_submissions ss
       JOIN users u ON ss.student_id = u.id
       JOIN speaking_prompts sp ON ss.prompt_id = sp.id
+      ${scoped}
       ORDER BY ss.submitted_at DESC
-    `);
+    `, params);
     res.json(submissions);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -5259,7 +5401,8 @@ app.get('/api/teacher/speaking', async (req, res) => {
 });
 
 // Teacher — Send/reveal score to student
-app.post('/api/teacher/speaking/:id/send', async (req, res) => {
+app.post('/api/teacher/speaking/:id/send', requireRole('teacher', 'admin'), async (req, res) => {
+  if (!(await canAccessSpeakingSubmission(req.authUser, req.params.id))) return res.status(403).json({ error: 'Not permitted for this submission' });
   try {
     await db.run('UPDATE speaking_submissions SET is_revealed = 1 WHERE id = ?', [req.params.id]);
     res.json({ success: true });
@@ -5269,7 +5412,8 @@ app.post('/api/teacher/speaking/:id/send', async (req, res) => {
 });
 
 // Teacher — Edit/Override speaking scores & feedback
-app.post('/api/teacher/speaking/:id/update', async (req, res) => {
+app.post('/api/teacher/speaking/:id/update', requireRole('teacher', 'admin'), async (req, res) => {
+  if (!(await canAccessSpeakingSubmission(req.authUser, req.params.id))) return res.status(403).json({ error: 'Not permitted for this submission' });
   const { fluency, lexical, grammar, pronunciation, overall, feedback } = req.body;
   try {
     await db.run(`
@@ -5288,7 +5432,7 @@ app.post('/api/teacher/speaking/:id/update', async (req, res) => {
 });
 
 // Admin / Teacher — Reset student speaking test assignment for re-take
-app.post('/api/admin/speaking/reset/:studentId', async (req, res) => {
+app.post('/api/admin/speaking/reset/:studentId', requireRole('admin'), async (req, res) => {
   const { studentId } = req.params;
   try {
     await db.run('DELETE FROM speaking_submissions WHERE student_id = ?', [studentId]);
