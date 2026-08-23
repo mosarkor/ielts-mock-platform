@@ -23,6 +23,12 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
   // the dashboard only receives released submissions in the first place.
   const [fullReview, setFullReview] = useState(null); // { url, moduleType, answers }
   const [fullReviewModules, setFullReviewModules] = useState([]);
+  // Passage-evidence explanations generated for this test's Reading questions
+  // (see server/readingExplanations.js) -- keyed by question number, only
+  // present for the questions it was possible to verify. Anything not in
+  // here still shows the paper's own explanationHtml if it has one, or
+  // nothing at all.
+  const [testExplanations, setTestExplanations] = useState(null);
   const [targetScore, setTargetScore] = useState(() => parseFloat(localStorage.getItem(`targetScore_${user.id}`)) || 7.0);
   const [activeGuide, setActiveGuide] = useState(null);
   const [speakingAssignments, setSpeakingAssignments] = useState([]);
@@ -41,7 +47,7 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
   // already fully covered by the per-question table in this modal.
   useEffect(() => {
     let cancelled = false;
-    if (!selectedReview) { setFullReviewModules([]); return undefined; }
+    if (!selectedReview) { setFullReviewModules([]); setTestExplanations(null); return undefined; }
     (async () => {
       try {
         const res = await fetch(`/api/student/test/${selectedReview.test_id}`);
@@ -51,9 +57,12 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
           const data = test[`${moduleType}_data`];
           if (data?.isIframe && data.iframeUrl) found.push({ moduleType, url: data.iframeUrl });
         }
-        if (!cancelled) setFullReviewModules(found);
+        if (!cancelled) {
+          setFullReviewModules(found);
+          setTestExplanations(test.explanations || null);
+        }
       } catch {
-        if (!cancelled) setFullReviewModules([]);
+        if (!cancelled) { setFullReviewModules([]); setTestExplanations(null); }
       }
     })();
     return () => { cancelled = true; };
@@ -189,6 +198,19 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
 
     const norm = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
     const moduleKey = prefix === 'l' ? 'listening' : 'reading';
+    const escapeHtml = (s) => String(s || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    // Server-generated evidence explanations only exist for Reading, and only
+    // fill in where the paper itself didn't already carry a real explanation.
+    const generatedExplanationHtml = (qNum) => {
+      const gen = prefix === 'r' ? testExplanations?.[qNum] : null;
+      if (!gen) return null;
+      return (
+        `<p>${escapeHtml(gen.reasonIntro)}</p>` +
+        `<blockquote style="margin:0.5rem 0;padding:0.5rem 0.75rem;border-left:3px solid var(--accent-primary, #6366f1);background:var(--bg-secondary);font-style:italic">${escapeHtml(gen.evidence)}</blockquote>` +
+        `<p style="margin-top:0.5rem"><strong>How to read this type:</strong> ${escapeHtml(gen.tip)}</p>`
+      );
+    };
 
     return (
       <div>
@@ -213,12 +235,13 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                 studentAns = d.userAnswer || '';
                 displayCorrect = d.correctAnswer ?? '—';
                 isOk = !!d.isCorrect;
-                explanationHtml = d.explanationHtml;
+                explanationHtml = d.explanationHtml || generatedExplanationHtml(qNum);
               } else {
                 studentAns = rawAnswers?.[qNum] || '';
                 const correctArr = answerKey.answers[prefix + qNum] || [];
                 displayCorrect = answerKey.display[prefix + qNum] || correctArr.join(' / ') || '—';
                 isOk = correctArr.some((ans) => norm(ans) === norm(studentAns));
+                explanationHtml = generatedExplanationHtml(qNum);
               }
 
               if (showOnlyMistakes && isOk) return null;

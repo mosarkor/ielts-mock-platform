@@ -179,6 +179,11 @@ export async function initDb() {
 
     await db.exec('ALTER TABLE tests ADD COLUMN html_content TEXT').catch(() => {});
     await db.exec('ALTER TABLE tests ADD COLUMN sequential_lock INTEGER NOT NULL DEFAULT 0').catch(() => {});
+    // Per-question evidence explanations for the review screen, generated
+    // once from a test's own passage text and stored here rather than
+    // injected into html_content -- keeps the (often huge, audio-embedded)
+    // test file untouched and this easy to regenerate or clear.
+    await db.exec('ALTER TABLE tests ADD COLUMN explanations TEXT').catch(() => {});
 
     // Listening audio used to be embedded inline in html_content as a base64
     // data: URI -- for a real ~15-20 minute track that's a 15+ MB single HTML
@@ -467,6 +472,7 @@ export async function initDb() {
 
   await db.exec('ALTER TABLE tests ADD COLUMN html_content TEXT').catch(() => {});
   await db.exec('ALTER TABLE tests ADD COLUMN sequential_lock INTEGER NOT NULL DEFAULT 0').catch(() => {});
+  await db.exec('ALTER TABLE tests ADD COLUMN explanations TEXT').catch(() => {});
 
   // See the Postgres branch above for why this exists: a track embedded
   // inline as base64 makes the whole HTML document too large to load

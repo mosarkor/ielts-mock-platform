@@ -10,6 +10,10 @@ import Anthropic from '@anthropic-ai/sdk';
 import { sanitizeTestHtml } from './contentSanitizer.js';
 import { hashPassword, verifyPassword } from './auth.js';
 import { FEEDBACK_SYSTEM_PROMPT, buildFeedbackRequest } from './writingFeedback.js';
+import {
+  extractReadingContent, passageForQuestion,
+  EXPLANATION_SYSTEM_PROMPT, buildExplanationRequest, evidenceVerifiedInPassage
+} from './readingExplanations.js';
 import { renderFeedbackSheets } from './feedbackPrint.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -369,7 +373,8 @@ app.get('/api/student/test/:testId', async (req, res) => {
       listening_data: JSON.parse(test.listening_data),
       reading_data: JSON.parse(test.reading_data),
       writing_data: JSON.parse(test.writing_data),
-      sequentialLock: !!Number(test.sequential_lock)
+      sequentialLock: !!Number(test.sequential_lock),
+      explanations: test.explanations ? JSON.parse(test.explanations) : null
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1266,6 +1271,114 @@ app.get('/api/teacher/tests/:testId/feedback', async (req, res) => {
       success: true, testId, test: test.title, taskType,
       prompt: JSON.parse(test.writing_data || '{}')?.[taskType]?.prompt || '',
       students
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Generates real, passage-evidence explanations for a standalone Reading
+// test's questions -- see readingExplanations.js for what makes a test and a
+// question eligible. Dry-run by default; pass confirm:true to store the
+// result on tests.explanations. Already-generated questions are skipped
+// unless regenerate:true, so re-running after adding new questions (or a
+// partial failure) never re-spends on ones already verified.
+app.post('/api/admin/tests/:id/generate-explanations', async (req, res) => {
+  const testId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
+  const confirm = req.body.confirm === true;
+  const ALLOWED_MODELS = ['claude-haiku-4-5', 'claude-sonnet-5', 'claude-opus-5'];
+  const model = ALLOWED_MODELS.includes(req.body.model) ? req.body.model : 'claude-haiku-4-5';
+
+  try {
+    const test = await db.get('SELECT title, html_content, explanations FROM tests WHERE id = ?', [testId]);
+    if (!test) return res.status(404).json({ error: `Test ${testId} not found` });
+    if (!test.html_content) return res.status(400).json({ error: 'This test has no standalone HTML to read passages from' });
+
+    const content = extractReadingContent(test.html_content);
+    if (!content) {
+      return res.status(400).json({
+        error: "This test's passage/answer data is not in a format this can read yet (needs `passages`, `answerKey` and part `range` literals in its HTML)."
+      });
+    }
+    if (!Object.keys(content.questionPrompts).length) {
+      return res.status(400).json({ error: 'No question prompts of a supported shape were found in this test.' });
+    }
+
+    const settings = await db.get('SELECT * FROM ai_settings LIMIT 1');
+    if (!settings?.anthropic_api_key) {
+      return res.status(400).json({ error: 'No Anthropic API key configured. Add one in Admin Settings.' });
+    }
+
+    let stored = {};
+    try { stored = JSON.parse(test.explanations || '{}'); } catch { stored = {}; }
+
+    const anthropic = new Anthropic({ apiKey: settings.anthropic_api_key });
+    const results = [];
+
+    const generateOne = async (qNum, prompt) => {
+      const passage = passageForQuestion(content, qNum);
+      if (!passage) return { status: 'no passage found for this question' };
+      const rawAnswer = content.answerKey[qNum];
+      const correctAnswer = Array.isArray(rawAnswer) ? rawAnswer.join(' / ') : rawAnswer;
+
+      let lastText = '';
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        const { content: userContent } = buildExplanationRequest({
+          passageTitle: passage.title, passageText: passage.text,
+          questionNumber: qNum, questionPrompt: prompt, correctAnswer
+        });
+        const message = attempt === 1
+          ? userContent
+          : `${userContent}\n\nYour previous "evidence" was not an exact quote from the passage above. Copy it character-for-character this time -- do not paraphrase.`;
+
+        const response = await anthropic.messages.create({
+          model, max_tokens: 1024, system: EXPLANATION_SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: message }]
+        });
+        const block = response.content.find(b => b.type === 'text');
+        if (!block) continue;
+        lastText = block.text;
+        const jsonMatch = block.text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) continue;
+        let parsed;
+        try { parsed = JSON.parse(jsonMatch[0]); } catch { continue; }
+        if (parsed.evidence && evidenceVerifiedInPassage(parsed.evidence, passage.text)) {
+          return {
+            status: 'generated',
+            data: { evidence: parsed.evidence, reasonIntro: parsed.reasonIntro || '', tip: parsed.tip || '', model: response.model, generatedAt: new Date().toISOString() }
+          };
+        }
+      }
+      return { status: 'could not verify an exact evidence quote, skipped', sample: lastText.slice(0, 160) };
+    };
+
+    for (const [qStr, prompt] of Object.entries(content.questionPrompts)) {
+      const qNum = Number(qStr);
+      if (stored[qNum] && !req.body.regenerate) {
+        results.push({ question: qNum, status: 'already generated' });
+        continue;
+      }
+      try {
+        const outcome = await generateOne(qNum, prompt);
+        if (outcome.status === 'generated') stored[qNum] = outcome.data;
+        results.push({ question: qNum, status: outcome.status, ...(outcome.sample ? { sample: outcome.sample } : {}) });
+      } catch (err) {
+        results.push({ question: qNum, status: 'failed: ' + err.message.slice(0, 100) });
+      }
+    }
+
+    if (confirm) {
+      await db.run('UPDATE tests SET explanations = ? WHERE id = ?', [JSON.stringify(stored), testId]);
+    }
+
+    res.json({
+      success: true, dryRun: !confirm, testId, test: test.title, model,
+      eligibleQuestions: Object.keys(content.questionPrompts).length,
+      generated: results.filter(r => r.status === 'generated').length,
+      skipped: results.filter(r => r.status !== 'generated').length,
+      totalStored: Object.keys(stored).length,
+      results
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
