@@ -173,6 +173,27 @@ app.get('/tests/:fileName', async (req, res, next) => {
   }
 });
 
+// Same three sources the route above resolves, in the same order, for code
+// that needs a test's actual HTML rather than serving it: the database is
+// authoritative for anything uploaded through the platform, but the original
+// day-one seed tests (mock1-~20ish) were never migrated into it and only
+// exist as files shipped with the app -- server/public/tests on disk, or
+// failing that the client's own public/tests (always present from git,
+// unlike the server-side copy which is not tracked and can go missing on a
+// fresh deploy). Returns null, not an empty string, when nothing has it --
+// callers must not silently treat "not found" as "empty test".
+async function resolveTestHtml(testId, dbHtmlContent) {
+  const onDiskServer = path.join(__dirname, 'public', 'tests', `mock${testId}.html`);
+  try { return await fs.promises.readFile(onDiskServer, 'utf8'); } catch (e) {}
+
+  if (dbHtmlContent) return dbHtmlContent;
+
+  for (const clientDir of [path.join(__dirname, '../client/dist/tests'), path.join(__dirname, '../client/public/tests')]) {
+    try { return await fs.promises.readFile(path.join(clientDir, `mock${testId}.html`), 'utf8'); } catch (e) {}
+  }
+  return null;
+}
+
 // Serves listening audio that was extracted out of an uploaded test's HTML
 // (see the harvest-bridge upload path below). The database stays the source of
 // truth, because the deploy filesystem is ephemeral -- but it is read ONCE per
@@ -1293,9 +1314,10 @@ app.post('/api/admin/tests/:id/generate-explanations', async (req, res) => {
   try {
     const test = await db.get('SELECT title, html_content, explanations FROM tests WHERE id = ?', [testId]);
     if (!test) return res.status(404).json({ error: `Test ${testId} not found` });
-    if (!test.html_content) return res.status(400).json({ error: 'This test has no standalone HTML to read passages from' });
+    const html = await resolveTestHtml(testId, test.html_content);
+    if (!html) return res.status(400).json({ error: 'This test has no standalone HTML to read passages from' });
 
-    const content = extractReadingContent(test.html_content);
+    const content = extractReadingContent(html);
     if (!content) {
       return res.status(400).json({
         error: "This test's passage/answer data is not in a format this can read yet (needs `passages`, `answerKey` and part `range` literals in its HTML)."
