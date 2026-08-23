@@ -1867,9 +1867,13 @@ app.get('/api/admin/overview', requireRole('admin'), async (req, res) => {
 });
 
 // Get all users
-app.get('/api/admin/users', requireRole('admin'), async (req, res) => {
+// A teacher sees only their own students here -- not other teachers, not
+// admin, not another school's roster.
+app.get('/api/admin/users', requireRole('teacher', 'admin'), async (req, res) => {
   try {
-    const users = await db.all('SELECT id, name, role, group_name as groupName, owner_teacher_id as ownerTeacherId FROM users');
+    const scoped = req.authUser.role === 'admin' ? '' : "WHERE role = 'student' AND owner_teacher_id = ?";
+    const params = req.authUser.role === 'admin' ? [] : [req.authUser.id];
+    const users = await db.all(`SELECT id, name, role, group_name as groupName, owner_teacher_id as ownerTeacherId FROM users ${scoped}`, params);
     res.json(users);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1877,8 +1881,11 @@ app.get('/api/admin/users', requireRole('admin'), async (req, res) => {
 });
 
 // Reset user password
-app.post('/api/admin/users/reset-password', requireRole('admin'), async (req, res) => {
+app.post('/api/admin/users/reset-password', requireRole('teacher', 'admin'), async (req, res) => {
   const { userId, newPassword } = req.body;
+  if (req.authUser.role === 'teacher' && !(await canAccessStudent(req.authUser, userId))) {
+    return res.status(403).json({ error: 'Teachers can only reset their own students’ passwords' });
+  }
   try {
     await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [await hashPassword(newPassword), userId]);
     res.json({ success: true });
@@ -1888,15 +1895,25 @@ app.post('/api/admin/users/reset-password', requireRole('admin'), async (req, re
 });
 
 // Add user
-app.post('/api/admin/users', requireRole('admin'), async (req, res) => {
+// A teacher may create their own students -- that's the entire point of
+// self-service onboarding -- but never a teacher or admin account (that
+// stays admin-only, since it's how a new school gets created in the first
+// place) and never a student owned by anyone but themselves, no matter what
+// ownerTeacherId the request claims.
+app.post('/api/admin/users', requireRole('teacher', 'admin'), async (req, res) => {
   const { id, name, role, password, groupName, ownerTeacherId } = req.body;
+  if (req.authUser.role === 'teacher' && role !== 'student') {
+    return res.status(403).json({ error: 'Teachers can only create student accounts' });
+  }
   try {
     const hashedPassword = await hashPassword(password || 'student123');
     // A student left without an owner is invisible to every teacher's
     // dashboard, so unassigned students default to the original account
     // rather than silently falling through the cracks. Teacher/admin rows
     // stay unowned -- they're tenant roots, not tenants.
-    const owner = role === 'student' ? (ownerTeacherId || 'teacher') : null;
+    const owner = role === 'student'
+      ? (req.authUser.role === 'teacher' ? req.authUser.id : (ownerTeacherId || 'teacher'))
+      : null;
     await db.run('INSERT INTO users (id, name, password_hash, role, group_name, owner_teacher_id) VALUES (?, ?, ?, ?, ?, ?)', [id, name, hashedPassword, role, groupName || null, owner]);
     res.json({ success: true });
   } catch (error) {
@@ -1994,11 +2011,14 @@ app.post('/api/admin/users/:id/name', requireRole('admin'), async (req, res) => 
   }
 });
 
-app.delete('/api/admin/users/:id', requireRole('admin'), async (req, res) => {
+app.delete('/api/admin/users/:id', requireRole('teacher', 'admin'), async (req, res) => {
   const { id } = req.params;
   try {
     if (id === 'admin') {
       return res.status(400).json({ error: 'Cannot delete primary administrator account' });
+    }
+    if (req.authUser.role === 'teacher' && !(await canAccessStudent(req.authUser, id))) {
+      return res.status(403).json({ error: 'Teachers can only remove their own students' });
     }
     // A logged-in user's session row references them, so deleting the user
     // while their session still exists fails the foreign key. Sessions are
@@ -2011,8 +2031,10 @@ app.delete('/api/admin/users/:id', requireRole('admin'), async (req, res) => {
   }
 });
 
-// Get tests list
-app.get('/api/admin/tests', requireRole('admin'), async (req, res) => {
+// Get tests list. Read-only and unscoped even for teachers -- the test
+// library is the one thing every school shares, so there's nothing to wall
+// off here; a teacher needs the full catalog to know what they can assign.
+app.get('/api/admin/tests', requireRole('teacher', 'admin'), async (req, res) => {
   try {
     const tests = await db.all('SELECT id, title, created_by FROM tests');
     res.json(tests);
@@ -4649,15 +4671,18 @@ app.post('/api/admin/tests/:id/settings', requireRole('admin'), async (req, res)
 });
 
 // Get Assignments list
-app.get('/api/admin/assignments', requireRole('admin'), async (req, res) => {
+app.get('/api/admin/assignments', requireRole('teacher', 'admin'), async (req, res) => {
   try {
+    const scoped = req.authUser.role === 'admin' ? '' : 'WHERE u.owner_teacher_id = ?';
+    const params = req.authUser.role === 'admin' ? [] : [req.authUser.id];
     const assignments = await db.all(`
       SELECT a.id, a.status, a.assigned_at, u.name as student_name, u.id as student_id, t.title as test_title, t.id as test_id
       FROM assignments a
       JOIN users u ON a.student_id = u.id
       JOIN tests t ON a.test_id = t.id
+      ${scoped}
       ORDER BY a.assigned_at DESC
-    `);
+    `, params);
     res.json(assignments);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -4665,10 +4690,17 @@ app.get('/api/admin/assignments', requireRole('admin'), async (req, res) => {
 });
 
 // Assign Test
-app.post('/api/admin/assign', requireRole('admin'), async (req, res) => {
+app.post('/api/admin/assign', requireRole('teacher', 'admin'), async (req, res) => {
   const { studentIds, testId, testIds } = req.body; // studentIds and testIds are arrays
   const targetTestIds = Array.isArray(testIds) ? testIds : (testId ? [testId] : []);
   try {
+    if (req.authUser.role === 'teacher') {
+      for (const sId of studentIds) {
+        if (!(await canAccessStudent(req.authUser, sId))) {
+          return res.status(403).json({ error: `Student ${sId} is not one of your students` });
+        }
+      }
+    }
     const stmt = await db.prepare("INSERT INTO assignments (student_id, test_id, assigned_at) VALUES (?, ?, datetime('now'))");
     for (const sId of studentIds) {
       for (const tId of targetTestIds) {
@@ -4687,12 +4719,15 @@ app.post('/api/admin/assign', requireRole('admin'), async (req, res) => {
 });
 
 // Bulk Import Students
-app.post('/api/admin/users/bulk-import', requireRole('admin'), async (req, res) => {
+app.post('/api/admin/users/bulk-import', requireRole('teacher', 'admin'), async (req, res) => {
   const { students, ownerTeacherId } = req.body; // Array of { id, name, password, groupName }
   if (!Array.isArray(students) || students.length === 0) {
     return res.status(400).json({ error: 'No students provided' });
   }
-  const owner = ownerTeacherId || 'teacher';
+  // A teacher's import is always owned by themselves -- ownerTeacherId in the
+  // request body is only honoured for an admin doing setup on a school's
+  // behalf.
+  const owner = req.authUser.role === 'teacher' ? req.authUser.id : (ownerTeacherId || 'teacher');
   const results = [];
   for (const s of students) {
     try {
@@ -4712,9 +4747,13 @@ app.post('/api/admin/users/bulk-import', requireRole('admin'), async (req, res) 
 });
 
 // Delete Assignment
-app.delete('/api/admin/assignments/:id', requireRole('admin'), async (req, res) => {
+app.delete('/api/admin/assignments/:id', requireRole('teacher', 'admin'), async (req, res) => {
   const { id } = req.params;
   try {
+    const asg = await db.get('SELECT student_id FROM assignments WHERE id = ?', [id]);
+    if (asg && !(await canAccessStudent(req.authUser, asg.student_id))) {
+      return res.status(403).json({ error: 'Not permitted for this assignment' });
+    }
     await db.run('DELETE FROM assignments WHERE id = ?', [id]);
     res.json({ success: true });
   } catch (error) {
@@ -4723,11 +4762,14 @@ app.delete('/api/admin/assignments/:id', requireRole('admin'), async (req, res) 
 });
 
 // Reset Assignment (set back to assigned so student can retake)
-app.post('/api/admin/assignments/:id/reset', requireRole('admin'), async (req, res) => {
+app.post('/api/admin/assignments/:id/reset', requireRole('teacher', 'admin'), async (req, res) => {
   const { id } = req.params;
   try {
     const asg = await db.get('SELECT * FROM assignments WHERE id = ?', [id]);
     if (!asg) return res.status(404).json({ error: 'Assignment not found' });
+    if (!(await canAccessStudent(req.authUser, asg.student_id))) {
+      return res.status(403).json({ error: 'Not permitted for this assignment' });
+    }
     const latestSubmission = await db.get(`
       SELECT id FROM submissions
       WHERE student_id = ? AND test_id = ?

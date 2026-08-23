@@ -37,8 +37,27 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
 
   // Speaking
   const [speakingSubmissions, setSpeakingSubmissions] = useState([]);
-  const [activeSection, setActiveSection] = useState('writing'); // 'writing' | 'speaking' | 'feedback'
+  const [activeSection, setActiveSection] = useState('writing'); // 'writing' | 'speaking' | 'feedback' | 'students'
   const [expandedSpeaking, setExpandedSpeaking] = useState(null);
+
+  // My Students: self-service roster + assignment, scoped server-side to this
+  // teacher's own school -- add/assign/reset/remove all reuse the same
+  // /api/admin/* endpoints the Admin Dashboard uses, just permitted for
+  // teachers now and restricted to their own students there.
+  const [myStudents, setMyStudents] = useState([]);
+  const [myTests, setMyTests] = useState([]);
+  const [rosterLoaded, setRosterLoaded] = useState(false);
+  const [newStudentId, setNewStudentId] = useState('');
+  const [newStudentName, setNewStudentName] = useState('');
+  const [newStudentGroup, setNewStudentGroup] = useState('');
+  const [newStudentPass, setNewStudentPass] = useState('student123');
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [bulkImportText, setBulkImportText] = useState('');
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [bulkResults, setBulkResults] = useState(null);
+  const [selectedTestIds, setSelectedTestIds] = useState([]);
+  const [selectedStudentIds, setSelectedStudentIds] = useState([]);
+  const [assignSearchTerm, setAssignSearchTerm] = useState('');
 
   // Essay feedback: draft with the model, edit, approve, then print.
   const [fbTestId, setFbTestId] = useState('');
@@ -156,6 +175,11 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
     }
   }, [selectedSub]);
 
+  useEffect(() => {
+    if (activeSection === 'students' && !rosterLoaded) fetchRoster();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection]);
+
   const loadAnswerKey = async (sub) => {
     setLoadingKey(true);
     try {
@@ -263,6 +287,132 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
     } finally {
       setLoading(false);
     }
+  };
+
+  // Lazy-loaded the first time the Students tab is opened, not on every
+  // dashboard load -- most visits are for grading, not roster management.
+  const fetchRoster = async () => {
+    try {
+      const [usersRes, testsRes] = await Promise.all([
+        fetch('/api/admin/users'),
+        fetch('/api/admin/tests')
+      ]);
+      if (usersRes.ok) setMyStudents(await usersRes.json());
+      if (testsRes.ok) setMyTests(await testsRes.json());
+    } catch (err) {
+      // Roster panel shows its own empty states; nothing to surface globally.
+    } finally {
+      setRosterLoaded(true);
+    }
+  };
+
+  const handleAddStudent = async (e) => {
+    e.preventDefault();
+    if (!newStudentId.trim() || !newStudentName.trim()) {
+      alert('Please fill in Student ID and Name');
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: newStudentId.trim(), name: newStudentName.trim(), role: 'student',
+          password: newStudentPass, groupName: newStudentGroup.trim()
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to add student');
+      alert('Student added!');
+      setNewStudentId(''); setNewStudentName(''); setNewStudentGroup('');
+      fetchRoster();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleBulkImportStudents = async () => {
+    if (!bulkImportText.trim()) { alert('Please paste student data first.'); return; }
+    const lines = bulkImportText.trim().split('\n').filter(l => l.trim());
+    const students = lines.map((line, idx) => {
+      const parts = line.split(',').map(p => p.trim());
+      const name = parts[0] || `Student ${idx + 1}`;
+      const groupName = parts[1] || '';
+      const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 3);
+      const id = `${initials}${Date.now().toString().slice(-4)}${String(idx).padStart(2, '0')}`;
+      const password = Math.random().toString(36).slice(2, 8).toUpperCase();
+      return { id, name, password, groupName };
+    });
+    setBulkImporting(true);
+    try {
+      const res = await fetch('/api/admin/users/bulk-import', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ students })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Bulk import failed');
+      setBulkResults(data.results);
+      fetchRoster();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setBulkImporting(false);
+    }
+  };
+
+  const handleDeleteStudent = async (studentId) => {
+    if (!confirm(`Remove student "${studentId}"? This cannot be undone.`)) return;
+    try {
+      const res = await fetch(`/api/admin/users/${studentId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to remove student');
+      fetchRoster();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleResetStudentPassword = async (studentId, name) => {
+    const newPass = prompt(`New passcode for "${name}" (${studentId}):`);
+    if (newPass === null) return;
+    if (!newPass.trim()) { alert('Passcode cannot be empty'); return; }
+    try {
+      const res = await fetch('/api/admin/users/reset-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: studentId, newPassword: newPass.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to reset password');
+      alert('Password updated.');
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleAssignTests = async (e) => {
+    e.preventDefault();
+    if (selectedStudentIds.length === 0) { alert('Select at least one student'); return; }
+    if (selectedTestIds.length === 0) { alert('Select at least one test'); return; }
+    try {
+      const res = await fetch('/api/admin/assign', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentIds: selectedStudentIds, testIds: selectedTestIds })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to assign tests');
+      alert('Tests assigned!');
+      setSelectedStudentIds([]);
+      setSelectedTestIds([]);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const toggleTestSelection = (tId) => {
+    setSelectedTestIds(prev => prev.includes(tId) ? prev.filter(id => id !== tId) : [...prev, tId]);
+  };
+  const toggleStudentSelection = (sId) => {
+    setSelectedStudentIds(prev => prev.includes(sId) ? prev.filter(id => id !== sId) : [...prev, sId]);
   };
 
   const handleSelectSubmission = async (listSub) => {
@@ -1521,7 +1671,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
           <>
             {/* Section Tabs */}
             <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              {[['writing', '✏️ Writing Submissions'], ['speaking', '🎙️ Speaking Submissions'], ['feedback', '📝 Essay Feedback']].map(([key, label]) => (
+              {[['writing', '✏️ Writing Submissions'], ['speaking', '🎙️ Speaking Submissions'], ['feedback', '📝 Essay Feedback'], ['students', '👥 My Students']].map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setActiveSection(key)}
@@ -1551,6 +1701,221 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                 </button>
               ))}
             </div>
+
+            {/* My Students Panel: self-service roster + test assignment,
+                scoped server-side to this teacher's own school. */}
+            {activeSection === 'students' && (
+              <div>
+                <div className="card" style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0 }}>📥 Bulk Import Students</h3>
+                    <button
+                      onClick={() => { setShowBulkImport(!showBulkImport); setBulkResults(null); }}
+                      className="btn btn-secondary"
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
+                    >
+                      {showBulkImport ? 'Close ▲' : 'Open ▼'}
+                    </button>
+                  </div>
+                  {showBulkImport && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', lineHeight: '1.5' }}>
+                        Paste one student per line: <strong>Full Name, Group Name</strong><br />
+                        IDs and passwords are generated automatically.
+                      </p>
+                      <textarea
+                        className="form-input"
+                        rows={6}
+                        placeholder={`Aria Thorne, Group A\nElara Vane, Group B`}
+                        value={bulkImportText}
+                        onChange={(e) => setBulkImportText(e.target.value)}
+                        style={{ fontFamily: 'monospace', fontSize: '0.85rem', resize: 'vertical', width: '100%', boxSizing: 'border-box' }}
+                      />
+                      <button
+                        onClick={handleBulkImportStudents}
+                        disabled={bulkImporting}
+                        className="btn btn-success"
+                        style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem' }}
+                      >
+                        {bulkImporting ? 'Importing...' : '🚀 Import All Students'}
+                      </button>
+                      {bulkResults && (
+                        <div style={{ marginTop: '1rem' }}>
+                          <p style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: '600', marginBottom: '0.5rem' }}>
+                            ✅ {bulkResults.filter(r => r.status === 'created').length} created, {bulkResults.filter(r => r.status !== 'created').length} skipped
+                          </p>
+                          <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                              <thead>
+                                <tr style={{ borderBottom: '2px solid var(--glass-border)' }}>
+                                  <th style={{ padding: '0.4rem', textAlign: 'left' }}>Name</th>
+                                  <th style={{ padding: '0.4rem', textAlign: 'left' }}>ID</th>
+                                  <th style={{ padding: '0.4rem', textAlign: 'left' }}>Password</th>
+                                  <th style={{ padding: '0.4rem', textAlign: 'left' }}>Status</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {bulkResults.map((r, i) => (
+                                  <tr key={i} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                    <td style={{ padding: '0.4rem' }}>{r.name}</td>
+                                    <td style={{ padding: '0.4rem', fontFamily: 'monospace', color: '#6366f1' }}>{r.id}</td>
+                                    <td style={{ padding: '0.4rem', fontFamily: 'monospace', color: '#10b981' }}>{r.password}</td>
+                                    <td style={{ padding: '0.4rem', color: r.status === 'created' ? '#10b981' : '#f43f5e' }}>{r.status}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const rows = bulkResults.map(r => `${r.name}\t${r.id}\t${r.password}\t${r.groupName}`).join('\n');
+                              navigator.clipboard.writeText(`Name\tID\tPassword\tGroup\n${rows}`);
+                              alert('Credentials copied to clipboard!');
+                            }}
+                            className="btn btn-secondary"
+                            style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem', fontSize: '0.8rem' }}
+                          >
+                            📋 Copy All Credentials
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="card" style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ marginTop: 0 }}>➕ Add One Student</h3>
+                  <form onSubmit={handleAddStudent}>
+                    <div className="form-group">
+                      <label className="form-label">Student ID</label>
+                      <input type="text" className="form-input" placeholder="e.g. G1-15" value={newStudentId} onChange={(e) => setNewStudentId(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Full Name</label>
+                      <input type="text" className="form-input" placeholder="e.g. Marcus Aurelius" value={newStudentName} onChange={(e) => setNewStudentName(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Group (optional)</label>
+                      <input type="text" className="form-input" placeholder="e.g. Group 1" value={newStudentGroup} onChange={(e) => setNewStudentGroup(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Temporary Passcode</label>
+                      <input type="text" className="form-input" value={newStudentPass} onChange={(e) => setNewStudentPass(e.target.value)} />
+                    </div>
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>Add Student +</button>
+                  </form>
+                </div>
+
+                <div className="card" style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ marginTop: 0 }}>🔗 Assign Tests</h3>
+                  <form onSubmit={handleAssignTests}>
+                    <div className="form-group">
+                      <label className="form-label">Tests ({selectedTestIds.length} selected)</label>
+                      <div style={{ maxHeight: '220px', overflowY: 'auto', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '0.4rem' }}>
+                        {myTests.length === 0 ? (
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.4rem' }}>No tests available.</p>
+                        ) : myTests.map(t => {
+                          const isSelected = selectedTestIds.includes(t.id);
+                          return (
+                            <div
+                              key={t.id}
+                              onClick={() => toggleTestSelection(t.id)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.5rem',
+                                borderRadius: '6px', cursor: 'pointer',
+                                backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'transparent'
+                              }}
+                            >
+                              <input type="checkbox" checked={isSelected} onChange={() => {}} style={{ pointerEvents: 'none' }} />
+                              <span style={{ fontSize: '0.85rem' }}>{t.title}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                        <label className="form-label" style={{ margin: 0 }}>Students ({selectedStudentIds.length} selected)</label>
+                        <div style={{ display: 'flex', gap: '0.35rem' }}>
+                          <button type="button" className="btn btn-secondary" style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem' }} onClick={() => setSelectedStudentIds(myStudents.map(s => s.id))}>Select All</button>
+                          <button type="button" className="btn btn-secondary" style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem' }} onClick={() => setSelectedStudentIds([])}>Clear</button>
+                        </div>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="🔍 Search by name, ID, or group..."
+                        value={assignSearchTerm}
+                        onChange={(e) => setAssignSearchTerm(e.target.value)}
+                        style={{ width: '100%', padding: '0.45rem 0.75rem', borderRadius: '6px', border: '1px solid var(--glass-border)', backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', fontSize: '0.82rem', marginBottom: '0.5rem', boxSizing: 'border-box' }}
+                      />
+                      <div style={{ maxHeight: '260px', overflowY: 'auto', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '0.4rem' }}>
+                        {myStudents.length === 0 ? (
+                          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.4rem' }}>No students yet -- add one above.</p>
+                        ) : (() => {
+                          const term = assignSearchTerm.toLowerCase();
+                          const filtered = myStudents.filter(s =>
+                            s.name.toLowerCase().includes(term) || s.id.toLowerCase().includes(term) || (s.groupName || '').toLowerCase().includes(term)
+                          );
+                          if (filtered.length === 0) return <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0.4rem' }}>No matches for "{assignSearchTerm}"</p>;
+                          return filtered.map(s => {
+                            const isSelected = selectedStudentIds.includes(s.id);
+                            return (
+                              <div
+                                key={s.id}
+                                onClick={() => toggleStudentSelection(s.id)}
+                                style={{
+                                  display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.5rem',
+                                  borderRadius: '6px', cursor: 'pointer',
+                                  backgroundColor: isSelected ? 'rgba(99, 102, 241, 0.15)' : 'transparent'
+                                }}
+                              >
+                                <input type="checkbox" checked={isSelected} onChange={() => {}} style={{ pointerEvents: 'none' }} />
+                                <span style={{ fontSize: '0.85rem' }}>{s.name} ({s.id}){s.groupName ? ` [${s.groupName}]` : ''}</span>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
+                    <button type="submit" className="btn btn-success" style={{ width: '100%', justifyContent: 'center' }}>Assign Selected Tests</button>
+                  </form>
+                </div>
+
+                <div className="card">
+                  <h3 style={{ marginTop: 0 }}>👥 Roster ({myStudents.length})</h3>
+                  {myStudents.length === 0 ? (
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No students yet.</p>
+                  ) : (
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '2px solid var(--glass-border)' }}>
+                            <th style={{ padding: '0.4rem', textAlign: 'left' }}>Name</th>
+                            <th style={{ padding: '0.4rem', textAlign: 'left' }}>ID</th>
+                            <th style={{ padding: '0.4rem', textAlign: 'left' }}>Group</th>
+                            <th style={{ padding: '0.4rem', textAlign: 'right' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {myStudents.map(s => (
+                            <tr key={s.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                              <td style={{ padding: '0.4rem' }}>{s.name}</td>
+                              <td style={{ padding: '0.4rem', fontFamily: 'monospace' }}>{s.id}</td>
+                              <td style={{ padding: '0.4rem' }}>{s.groupName || '—'}</td>
+                              <td style={{ padding: '0.4rem', textAlign: 'right' }}>
+                                <button onClick={() => handleResetStudentPassword(s.id, s.name)} className="btn btn-secondary" style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', marginRight: '0.35rem' }}>Reset Password</button>
+                                <button onClick={() => handleDeleteStudent(s.id)} className="btn btn-secondary" style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', color: '#f43f5e' }}>Remove</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Essay Feedback Panel */}
             {activeSection === 'feedback' && (() => {
