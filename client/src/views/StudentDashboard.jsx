@@ -200,15 +200,16 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
     const moduleKey = prefix === 'l' ? 'listening' : 'reading';
     const escapeHtml = (s) => String(s || '')
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    // Server-generated evidence explanations only exist for Reading, and only
-    // fill in where the paper itself didn't already carry a real explanation.
+    // Reading-only. Two sources: evidence the test itself already carried
+    // (no reasonIntro/tip, just the real quote -- shown on its own), or one
+    // generated where the test had nothing (has all three fields).
     const generatedExplanationHtml = (qNum) => {
       const gen = prefix === 'r' ? testExplanations?.[qNum] : null;
-      if (!gen) return null;
+      if (!gen?.evidence) return null;
       return (
-        `<p>${escapeHtml(gen.reasonIntro)}</p>` +
+        (gen.reasonIntro ? `<p>${escapeHtml(gen.reasonIntro)}</p>` : '') +
         `<blockquote style="margin:0.5rem 0;padding:0.5rem 0.75rem;border-left:3px solid var(--accent-primary, #6366f1);background:var(--bg-secondary);font-style:italic">${escapeHtml(gen.evidence)}</blockquote>` +
-        `<p style="margin-top:0.5rem"><strong>How to read this type:</strong> ${escapeHtml(gen.tip)}</p>`
+        (gen.tip ? `<p style="margin-top:0.5rem"><strong>How to read this type:</strong> ${escapeHtml(gen.tip)}</p>` : '')
       );
     };
 

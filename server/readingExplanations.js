@@ -18,6 +18,29 @@
 // than guessed at -- a wrong "how it works" is invisible to skim past, but a
 // wrong "evidence" quote actively misleads a student studying from it.
 
+// Many of the tests actually being uploaded already carry real, pre-authored
+// evidence excerpts of their own -- a `{question: N, text: "..."}` pair per
+// question, driving the test's own "Check Answers" screen (it highlights this
+// exact text in the passage once a student finishes). This is better raw
+// material than anything worth generating: it was written by whoever built
+// the test, not guessed afterward, so it needs no model call and no
+// verification -- reading it is just reading the file. Try this before
+// falling back to LLM generation below, which only exists for the tests that
+// don't have it.
+export function scanAuthoredEvidence(html) {
+  const re = /\{\s*"?question"?\s*:\s*(\d{1,2})\s*,\s*"?text"?\s*:\s*(['"])((?:\\.|(?!\2)[^\\])*)\2\s*\}/g;
+  const found = {};
+  let m;
+  while ((m = re.exec(html))) {
+    const n = Number(m[1]);
+    if (found[n]) continue;
+    const text = m[3].replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/\\n/g, ' ').trim();
+    if (text.length < 8) continue;
+    found[n] = text;
+  }
+  return found;
+}
+
 function safeJsonLiteral(html, varName) {
   const re = new RegExp(`const\\s+${varName}\\s*=\\s*(\\{[\\s\\S]*?\\});`);
   const match = html.match(re);

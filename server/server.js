@@ -11,7 +11,7 @@ import { sanitizeTestHtml } from './contentSanitizer.js';
 import { hashPassword, verifyPassword } from './auth.js';
 import { FEEDBACK_SYSTEM_PROMPT, buildFeedbackRequest } from './writingFeedback.js';
 import {
-  extractReadingContent, passageForQuestion,
+  extractReadingContent, passageForQuestion, scanAuthoredEvidence,
   EXPLANATION_SYSTEM_PROMPT, buildExplanationRequest, evidenceVerifiedInPassage
 } from './readingExplanations.js';
 import { renderFeedbackSheets } from './feedbackPrint.js';
@@ -1298,12 +1298,24 @@ app.get('/api/teacher/tests/:testId/feedback', async (req, res) => {
   }
 });
 
-// Generates real, passage-evidence explanations for a standalone Reading
-// test's questions -- see readingExplanations.js for what makes a test and a
-// question eligible. Dry-run by default; pass confirm:true to store the
-// result on tests.explanations. Already-generated questions are skipped
-// unless regenerate:true, so re-running after adding new questions (or a
-// partial failure) never re-spends on ones already verified.
+// Fills in real, passage-evidence explanations for a standalone Reading
+// test's questions. Two sources, tried in order:
+//
+//   1. Evidence the test already carries. Most uploaded tests define their
+//      own {question, text} evidence pairs that drive their own "Check
+//      Answers" screen (it highlights this exact text in the passage). This
+//      was written by whoever built the test, not guessed afterward, so it's
+//      used directly -- free, instant, and needs no verification.
+//   2. Only for questions still uncovered after that, and only on the older
+//      template family that exposes clean passage + answer-key data, this
+//      asks Claude for an evidence quote and mechanically verifies it's an
+//      exact substring of the real passage before storing it. Skipped
+//      entirely if no Anthropic key is configured -- source 1 alone already
+//      covers most of what's actually assigned.
+//
+// Dry-run by default; pass confirm:true to store the result on
+// tests.explanations. Already-generated questions are skipped unless
+// regenerate:true, so re-running after a partial failure costs nothing extra.
 app.post('/api/admin/tests/:id/generate-explanations', async (req, res) => {
   const testId = Number.parseInt(req.params.id, 10);
   if (!Number.isInteger(testId)) return res.status(400).json({ error: 'Invalid test id' });
@@ -1317,76 +1329,83 @@ app.post('/api/admin/tests/:id/generate-explanations', async (req, res) => {
     const html = await resolveTestHtml(testId, test.html_content);
     if (!html) return res.status(400).json({ error: 'This test has no standalone HTML to read passages from' });
 
-    const content = extractReadingContent(html);
-    if (!content) {
-      return res.status(400).json({
-        error: "This test's passage/answer data is not in a format this can read yet (needs `passages`, `answerKey` and part `range` literals in its HTML)."
-      });
-    }
-    if (!Object.keys(content.questionPrompts).length) {
-      return res.status(400).json({ error: 'No question prompts of a supported shape were found in this test.' });
-    }
-
-    const settings = await db.get('SELECT * FROM ai_settings LIMIT 1');
-    if (!settings?.anthropic_api_key) {
-      return res.status(400).json({ error: 'No Anthropic API key configured. Add one in Admin Settings.' });
-    }
-
     let stored = {};
     try { stored = JSON.parse(test.explanations || '{}'); } catch { stored = {}; }
 
-    const anthropic = new Anthropic({ apiKey: settings.anthropic_api_key });
     const results = [];
+    const authored = scanAuthoredEvidence(html);
 
-    const generateOne = async (qNum, prompt) => {
-      const passage = passageForQuestion(content, qNum);
-      if (!passage) return { status: 'no passage found for this question' };
-      const rawAnswer = content.answerKey[qNum];
-      const correctAnswer = Array.isArray(rawAnswer) ? rawAnswer.join(' / ') : rawAnswer;
-
-      let lastText = '';
-      for (let attempt = 1; attempt <= 2; attempt++) {
-        const { content: userContent } = buildExplanationRequest({
-          passageTitle: passage.title, passageText: passage.text,
-          questionNumber: qNum, questionPrompt: prompt, correctAnswer
-        });
-        const message = attempt === 1
-          ? userContent
-          : `${userContent}\n\nYour previous "evidence" was not an exact quote from the passage above. Copy it character-for-character this time -- do not paraphrase.`;
-
-        const response = await anthropic.messages.create({
-          model, max_tokens: 1024, system: EXPLANATION_SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: message }]
-        });
-        const block = response.content.find(b => b.type === 'text');
-        if (!block) continue;
-        lastText = block.text;
-        const jsonMatch = block.text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) continue;
-        let parsed;
-        try { parsed = JSON.parse(jsonMatch[0]); } catch { continue; }
-        if (parsed.evidence && evidenceVerifiedInPassage(parsed.evidence, passage.text)) {
-          return {
-            status: 'generated',
-            data: { evidence: parsed.evidence, reasonIntro: parsed.reasonIntro || '', tip: parsed.tip || '', model: response.model, generatedAt: new Date().toISOString() }
-          };
-        }
-      }
-      return { status: 'could not verify an exact evidence quote, skipped', sample: lastText.slice(0, 160) };
-    };
-
-    for (const [qStr, prompt] of Object.entries(content.questionPrompts)) {
+    for (const [qStr, evidence] of Object.entries(authored)) {
       const qNum = Number(qStr);
       if (stored[qNum] && !req.body.regenerate) {
         results.push({ question: qNum, status: 'already generated' });
         continue;
       }
-      try {
-        const outcome = await generateOne(qNum, prompt);
-        if (outcome.status === 'generated') stored[qNum] = outcome.data;
-        results.push({ question: qNum, status: outcome.status, ...(outcome.sample ? { sample: outcome.sample } : {}) });
-      } catch (err) {
-        results.push({ question: qNum, status: 'failed: ' + err.message.slice(0, 100) });
+      stored[qNum] = { evidence, reasonIntro: '', tip: '', source: 'authored', generatedAt: new Date().toISOString() };
+      results.push({ question: qNum, status: 'used authored evidence' });
+    }
+
+    // Fall back to generation only for what authored evidence didn't cover,
+    // and only if the older passages+answerKey shape applies here at all.
+    const content = extractReadingContent(html);
+    const remaining = content
+      ? Object.entries(content.questionPrompts).filter(([qStr]) => !(Number(qStr) in stored) || req.body.regenerate)
+      : [];
+
+    if (remaining.length) {
+      const settings = await db.get('SELECT * FROM ai_settings LIMIT 1');
+      if (!settings?.anthropic_api_key) {
+        results.push({ question: null, status: `${remaining.length} question(s) have no authored evidence and no Anthropic API key is configured to generate them -- skipped` });
+      } else {
+        const anthropic = new Anthropic({ apiKey: settings.anthropic_api_key });
+
+        const generateOne = async (qNum, prompt) => {
+          const passage = passageForQuestion(content, qNum);
+          if (!passage) return { status: 'no passage found for this question' };
+          const rawAnswer = content.answerKey[qNum];
+          const correctAnswer = Array.isArray(rawAnswer) ? rawAnswer.join(' / ') : rawAnswer;
+
+          let lastText = '';
+          for (let attempt = 1; attempt <= 2; attempt++) {
+            const { content: userContent } = buildExplanationRequest({
+              passageTitle: passage.title, passageText: passage.text,
+              questionNumber: qNum, questionPrompt: prompt, correctAnswer
+            });
+            const message = attempt === 1
+              ? userContent
+              : `${userContent}\n\nYour previous "evidence" was not an exact quote from the passage above. Copy it character-for-character this time -- do not paraphrase.`;
+
+            const response = await anthropic.messages.create({
+              model, max_tokens: 1024, system: EXPLANATION_SYSTEM_PROMPT,
+              messages: [{ role: 'user', content: message }]
+            });
+            const block = response.content.find(b => b.type === 'text');
+            if (!block) continue;
+            lastText = block.text;
+            const jsonMatch = block.text.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) continue;
+            let parsed;
+            try { parsed = JSON.parse(jsonMatch[0]); } catch { continue; }
+            if (parsed.evidence && evidenceVerifiedInPassage(parsed.evidence, passage.text)) {
+              return {
+                status: 'generated',
+                data: { evidence: parsed.evidence, reasonIntro: parsed.reasonIntro || '', tip: parsed.tip || '', source: 'generated', model: response.model, generatedAt: new Date().toISOString() }
+              };
+            }
+          }
+          return { status: 'could not verify an exact evidence quote, skipped', sample: lastText.slice(0, 160) };
+        };
+
+        for (const [qStr, prompt] of remaining) {
+          const qNum = Number(qStr);
+          try {
+            const outcome = await generateOne(qNum, prompt);
+            if (outcome.status === 'generated') stored[qNum] = outcome.data;
+            results.push({ question: qNum, status: outcome.status, ...(outcome.sample ? { sample: outcome.sample } : {}) });
+          } catch (err) {
+            results.push({ question: qNum, status: 'failed: ' + err.message.slice(0, 100) });
+          }
+        }
       }
     }
 
@@ -1396,9 +1415,8 @@ app.post('/api/admin/tests/:id/generate-explanations', async (req, res) => {
 
     res.json({
       success: true, dryRun: !confirm, testId, test: test.title, model,
-      eligibleQuestions: Object.keys(content.questionPrompts).length,
-      generated: results.filter(r => r.status === 'generated').length,
-      skipped: results.filter(r => r.status !== 'generated').length,
+      fromAuthoredEvidence: Object.keys(authored).length,
+      generatedByModel: results.filter(r => r.status === 'generated').length,
       totalStored: Object.keys(stored).length,
       results
     });
