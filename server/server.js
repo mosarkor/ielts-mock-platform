@@ -5205,7 +5205,9 @@ app.post('/api/admin/settings', requireRole('admin'), async (req, res) => {
 });
 
 // Speaking Prompts — List
-app.get('/api/admin/speaking/prompts', requireRole('admin'), async (req, res) => {
+// Read-only and unscoped for teachers too, same reasoning as /api/admin/tests
+// -- speaking prompts are shared content, authored by admin.
+app.get('/api/admin/speaking/prompts', requireRole('teacher', 'admin'), async (req, res) => {
   try {
     const prompts = await db.all('SELECT * FROM speaking_prompts ORDER BY created_at DESC');
     res.json(prompts);
@@ -5242,10 +5244,17 @@ app.delete('/api/admin/speaking/prompts/:id', requireRole('admin'), async (req, 
 });
 
 // Speaking Assign — Assign prompt to students
-app.post('/api/admin/speaking/assign', requireRole('admin'), async (req, res) => {
+app.post('/api/admin/speaking/assign', requireRole('teacher', 'admin'), async (req, res) => {
   const { studentIds, promptId } = req.body;
   if (!Array.isArray(studentIds) || !promptId) {
     return res.status(400).json({ error: 'studentIds array and promptId required' });
+  }
+  if (req.authUser.role === 'teacher') {
+    for (const sId of studentIds) {
+      if (!(await canAccessStudent(req.authUser, sId))) {
+        return res.status(403).json({ error: `Student ${sId} is not one of your students` });
+      }
+    }
   }
   try {
     for (const sId of studentIds) {
@@ -5515,8 +5524,9 @@ app.post('/api/teacher/speaking/:id/update', requireRole('teacher', 'admin'), as
 });
 
 // Admin / Teacher — Reset student speaking test assignment for re-take
-app.post('/api/admin/speaking/reset/:studentId', requireRole('admin'), async (req, res) => {
+app.post('/api/admin/speaking/reset/:studentId', requireRole('teacher', 'admin'), async (req, res) => {
   const { studentId } = req.params;
+  if (!(await canAccessStudent(req.authUser, studentId))) return res.status(403).json({ error: 'Not permitted for this student' });
   try {
     await db.run('DELETE FROM speaking_submissions WHERE student_id = ?', [studentId]);
     await db.run('UPDATE speaking_assignments SET status = "assigned" WHERE student_id = ?', [studentId]);

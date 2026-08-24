@@ -58,6 +58,8 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   const [selectedTestIds, setSelectedTestIds] = useState([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [assignSearchTerm, setAssignSearchTerm] = useState('');
+  const [myPrompts, setMyPrompts] = useState([]);
+  const [assignPromptId, setAssignPromptId] = useState('');
 
   // Essay feedback: draft with the model, edit, approve, then print.
   const [fbTestId, setFbTestId] = useState('');
@@ -293,12 +295,14 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
   // dashboard load -- most visits are for grading, not roster management.
   const fetchRoster = async () => {
     try {
-      const [usersRes, testsRes] = await Promise.all([
+      const [usersRes, testsRes, promptsRes] = await Promise.all([
         fetch('/api/admin/users'),
-        fetch('/api/admin/tests')
+        fetch('/api/admin/tests'),
+        fetch('/api/admin/speaking/prompts')
       ]);
       if (usersRes.ok) setMyStudents(await usersRes.json());
       if (testsRes.ok) setMyTests(await testsRes.json());
+      if (promptsRes.ok) setMyPrompts(await promptsRes.json());
     } catch (err) {
       // Roster panel shows its own empty states; nothing to surface globally.
     } finally {
@@ -403,6 +407,25 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
       alert('Tests assigned!');
       setSelectedStudentIds([]);
       setSelectedTestIds([]);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const handleAssignSpeaking = async (e) => {
+    e.preventDefault();
+    if (!assignPromptId) { alert('Select a speaking prompt'); return; }
+    if (selectedStudentIds.length === 0) { alert('Select at least one student'); return; }
+    try {
+      const res = await fetch('/api/admin/speaking/assign', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentIds: selectedStudentIds, promptId: parseInt(assignPromptId, 10) })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to assign speaking test');
+      alert('Speaking test assigned!');
+      setSelectedStudentIds([]);
+      setAssignPromptId('');
     } catch (err) {
       alert(err.message);
     }
@@ -1879,6 +1902,33 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                       </div>
                     </div>
                     <button type="submit" className="btn btn-success" style={{ width: '100%', justifyContent: 'center' }}>Assign Selected Tests</button>
+                  </form>
+                </div>
+
+                <div className="card" style={{ marginBottom: '1.5rem' }}>
+                  <h3 style={{ marginTop: 0 }}>🎙️ Assign Speaking Test</h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '-0.5rem', marginBottom: '0.75rem' }}>
+                    Uses the same student selection as above -- pick students in the Assign Tests box, then assign a speaking prompt here too if needed.
+                  </p>
+                  <form onSubmit={handleAssignSpeaking}>
+                    <div className="form-group">
+                      <label className="form-label">Speaking Prompt</label>
+                      <select className="form-input" value={assignPromptId} onChange={(e) => setAssignPromptId(e.target.value)}>
+                        <option value="">-- Select a prompt --</option>
+                        {myPrompts.map(p => (
+                          <option key={p.id} value={p.id}>{p.title}</option>
+                        ))}
+                      </select>
+                      {myPrompts.length === 0 && (
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                          No speaking prompts exist yet -- ask the admin to add one.
+                        </p>
+                      )}
+                    </div>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      {selectedStudentIds.length} student{selectedStudentIds.length === 1 ? '' : 's'} selected
+                    </p>
+                    <button type="submit" className="btn btn-success" style={{ width: '100%', justifyContent: 'center' }}>Assign Speaking Test</button>
                   </form>
                 </div>
 
