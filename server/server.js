@@ -35,19 +35,41 @@ const SESSION_COOKIE = 'ielts_session';
 // Loads req.authUser from the session cookie if present -- does not itself
 // require one. Placed before every route so requireAuth/requireRole below
 // can just read req.authUser instead of re-querying per route.
+//
+// This query now runs on every authenticated request, where none existed
+// before -- and the database (Neon, scale-to-zero) suspends when idle and
+// takes a moment to wake on the next query. Before today, that wake delay
+// just made the first request after a quiet spell slow. Now it sits directly
+// in the login check: if this specific query is the one that hits the
+// wake-up window and fails, a real, valid session was at risk of silently
+// looking like "not logged in" -- a legitimate teacher or admin bounced to
+// the login screen by the client's own 401 handler, for a database hiccup
+// that had nothing to do with whether they were signed in. One quick retry
+// covers most wake-ups; if the database is still unreachable after that,
+// this says so explicitly (503) instead of guessing "not logged in" (401),
+// so a real outage reads as "try again in a second," not a spurious logout.
 app.use(async (req, res, next) => {
   const token = req.cookies?.[SESSION_COOKIE];
   if (!token) return next();
+  const lookup = () => db.get(
+    `SELECT u.id, u.name, u.role, u.owner_teacher_id
+     FROM sessions s JOIN users u ON s.user_id = u.id
+     WHERE s.token = ?`,
+    [token]
+  );
   try {
-    const row = await db.get(
-      `SELECT u.id, u.name, u.role, u.owner_teacher_id
-       FROM sessions s JOIN users u ON s.user_id = u.id
-       WHERE s.token = ?`,
-      [token]
-    );
+    const row = await lookup();
     if (row) req.authUser = row;
+    return next();
   } catch (e) {}
-  next();
+  try {
+    await new Promise((r) => setTimeout(r, 400));
+    const row = await lookup();
+    if (row) req.authUser = row;
+    return next();
+  } catch (e) {
+    return res.status(503).json({ error: 'The platform is temporarily unavailable. Please try again in a moment.', retrying: true });
+  }
 });
 
 // Rejects with 401 unless a valid session is attached. Use before any route
