@@ -531,6 +531,16 @@ body.light .login-page-container {
   background: radial-gradient(circle at 50% 50%, #ffffff 0%, #cbd5e1 100%) !important;
 }
 
+/* The pitch panel is for a prospective teacher evaluating the platform on a
+   real screen -- on a phone, someone opening this link almost always already
+   has a login to use, so skip straight to the form instead of making them
+   scroll past a feature grid first. */
+@media (max-width: 860px) {
+  .login-pitch {
+    display: none;
+  }
+}
+
 /* Make sure student feedback details inside review models looks outstanding in Light Mode */
 body.light .detailsGrid, 
 body.light .soundTestBox {

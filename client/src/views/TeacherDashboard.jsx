@@ -1692,6 +1692,22 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
         ) : (
           /* MAIN LISTINGS VIEW */
           <>
+            {/* First-run nudge: a brand-new teacher account has nothing
+                submitted yet, so the writing/speaking tabs below would just
+                be empty lists with no clue what to do next. Point straight
+                at where a class actually gets started. */}
+            {!loading && safeSubmissions.length === 0 && safeSpeakingSubmissions.length === 0 && (
+              <div className="card" style={{ marginBottom: '1.5rem', border: '1px solid var(--color-indigo)', background: 'rgba(99, 102, 241, 0.06)' }}>
+                <h3 style={{ marginTop: 0 }}>👋 Welcome! Let's get your class set up.</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '1rem' }}>
+                  No results here yet because no students are assigned to any tests. Head to <strong>My Students</strong> to add your roster and assign your first test — results will start appearing here as soon as someone submits.
+                </p>
+                <button onClick={() => setActiveSection('students')} className="btn btn-primary">
+                  👥 Go to My Students
+                </button>
+              </div>
+            )}
+
             {/* Section Tabs */}
             <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
               {[['writing', '✏️ Writing Submissions'], ['speaking', '🎙️ Speaking Submissions'], ['feedback', '📝 Essay Feedback'], ['students', '👥 My Students']].map(([key, label]) => (

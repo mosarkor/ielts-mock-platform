@@ -176,14 +176,42 @@ export default function LoginPortal({ onLoginSuccess, theme, toggleTheme }) {
 
   return (
     <div className="login-page-container" style={styles.pageContainer}>
-      <button 
-        onClick={toggleTheme} 
+      <button
+        onClick={toggleTheme}
         className="theme-toggle-btn"
-        style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', border: 'none' }}
+        style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', border: 'none', zIndex: 2 }}
         title="Toggle Light/Dark Theme"
       >
         {theme === 'dark' ? '☀️' : '🌙'}
       </button>
+
+      <div className="login-split" style={styles.splitLayout}>
+        <div className="login-pitch" style={styles.pitchPanel}>
+          <span style={styles.pitchEyebrow}>IELTS MOCK PLATFORM</span>
+          <h1 style={styles.pitchHeadline}>
+            Run your IELTS classroom<br />like clockwork.
+          </h1>
+          <p style={styles.pitchSubhead}>
+            Auto-graded practice tests, AI-assisted marking, and real answer explanations —
+            built by a teacher, for teachers running their own class.
+          </p>
+
+          <div style={styles.featureGrid}>
+            {FEATURES.map((f) => (
+              <div key={f.title} style={styles.featureCard}>
+                <div style={{ ...styles.featureIcon, background: f.tint }}>{f.icon}</div>
+                <div>
+                  <div style={styles.featureTitle}>{f.title}</div>
+                  <div style={styles.featureDesc}>{f.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p style={styles.pitchFooter}>
+            Every teacher gets their own students, their own results — completely separate from every other class on the platform.
+          </p>
+        </div>
 
       <div className="glass-panel" style={styles.loginCard}>
         <div style={styles.logoHeader}>
@@ -314,9 +342,21 @@ export default function LoginPortal({ onLoginSuccess, theme, toggleTheme }) {
           </button>
         </form>
       </div>
+      </div>
     </div>
   );
 }
+
+// What the platform actually does today, not aspirational marketing --
+// each line here maps to a real, shipped feature.
+const FEATURES = [
+  { icon: '🎯', tint: 'rgba(99, 102, 241, 0.15)', title: 'Instant auto-grading', desc: 'Listening & Reading scored the moment a student finishes -- no waiting on you.' },
+  { icon: '✍️', tint: 'rgba(16, 185, 129, 0.15)', title: 'AI-drafted Writing feedback', desc: 'Written in your own marking voice. You review and approve every word before it ships.' },
+  { icon: '📖', tint: 'rgba(245, 158, 11, 0.15)', title: 'Real answer explanations', desc: 'Students see the exact passage evidence behind each answer, not a generic tip.' },
+  { icon: '🎙️', tint: 'rgba(244, 63, 94, 0.15)', title: 'Speaking practice, AI-scored', desc: 'Recorded, transcribed, and evaluated automatically against the IELTS criteria.' },
+  { icon: '🔒', tint: 'rgba(99, 102, 241, 0.15)', title: 'Your class, kept separate', desc: 'Every teacher sees only their own students and results -- never another school’s.' },
+  { icon: '⚡', tint: 'rgba(16, 185, 129, 0.15)', title: 'Built for a whole class', desc: 'Bulk-import a roster, release a clean test to everyone in one click.' }
+];
 
 const styles = {
   pageContainer: {
@@ -327,9 +367,91 @@ const styles = {
     padding: '1rem',
     background: 'radial-gradient(circle at 50% 50%, #151e33 0%, #0b0f19 100%)',
   },
+  splitLayout: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '3.5rem',
+    width: '100%',
+    maxWidth: '1180px',
+    flexWrap: 'wrap',
+  },
+  pitchPanel: {
+    flex: '1 1 460px',
+    maxWidth: '560px',
+    padding: '1rem',
+  },
+  pitchEyebrow: {
+    display: 'inline-block',
+    fontSize: '0.72rem',
+    fontWeight: '700',
+    letterSpacing: '1.5px',
+    color: 'var(--color-indigo)',
+    background: 'rgba(99, 102, 241, 0.12)',
+    border: '1px solid rgba(99, 102, 241, 0.3)',
+    borderRadius: '999px',
+    padding: '0.3rem 0.85rem',
+    marginBottom: '1.25rem',
+  },
+  pitchHeadline: {
+    fontFamily: 'var(--font-sans)',
+    fontSize: '2.6rem',
+    lineHeight: '1.15',
+    fontWeight: '700',
+    color: 'var(--text-primary)',
+    marginBottom: '1rem',
+  },
+  pitchSubhead: {
+    fontSize: '1.05rem',
+    lineHeight: '1.6',
+    color: 'var(--text-secondary)',
+    marginBottom: '2.25rem',
+    maxWidth: '480px',
+  },
+  featureGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '1.1rem',
+    marginBottom: '2rem',
+  },
+  featureCard: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '0.8rem',
+  },
+  featureIcon: {
+    flexShrink: 0,
+    width: '2.5rem',
+    height: '2.5rem',
+    borderRadius: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.2rem',
+  },
+  featureTitle: {
+    fontSize: '0.92rem',
+    fontWeight: '700',
+    color: 'var(--text-primary)',
+    marginBottom: '0.2rem',
+  },
+  featureDesc: {
+    fontSize: '0.82rem',
+    lineHeight: '1.45',
+    color: 'var(--text-secondary)',
+  },
+  pitchFooter: {
+    fontSize: '0.82rem',
+    color: 'var(--text-secondary)',
+    borderTop: '1px solid var(--glass-border)',
+    paddingTop: '1.25rem',
+    maxWidth: '480px',
+    lineHeight: '1.5',
+  },
   loginCard: {
     width: '100%',
-    maxWidth: '460px',
+    maxWidth: '440px',
+    flex: '0 1 440px',
     padding: '2.5rem 2rem',
   },
   logoHeader: {
