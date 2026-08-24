@@ -1166,6 +1166,22 @@ export default function StudentDashboard({ user, onLogout, onStartTest, onStartS
                 <p style={{ ...styles.feedbackText, color: theme === 'light' ? '#065f46' : '#e2e8f0' }}>{selectedReview.teacher_feedback || "Teacher hasn't submitted a summary feedback yet."}</p>
               </div>
 
+              {selectedReview.essay_feedback?.html && (
+                <div style={{
+                  ...styles.feedbackSection,
+                  backgroundColor: theme === 'light' ? 'rgba(99, 102, 241, 0.05)' : 'rgba(99, 102, 241, 0.08)',
+                  borderColor: theme === 'light' ? 'rgba(99, 102, 241, 0.25)' : 'rgba(99, 102, 241, 0.2)'
+                }}>
+                  <h5 style={{ color: '#6366f1', fontWeight: '600', marginBottom: '0.75rem' }}>
+                    📝 Detailed {selectedReview.essay_feedback.taskType === 'task1' ? 'Task 1' : 'Task 2'} Feedback
+                  </h5>
+                  <div
+                    className="essay-feedback-content"
+                    dangerouslySetInnerHTML={{ __html: selectedReview.essay_feedback.html }}
+                  />
+                </div>
+              )}
+
               <div style={styles.essaysSection}>
                 <h5 style={{ color: 'var(--text-primary)', fontWeight: '600', marginBottom: '0.75rem' }}>Your Submitted Essays</h5>
                 <div style={{ ...styles.essayBox, backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--glass-border)' }}>

@@ -15,7 +15,7 @@ import {
   extractReadingContent, passageForQuestion, scanAuthoredEvidence,
   EXPLANATION_SYSTEM_PROMPT, buildExplanationRequest, evidenceVerifiedInPassage
 } from './readingExplanations.js';
-import { renderFeedbackSheets } from './feedbackPrint.js';
+import { renderFeedbackSheets, renderMarkdown } from './feedbackPrint.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -523,15 +523,30 @@ app.get('/api/student/dashboard/:studentId', requireAuth, async (req, res) => {
     // These are stored as JSON strings -- parse them here so the client gets real
     // objects (indexing a raw JSON string by question number silently returns a
     // single character, not the intended answer).
-    const submissions = submissionRows.map((sub) => ({
-      ...sub,
-      listening_answers: parseJson(sub.listening_answers, {}),
-      reading_answers: parseJson(sub.reading_answers, {}),
-      writing_answers: parseJson(sub.writing_answers, {}),
-      listening_detail: parseJson(sub.listening_detail, null),
-      reading_detail: parseJson(sub.reading_detail, null),
-      writing_scores: parseJson(sub.writing_scores, null)
-    }));
+    const submissions = submissionRows.map((sub) => {
+      // The AI-drafted essay feedback only ever reaches a student once the
+      // teacher has explicitly approved it (see /api/teacher/submissions/:id/
+      // feedback) -- an unapproved draft must never appear here, so this
+      // checks .approved itself rather than trusting the caller. Rendered to
+      // HTML server-side with the same renderMarkdown the printed sheets use,
+      // so the two stay identical and the client never parses markdown itself.
+      let essayFeedback = null;
+      const draft = parseJson(sub.writing_feedback_draft, null);
+      if (draft?.approved && draft.feedback) {
+        essayFeedback = { taskType: draft.taskType, html: renderMarkdown(draft.feedback) };
+      }
+      return {
+        ...sub,
+        listening_answers: parseJson(sub.listening_answers, {}),
+        reading_answers: parseJson(sub.reading_answers, {}),
+        writing_answers: parseJson(sub.writing_answers, {}),
+        listening_detail: parseJson(sub.listening_detail, null),
+        reading_detail: parseJson(sub.reading_detail, null),
+        writing_scores: parseJson(sub.writing_scores, null),
+        writing_feedback_draft: undefined,
+        essay_feedback: essayFeedback
+      };
+    });
 
     res.json({ assignments, submissions });
   } catch (error) {

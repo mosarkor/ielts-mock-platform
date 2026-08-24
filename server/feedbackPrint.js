@@ -12,7 +12,7 @@ const escapeHtml = s => String(s == null ? '' : s)
 // to produce -- headings, bold, bullets, numbered items, rules -- keeps this
 // dependency-free and predictable, and anything unexpected degrades to plain
 // text rather than leaking raw tags onto a student's page.
-function renderMarkdown(md) {
+export function renderMarkdown(md) {
   const lines = String(md || '').split(/\r?\n/);
   const out = [];
   let listType = null;

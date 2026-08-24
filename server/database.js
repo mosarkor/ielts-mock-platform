@@ -587,6 +587,10 @@ export async function initDb() {
   await db.exec('ALTER TABLE submissions ADD COLUMN violations_count INTEGER DEFAULT 0').catch(() => {});
   await db.exec('ALTER TABLE submissions ADD COLUMN listening_detail TEXT').catch(() => {});
   await db.exec('ALTER TABLE submissions ADD COLUMN reading_detail TEXT').catch(() => {});
+  // Missing from this branch until now -- present on Postgres for a long
+  // time, but a fresh local SQLite database never got it, so the essay
+  // feedback draft/approve endpoints have always 500'd here specifically.
+  await db.exec('ALTER TABLE submissions ADD COLUMN writing_feedback_draft TEXT').catch(() => {});
 
   // Speaking module tables
   await db.exec(`

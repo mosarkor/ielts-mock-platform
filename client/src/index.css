@@ -531,6 +531,46 @@ body.light .login-page-container {
   background: radial-gradient(circle at 50% 50%, #ffffff 0%, #cbd5e1 100%) !important;
 }
 
+/* Rendered from the same renderMarkdown() the printed feedback sheets use
+   (server/feedbackPrint.js) -- a teacher's approved essay feedback shown
+   directly in the student's own dashboard. */
+.essay-feedback-content {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+.essay-feedback-content h2,
+.essay-feedback-content h3,
+.essay-feedback-content h4,
+.essay-feedback-content h5 {
+  color: var(--text-primary);
+  margin: 1.1rem 0 0.4rem;
+}
+.essay-feedback-content h2:first-child,
+.essay-feedback-content h3:first-child {
+  margin-top: 0;
+}
+.essay-feedback-content p {
+  margin: 0.55rem 0;
+}
+.essay-feedback-content ul,
+.essay-feedback-content ol {
+  margin: 0.55rem 0 0.55rem 1.25rem;
+  padding: 0;
+}
+.essay-feedback-content li {
+  margin: 0.3rem 0;
+}
+.essay-feedback-content strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+.essay-feedback-content hr {
+  border: 0;
+  border-top: 1px solid var(--glass-border);
+  margin: 1rem 0;
+}
+
 /* The pitch panel is for a prospective teacher evaluating the platform on a
    real screen -- on a phone, someone opening this link almost always already
    has a login to use, so skip straight to the form instead of making them
