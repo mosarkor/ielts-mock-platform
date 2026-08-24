@@ -202,12 +202,20 @@ export default function App() {
       );
     }
     return (
-      <TeacherDashboard 
-        user={user} 
-        onLogout={handleLogout} 
-        onSwitchRole={() => handleSwitchRole('admin')}
-        theme={theme} 
-        toggleTheme={toggleTheme} 
+      <TeacherDashboard
+        user={user}
+        onLogout={handleLogout}
+        // Only offered to the real admin account viewing as a teacher --
+        // that switch genuinely works, since the server exempts admin from
+        // every scoping check. A plain teacher account has no admin access
+        // at all now that the server actually verifies who's calling, so
+        // offering this button to them used to look like a feature and is
+        // now just a dead end: the Admin Dashboard shell would render, but
+        // every request on it comes back refused ("Failed to retrieve
+        // administrative records", every count stuck at 0).
+        onSwitchRole={user.role === 'admin' ? () => handleSwitchRole('admin') : undefined}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
     );
   }
