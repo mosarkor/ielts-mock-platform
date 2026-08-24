@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
+import ProfilePhoto from '../components/ProfilePhoto';
 import { generateDetailedReviewPdf } from '../utils/pdfReport';
 
 const fmtScore = (v) => (v === null || v === undefined || isNaN(Number(v))) ? '—' : Number(v).toFixed(1);
 
-export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, toggleTheme }) {
+export default function TeacherDashboard({ user, onLogout, onUserUpdate, onSwitchRole, theme, toggleTheme }) {
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1302,6 +1303,7 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
           <span style={styles.badge}>Teacher Assessment Suite</span>
         </div>
         <div style={styles.userInfo}>
+          <ProfilePhoto user={user} photo={user.photo} onPhotoChange={(photo) => onUserUpdate?.({ photo })} />
           <div style={styles.userMeta}>
             <span style={styles.userName}>{user.name}</span>
             <span style={styles.userId}>Assessor Profile</span>

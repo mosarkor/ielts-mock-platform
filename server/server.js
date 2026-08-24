@@ -384,9 +384,9 @@ app.get('/api/auth/whoami/:id', requireAuth, async (req, res) => {
     return res.status(403).json({ error: 'Not permitted for this account' });
   }
   try {
-    const user = await db.get('SELECT id, name, role FROM users WHERE LOWER(TRIM(id)) = ?', [cleanId]);
+    const user = await db.get('SELECT id, name, role, photo_data FROM users WHERE LOWER(TRIM(id)) = ?', [cleanId]);
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ id: user.id, name: user.name, role: user.role });
+    res.json({ id: user.id, name: user.name, role: user.role, photo: user.photo_data || null });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -419,7 +419,7 @@ app.post('/api/auth/login', async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000
     });
 
-    return res.json({ id: user.id, name: user.name, role: user.role });
+    return res.json({ id: user.id, name: user.name, role: user.role, photo: user.photo_data || null });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -454,6 +454,40 @@ app.post('/api/user/change-password', requireAuth, async (req, res) => {
     }
     await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [await hashPassword(newPassword), userId]);
     res.json({ success: true, message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Profile photos: teacher and admin only, self-service only -- nobody, not
+// even admin, sets someone else's photo, which keeps this a single-owner
+// column with no separate authorization model to get wrong. Always the
+// caller's own account (req.authUser.id from the verified session), never a
+// body-supplied id.
+app.post('/api/user/photo', requireRole('teacher', 'admin'), async (req, res) => {
+  const { photoData } = req.body;
+  if (typeof photoData !== 'string' || !/^data:image\/(jpeg|png|webp);base64,/.test(photoData)) {
+    return res.status(400).json({ error: 'photoData must be a base64 JPEG, PNG, or WebP data URL' });
+  }
+  // The client resizes and compresses before sending, but a hard cap here
+  // too so a stale client or a bug can't quietly bloat every row -- base64
+  // runs about 4/3 the size of the raw bytes.
+  const approxBytes = photoData.length * 0.75;
+  if (approxBytes > 800 * 1024) {
+    return res.status(400).json({ error: 'Photo is too large after encoding (max ~800KB) -- try a smaller image' });
+  }
+  try {
+    await db.run('UPDATE users SET photo_data = ? WHERE id = ?', [photoData, req.authUser.id]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/user/photo', requireRole('teacher', 'admin'), async (req, res) => {
+  try {
+    await db.run('UPDATE users SET photo_data = NULL WHERE id = ?', [req.authUser.id]);
+    res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

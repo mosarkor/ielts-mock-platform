@@ -75,8 +75,8 @@ export default function App() {
       .then(res => (res.ok ? res.json() : null))
       .then(fresh => {
         if (cancelled || !fresh?.id) return;
-        if (fresh.name === user.name && fresh.role === user.role) return;
-        const updated = { ...user, name: fresh.name, role: fresh.role };
+        if (fresh.name === user.name && fresh.role === user.role && fresh.photo === user.photo) return;
+        const updated = { ...user, name: fresh.name, role: fresh.role, photo: fresh.photo ?? null };
         setUser(updated);
         writeStorage('user', JSON.stringify(updated));
       })
@@ -123,6 +123,18 @@ export default function App() {
 
   const handleSwitchRole = (newRole) => {
     setActiveRole(newRole);
+  };
+
+  // Merges a partial update (e.g. a newly uploaded photo) into the signed-in
+  // user and persists it, so it survives a reload without waiting on the
+  // whoami refresh above.
+  const handleUserUpdate = (patch) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...patch };
+      writeStorage('user', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleLogout = () => {
@@ -192,12 +204,13 @@ export default function App() {
     const currentViewRole = activeRole || user.role;
     if (currentViewRole === 'admin') {
       return (
-        <AdminDashboard 
-          user={user} 
-          onLogout={handleLogout} 
+        <AdminDashboard
+          user={user}
+          onLogout={handleLogout}
+          onUserUpdate={handleUserUpdate}
           onSwitchRole={() => handleSwitchRole('teacher')}
-          theme={theme} 
-          toggleTheme={toggleTheme} 
+          theme={theme}
+          toggleTheme={toggleTheme}
         />
       );
     }
@@ -205,6 +218,7 @@ export default function App() {
       <TeacherDashboard
         user={user}
         onLogout={handleLogout}
+        onUserUpdate={handleUserUpdate}
         // Only offered to the real admin account viewing as a teacher --
         // that switch genuinely works, since the server exempts admin from
         // every scoping check. A plain teacher account has no admin access

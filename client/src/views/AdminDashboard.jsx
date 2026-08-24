@@ -2,8 +2,9 @@
 const fmtScore = (v) => (v === null || v === undefined || isNaN(Number(v))) ? '—' : Number(v).toFixed(1);
 import React, { useState, useEffect } from 'react';
 import ChangePasswordModal from '../components/ChangePasswordModal';
+import ProfilePhoto from '../components/ProfilePhoto';
 
-export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, toggleTheme }) {
+export default function AdminDashboard({ user, onLogout, onUserUpdate, onSwitchRole, theme, toggleTheme }) {
   const [showPwdModal, setShowPwdModal] = useState(false);
   const [metrics, setMetrics] = useState({ students: 0, tests: 0, pendingGrades: 0, completedGrades: 0 });
   const [students, setStudents] = useState([]);
@@ -505,6 +506,7 @@ export default function AdminDashboard({ user, onLogout, onSwitchRole, theme, to
           <span style={styles.badge}>Administrator Suite</span>
         </div>
         <div style={styles.userInfo}>
+          <ProfilePhoto user={user} photo={user.photo} onPhotoChange={(photo) => onUserUpdate?.({ photo })} />
           <div style={styles.userMeta}>
             <span style={styles.userName}>{user.name}</span>
             <span style={styles.userId}>System Controller</span>

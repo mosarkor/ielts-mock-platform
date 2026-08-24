@@ -168,6 +168,11 @@ export async function initDb() {
     // Every teacher-facing query scopes by this; admin queries do not, so the
     // admin account keeps its existing cross-school view.
     await db.exec('ALTER TABLE users ADD COLUMN owner_teacher_id TEXT REFERENCES users(id)').catch(() => {});
+    // Profile photo, teacher/admin only -- a data URL, resized and
+    // compressed client-side before upload, so this stays small (server
+    // still enforces a hard size cap independently). No separate asset
+    // table or disk cache needed at this size, unlike listening audio.
+    await db.exec('ALTER TABLE users ADD COLUMN photo_data TEXT').catch(() => {});
 
     // Real, server-verified login sessions. Previously the client just held
     // {id, name, role} in localStorage and every request trusted whatever id
@@ -490,6 +495,7 @@ export async function initDb() {
   // Dynamically alter table for existing installations
   await db.exec('ALTER TABLE users ADD COLUMN group_name TEXT').catch(() => {});
   await db.exec('ALTER TABLE users ADD COLUMN owner_teacher_id TEXT REFERENCES users(id)').catch(() => {});
+  await db.exec('ALTER TABLE users ADD COLUMN photo_data TEXT').catch(() => {});
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS sessions (
