@@ -1922,10 +1922,21 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                 </div>
 
                 <div className="card" style={{ marginBottom: '1.5rem' }}>
-                  <h3 style={{ marginTop: 0 }}>🎙️ Assign Speaking Test</h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '-0.5rem', marginBottom: '0.75rem' }}>
-                    Uses the same student selection as above -- pick students in the Assign Tests box, then assign a speaking prompt here too if needed.
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', marginBottom: '1.25rem' }}>
+                    <div style={{
+                      flexShrink: 0, width: '2.5rem', height: '2.5rem', borderRadius: '10px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '1.2rem', background: 'rgba(244, 63, 94, 0.15)'
+                    }}>
+                      🎙️
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0 }}>Assign Speaking Test</h3>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
+                        Uses the same students selected above in Assign Tests -- pick them there, then assign a prompt here.
+                      </p>
+                    </div>
+                  </div>
                   <form onSubmit={handleAssignSpeaking}>
                     <div className="form-group">
                       <label className="form-label">Speaking Prompt</label>
@@ -1941,10 +1952,27 @@ export default function TeacherDashboard({ user, onLogout, onSwitchRole, theme, 
                         </p>
                       )}
                     </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                      {selectedStudentIds.length} student{selectedStudentIds.length === 1 ? '' : 's'} selected
-                    </p>
-                    <button type="submit" className="btn btn-success" style={{ width: '100%', justifyContent: 'center' }}>Assign Speaking Test</button>
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                      fontSize: '0.8rem', fontWeight: '600', marginBottom: '1rem',
+                      padding: '0.3rem 0.75rem', borderRadius: '999px',
+                      color: selectedStudentIds.length ? '#10b981' : 'var(--text-secondary)',
+                      background: selectedStudentIds.length ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-tertiary)'
+                    }}>
+                      👥 {selectedStudentIds.length} student{selectedStudentIds.length === 1 ? '' : 's'} selected
+                    </div>
+                    <button
+                      type="submit"
+                      className="btn btn-success"
+                      disabled={!assignPromptId || selectedStudentIds.length === 0}
+                      style={{
+                        width: '100%', justifyContent: 'center', display: 'flex',
+                        opacity: (!assignPromptId || selectedStudentIds.length === 0) ? 0.5 : 1,
+                        cursor: (!assignPromptId || selectedStudentIds.length === 0) ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      Assign Speaking Test
+                    </button>
                   </form>
                 </div>
 
