@@ -787,13 +787,25 @@ async function ensureCustomDataSeeded(db) {
   } catch (e) {}
 
   // Every student who existed before multi-school support becomes school 1,
-  // owned by the original 'teacher' account -- so the current class sees no
-  // change at all. A student created after this point without an explicit
-  // owner (e.g. by an admin tool not yet updated) also falls back here rather
-  // than being ownerless and invisible to every teacher.
+  // owned by whichever teacher is actually running the class -- so the
+  // current class sees no change at all. A student created after this point
+  // without an explicit owner (e.g. by an admin tool not yet updated) also
+  // falls back here rather than being ownerless and invisible to every
+  // teacher.
+  //
+  // 'mrGreen' when that account exists (the real teacher on this
+  // installation -- 'teacher' turned out to be an unused seed leftover, and
+  // this defaulted every existing student to it the first time this ran,
+  // which is exactly the bug that prompted this fix). Falls back to
+  // 'teacher' on an installation that never created a 'mrGreen' account --
+  // a fresh local SQLite database only ever seeds 'teacher', and defaulting
+  // to an id that doesn't exist would fail the owner_teacher_id foreign key
+  // and crash startup there.
   try {
+    const primaryTeacher = (await db.get(`SELECT id FROM users WHERE id = 'mrGreen'`)) ? 'mrGreen' : 'teacher';
     await db.run(
-      `UPDATE users SET owner_teacher_id = 'teacher' WHERE role = 'student' AND owner_teacher_id IS NULL`
+      `UPDATE users SET owner_teacher_id = ? WHERE role = 'student' AND owner_teacher_id IS NULL`,
+      [primaryTeacher]
     );
   } catch (e) {}
 

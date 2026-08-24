@@ -1912,11 +1912,11 @@ app.post('/api/admin/users', requireRole('teacher', 'admin'), async (req, res) =
   try {
     const hashedPassword = await hashPassword(password || 'student123');
     // A student left without an owner is invisible to every teacher's
-    // dashboard, so unassigned students default to the original account
-    // rather than silently falling through the cracks. Teacher/admin rows
-    // stay unowned -- they're tenant roots, not tenants.
+    // dashboard, so unassigned students default to the account actually
+    // running the class rather than silently falling through the cracks.
+    // Teacher/admin rows stay unowned -- they're tenant roots, not tenants.
     const owner = role === 'student'
-      ? (req.authUser.role === 'teacher' ? req.authUser.id : (ownerTeacherId || 'teacher'))
+      ? (req.authUser.role === 'teacher' ? req.authUser.id : (ownerTeacherId || 'mrGreen'))
       : null;
     await db.run('INSERT INTO users (id, name, password_hash, role, group_name, owner_teacher_id) VALUES (?, ?, ?, ?, ?, ?)', [id, name, hashedPassword, role, groupName || null, owner]);
     res.json({ success: true });
@@ -2030,6 +2030,32 @@ app.delete('/api/admin/users/:id', requireRole('teacher', 'admin'), async (req, 
     await db.run('DELETE FROM sessions WHERE user_id = ?', [id]);
     await db.run('DELETE FROM users WHERE id = ?', [id]);
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Moves every student owned by one teacher to another. Exists to correct the
+// multi-school migration's first run, which defaulted every pre-existing
+// student to a leftover seed account ('teacher') instead of the account
+// actually running the class -- not a bulk classroom-transfer feature, so it
+// is deliberately blunt (whole roster, no partial selection) rather than
+// something built out for routine use.
+app.post('/api/admin/users/reassign-owner', requireRole('admin'), async (req, res) => {
+  const { fromTeacherId, toTeacherId } = req.body;
+  if (!fromTeacherId || !toTeacherId) {
+    return res.status(400).json({ error: 'fromTeacherId and toTeacherId are required' });
+  }
+  try {
+    const toUser = await db.get(`SELECT id, role FROM users WHERE id = ?`, [toTeacherId]);
+    if (!toUser || toUser.role !== 'teacher') {
+      return res.status(400).json({ error: `${toTeacherId} is not a teacher account` });
+    }
+    const result = await db.run(
+      `UPDATE users SET owner_teacher_id = ? WHERE role = 'student' AND owner_teacher_id = ?`,
+      [toTeacherId, fromTeacherId]
+    );
+    res.json({ success: true, moved: result.changes });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -4731,7 +4757,7 @@ app.post('/api/admin/users/bulk-import', requireRole('teacher', 'admin'), async 
   // A teacher's import is always owned by themselves -- ownerTeacherId in the
   // request body is only honoured for an admin doing setup on a school's
   // behalf.
-  const owner = req.authUser.role === 'teacher' ? req.authUser.id : (ownerTeacherId || 'teacher');
+  const owner = req.authUser.role === 'teacher' ? req.authUser.id : (ownerTeacherId || 'mrGreen');
   const results = [];
   for (const s of students) {
     try {
