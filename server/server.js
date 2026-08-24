@@ -2083,7 +2083,7 @@ app.get('/api/admin/tests', requireRole('teacher', 'admin'), async (req, res) =>
 // "Cannot read properties of undefined (reading 'map')" crash that rebuild
 // was meant to fix. listening_data/reading_data are only ever used here for
 // the one-time bootstrap insert, when there's nothing else to regress.
-app.all('/api/admin/sync-mock10', async (req, res) => {
+app.all('/api/admin/sync-mock10', requireRole('admin'), async (req, res) => {
   try {
     const jsonPath = path.join(__dirname, 'data', 'mocks', 'mock10.json');
     if (!fs.existsSync(jsonPath)) {
@@ -4827,7 +4827,7 @@ app.post('/api/admin/assignments/clear-pending', requireRole('admin'), async (re
 });
 
 // Clear All Assignments & Submissions (Purge History)
-app.all('/api/admin/assignments/clear-all', async (req, res) => {
+app.all('/api/admin/assignments/clear-all', requireRole('admin'), async (req, res) => {
   try {
     await db.run('DELETE FROM assignments');
     await db.run('DELETE FROM speaking_assignments');
